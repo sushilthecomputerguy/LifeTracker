@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backup & Restore</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+
+       body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      
+            background: url('bg2.jpg');
+            color:#2c3e50;
+        }
+
+        .container{
+            max-width: 800px;
+            display: block;
+            margin:auto;
+                  padding: 20px;
+
+        }
+
+        h1 { margin-bottom: 24px; }
+
+        /* ── section ── */
+        .section {
+            background: white;
+            padding: 28px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: rgba(0, 0, 0, 0.05) 0px 6px 24px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
+        }
+
+        .section-title {
+            font-size: 1.25em;
+            font-weight: 600;
+            margin-bottom: 8px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .section-desc {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 18px;
+        }
+
+        /* ── buttons ── */
+        .btn {
+            padding: 11px 22px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { background: #2196F3; color: white; }
+        .btn-success { background: #4CAF50; color: white; }
+
+        /* ── drop zone ── */
+        .drop-zone {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 34px 20px;
+            text-align: center;
+            background: #fafafa;
+            margin-bottom: 18px;
+        }
+
+        .drop-zone.dragover { border-color: #2196F3; background: #E3F2FD; }
+        .drop-zone .icon { font-size: 38px; margin-bottom: 6px; }
+        .drop-zone .hint { color: #666; font-size: 14px; margin-bottom: 8px; }
+        .drop-zone .hint.dim { color: #aaa; margin-bottom: 12px; }
+        .file-input { display: none; }
+
+        /* ── import-mode radios ── */
+        .radio-group label {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+
+        .radio-group input[type="radio"] { margin-top: 3px; flex-shrink: 0; }
+        .radio-label { font-weight: 600; font-size: 14px; }
+        .radio-desc  { font-size: 13px; color: #666; margin-top: 2px; }
+
+        /* ── info / warning / success / error boxes ── */
+        .box {
+            padding: 14px 16px;
+            border-radius: 4px;
+            margin-top: 16px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .box-info    { background: #E3F2FD; border-left: 4px solid #2196F3; }
+        .box-warn    { background: #FFF3E0; border-left: 4px solid #FF9800; }
+        .box-success { background: #E8F5E9; border-left: 4px solid #4CAF50; display:none; }
+        .box-error   { background: #FFEBEE; border-left: 4px solid #F44336; display:none; }
+
+        .box-title { font-weight: 600; margin-bottom: 3px; }
+        .box-info .box-title    { color: #1565C0; }
+        .box-warn .box-title    { color: #E65100; }
+        .box-success .box-title { color: #2E7D32; }
+        .box-error .box-title   { color: #C62828; }
+
+        .box-success.show, .box-error.show { display: block; }
+
+        /* ── preview panel ── */
+        .preview-panel { display:none; margin-top: 18px; }
+        .preview-panel.show { display: block; }
+
+        /* tracker definitions strip */
+        .preview-trackers-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #444;
+        }
+
+        .preview-tracker-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+
+        .preview-tracker-row:last-child { border-bottom: none; }
+
+        .type-badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 7px;
+            border-radius: 4px;
+            background: #e8e8e8;
+            white-space: nowrap;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            color: white;
+            font-weight: 600;
+            margin-right: 3px;
+        }
+
+        /* date block inside preview */
+        .date-block {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .date-block-header {
+            background: #f0f4f8;
+            padding: 9px 14px;
+            font-weight: 600;
+            font-size: 14px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .date-block-body { padding: 10px 14px; }
+
+        .entry-row {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            padding: 6px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+
+        .entry-row:last-child { border-bottom: none; }
+        .entry-name { font-weight: 600; min-width: 140px; color: #333; }
+        .entry-value { color: #555; }
+
+        /* import-btn row */
+        .import-btn-row { display:none; margin-top: 18px; text-align:center; }
+        .import-btn-row.show { display: block; }
+
+
+
+
+          .bottom-navigation{
+        position: sticky;
+        bottom: 0;
+        padding-top: 15px;     
+        text-align: center;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        background: #FFF;
+        box-shadow: rgba(0, 0, 0, 0.05) 0px 6px 24px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
+    }
+    .bottom-navigation a{
+        text-decoration: none;
+        color: #333;
+    }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Backup &amp; Restore</h1>
+
+    <!-- ═══ EXPORT ═══ -->
+    <div class="section">
+        <h2 class="section-title">Export Backup</h2>
+        <p class="section-desc">
+            Downloads every tracker and all your daily entries as one JSON file.
+            Each date in the file includes the tracker name, type, and the actual saved value — fully readable without the app.
+        </p>
+
+        <button class="btn btn-primary" onclick="exportBackup()">📥 Download Backup</button>
+
+        <div class="box box-info">
+            <div class="box-title">What is saved in the file?</div>
+            ✓ All trackers with their full settings (options, prefix/suffix, etc.)<br>
+            ✓ Every tracked date with each entry resolved: tracker name + value<br>
+            ✓ Custom templates<br>
+            ✓ Export date &amp; version metadata
+        </div>
+
+        <div class="box box-success" id="exportSuccess">
+            <div class="box-title">✓ Success</div>
+            <span id="exportSuccessText"></span>
+        </div>
+    </div>
+
+    <!-- ═══ IMPORT ═══ -->
+    <div class="section">
+        <h2 class="section-title">Import Backup</h2>
+        <p class="section-desc">
+            Drop or choose a backup JSON file. A full preview of trackers and every date will appear before anything is written.
+        </p>
+
+        <!-- drop zone -->
+        <div class="drop-zone" id="dropZone">
+            <div class="icon">📁</div>
+            <div class="hint">Drag &amp; drop your backup file here</div>
+            <div class="hint dim">or</div>
+            <button class="btn btn-success" onclick="document.getElementById('fileInput').click()">Choose File</button>
+            <input type="file" id="fileInput" class="file-input" accept=".json" onchange="onFileChosen(event)">
+        </div>
+
+        <!-- mode -->
+        <div class="radio-group">
+            <label>
+                <input type="radio" name="importMode" value="merge" checked>
+                <div>
+                    <div class="radio-label">Merge</div>
+                    <div class="radio-desc">Keep current data and add everything from the backup on top.</div>
+                </div>
+            </label>
+            <label>
+                <input type="radio" name="importMode" value="replace">
+                <div>
+                    <div class="radio-label">Replace</div>
+                    <div class="radio-desc">Delete all current data first, then load the backup. Best for a fresh device.</div>
+                </div>
+            </label>
+        </div>
+
+        <!-- preview (hidden until file loaded) -->
+        <div class="preview-panel" id="previewPanel">
+            <!-- tracker definitions -->
+            <div class="preview-trackers-title">Trackers in this backup</div>
+            <div id="previewTrackerList"></div>
+
+            <!-- date entries -->
+            <div id="previewDates" style="margin-top:18px;"></div>
+        </div>
+
+        <!-- import button -->
+        <div class="import-btn-row" id="importBtnRow">
+            <button class="btn btn-primary" onclick="runImport()">📥 Import</button>
+        </div>
+
+        <!-- messages -->
+        <div class="box box-warn">
+            <div class="box-title">⚠️ Important</div>
+            "Replace" permanently deletes everything currently on this device. Export a fresh backup first if you need to keep current data.
+        </div>
+
+        <div class="box box-success" id="importSuccess">
+            <div class="box-title">✓ Import successful</div>
+            <span id="importSuccessText"></span>
+        </div>
+
+        <div class="box box-error" id="importError">
+            <div class="box-title">✗ Import failed</div>
+            <span id="importErrorText"></span>
+        </div>
+    </div>
+</div>
+
+
+
+ <div class="bottom-navigation">
+            <div><a href="template.html"><img src="tracker_small.png"/><br/>Tracker</a></div>
+            <div><a href="report.html"><img src="calendar_small.png"/><br/>Report</a></div>
+            <div><a href="index.html"><img src="today_small.png"/><br/>My Day</a></div>
+            <div><a href="backup.html"><img src="backup.png"/><br/>Backup</a></div>
+        </div>
+
+<script>
+/* ═══ DB ═══════════════════════════════════════════════════ */
+let db;
+const DB_NAME    = 'TrackerDB';
+const STORE_NAME = 'trackers';
+
+function initDB() {
+    const req = indexedDB.open(DB_NAME, 2);
+    req.onerror   = () => console.error('DB open failed');
+    req.onsuccess = () => { db = req.result; };
+    req.onupgradeneeded = (e) => {
+        const d = e.target.result;
+        if (!d.objectStoreNames.contains(STORE_NAME)) {
+            const s = d.createObjectStore(STORE_NAME, { keyPath:'id', autoIncrement:true });
+            s.createIndex('title','title');
+            s.createIndex('type','type');
+        }
+    };
+}
+
+function getAllTrackers() {
+    return new Promise((res, rej) => {
+        const req = db.transaction([STORE_NAME],'readonly').objectStore(STORE_NAME).getAll();
+        req.onsuccess = () => res(req.result);
+        req.onerror   = () => rej(req.error);
+    });
+}
+
+function addTracker(tracker) {
+    return new Promise((res, rej) => {
+        const req = db.transaction([STORE_NAME],'readwrite').objectStore(STORE_NAME).add(tracker);
+        req.onsuccess = () => res(req.result);   // new auto-inc id
+        req.onerror   = () => rej(req.error);
+    });
+}
+
+function clearDB() {
+    return new Promise((res, rej) => {
+        const req = db.transaction([STORE_NAME],'readwrite').objectStore(STORE_NAME).clear();
+        req.onsuccess = res;
+        req.onerror   = () => rej(req.error);
+    });
+}
+
+/* ═══ tiny helpers ═════════════════════════════════════════ */
+function getTypeLabel(t) {
+    return { dropdown:'Dropdown', yesno:'Yes / No', numeric:'Numeric', text:'Text' }[t] || 'Dropdown';
+}
+
+function formatDate(isoDate) {
+    // "2026-02-03" → "February 3, 2026"
+    const d = new Date(isoDate + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+}
+
+/*
+ * Given a tracker object and the raw value string stored in dailySelections,
+ * return a human-readable string.  e.g.  "Happy"  /  "Yes"  /  "$150 lbs"  /  "note text"
+ */
+function resolveValue(tracker, rawValue) {
+    const type = tracker.type || 'dropdown';
+
+    if (type === 'dropdown') {
+        const idx = parseInt(rawValue);
+        return (tracker.options && tracker.options[idx]) ? tracker.options[idx].title : rawValue;
+    }
+    if (type === 'yesno')  return rawValue === 'yes' ? 'Yes' : 'No';
+    if (type === 'numeric') {
+        const p = tracker.numericPrefix || '';
+        const s = tracker.numericSuffix || '';
+        return `${p}${rawValue}${s ? ' ' + s : ''}`;
+    }
+    return rawValue; // text
+}
+
+/* ═══ EXPORT ═══════════════════════════════════════════════ */
+async function exportBackup() {
+    try {
+        const trackers       = await getAllTrackers();
+        const dailySelections = JSON.parse(localStorage.getItem('dailySelections') || '{}');
+        const customTemplates = JSON.parse(localStorage.getItem('customTemplates')  || '[]');
+
+        // Build a tracker-id → tracker map for quick lookup
+        const trackerMap = {};
+        trackers.forEach(t => { trackerMap[t.id] = t; });
+
+        /*
+         * Build the "dates" array.
+         * Each element  = { date, dateFormatted, entries: [ … ] }
+         * Each entry    = { trackerId, trackerName, trackerType, value (resolved), rawValue }
+         * Sorted newest date first.
+         */
+        const sortedDates = Object.keys(dailySelections).sort().reverse();
+
+        const dates = sortedDates.map(dateKey => {
+            const dayEntries = dailySelections[dateKey];
+            const entries = Object.values(dayEntries).map(entry => {
+                const tracker = trackerMap[entry.trackerId];
+                return {
+                    trackerId:   entry.trackerId,
+                    trackerName: tracker ? tracker.title : 'Unknown Tracker',
+                    trackerType: tracker ? (tracker.type || 'dropdown') : entry.type,
+                    value:       tracker ? resolveValue(tracker, entry.value) : entry.value,
+                    rawValue:    entry.value
+                };
+            });
+
+            return {
+                date:          dateKey,           // "2026-02-03"  — the machine key
+                dateFormatted: formatDate(dateKey), // "February 3, 2026"
+                entries:       entries
+            };
+        });
+
+        /* final JSON payload */
+        const backup = {
+            version:    '2.0',
+            exportDate: new Date().toISOString(),
+            data: {
+                trackers:        trackers,
+                dates:           dates,
+                customTemplates: customTemplates
+            }
+        };
+
+        /* download */
+        const blob = new Blob([JSON.stringify(backup, null, 2)], { type:'application/json' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = `tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showMsg('exportSuccess','exportSuccessText', 'Backup downloaded. The file contains all trackers and every tracked date.');
+
+    } catch (err) {
+        console.error('Export error', err);
+    }
+}
+
+/* ═══ IMPORT – read file ═══════════════════════════════════ */
+let pendingBackup = null;
+
+function onFileChosen(e) {
+    const file = e.target.files[0];
+    if (file) readFile(file);
+}
+
+/* drag & drop */
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover',  (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', ()  => { dropZone.classList.remove('dragover'); });
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) readFile(file);
+    else      showMsg('importError','importErrorText','Please drop a valid JSON backup file.');
+});
+
+async function readFile(file) {
+    hideAll();
+    try {
+        const text   = await file.text();
+        const backup = JSON.parse(text);
+
+        // accept both v2 (dates array) and legacy (dailySelections object)
+        if (!backup.version || !backup.data || !backup.data.trackers) {
+            throw new Error('Not a valid tracker backup');
+        }
+
+        pendingBackup = backup;
+        renderPreview(backup);
+        document.getElementById('previewPanel').classList.add('show');
+        document.getElementById('importBtnRow').classList.add('show');
+
+    } catch (err) {
+        console.error('Read error', err);
+        showMsg('importError','importErrorText','Invalid file — make sure it is a Tracker backup JSON.');
+        pendingBackup = null;
+        document.getElementById('previewPanel').classList.remove('show');
+        document.getElementById('importBtnRow').classList.remove('show');
+    }
+}
+
+/* ═══ PREVIEW ══════════════════════════════════════════════ */
+function renderPreview(backup) {
+    const { trackers, dates } = backup.data;
+
+    /* ── tracker list ── */
+    document.getElementById('previewTrackerList').innerHTML = trackers.map(t => {
+        const type = t.type || 'dropdown';
+        let detail = '';
+
+        if (type === 'dropdown' && t.options) {
+            detail = t.options.map(o => `<span class="pill" style="background:${o.color}">${o.title}</span>`).join('');
+        } else if (type === 'yesno') {
+            detail = '<span style="color:#666;font-size:13px;">Yes or No</span>';
+        } else if (type === 'numeric') {
+            const p = t.numericPrefix || '';
+            const s = t.numericSuffix || '';
+            detail = `<span style="color:#666;font-size:13px;">${p}[number]${s ? ' '+s : ''}</span>`;
+        } else {
+            detail = '<span style="color:#666;font-size:13px;">Free text</span>';
+        }
+
+        return `<div class="preview-tracker-row">
+                    <span class="type-badge">${getTypeLabel(type)}</span>
+                    <span style="font-weight:600;">${t.title}</span>
+                    <span style="flex:1;">${detail}</span>
+                </div>`;
+    }).join('');
+
+    /* ── date blocks ── */
+    // If the file has the new "dates" array use it directly; otherwise rebuild from legacy dailySelections
+    let dateBlocks = [];
+
+    if (dates && dates.length) {
+        dateBlocks = dates;
+    } else if (backup.data.dailySelections) {
+        // legacy format — resolve on the fly
+        const tMap = {};
+        trackers.forEach(t => { tMap[t.id] = t; });
+
+        dateBlocks = Object.keys(backup.data.dailySelections).sort().reverse().map(dateKey => {
+            const entries = Object.values(backup.data.dailySelections[dateKey]).map(entry => {
+                const tracker = tMap[entry.trackerId];
+                return {
+                    trackerId:   entry.trackerId,
+                    trackerName: tracker ? tracker.title : 'Unknown',
+                    trackerType: tracker ? (tracker.type || 'dropdown') : (entry.type || 'dropdown'),
+                    value:       tracker ? resolveValue(tracker, entry.value) : entry.value,
+                    rawValue:    entry.value
+                };
+            });
+            return { date: dateKey, dateFormatted: formatDate(dateKey), entries };
+        });
+    }
+
+    document.getElementById('previewDates').innerHTML = dateBlocks.length
+        ? dateBlocks.map(block => `
+            <div class="date-block">
+                <div class="date-block-header">${block.dateFormatted} <span style="font-weight:400;color:#666;font-size:13px;">(${block.date})</span></div>
+                <div class="date-block-body">
+                    ${block.entries.map(e => `
+                        <div class="entry-row">
+                            <span class="entry-name">${e.trackerName}</span>
+                            <span class="type-badge">${getTypeLabel(e.trackerType)}</span>
+                            <span class="entry-value">${e.value}</span>
+                        </div>`).join('')}
+                </div>
+            </div>`)
+            .join('')
+        : '<p style="color:#999;font-size:14px;margin-top:10px;">No tracked dates in this backup.</p>';
+}
+
+/* ═══ IMPORT – execute ════════════════════════════════════ */
+async function runImport() {
+    if (!pendingBackup) return;
+    hideAll();
+
+    const mode = document.querySelector('input[name="importMode"]:checked').value;
+    if (mode === 'replace') {
+        if (!confirm('Replace will permanently delete all data on this device. Continue?')) return;
+        await clearDB();
+        localStorage.removeItem('dailySelections');
+        localStorage.removeItem('customTemplates');
+    }
+
+    try {
+        const { trackers, dates, customTemplates } = pendingBackup.data;
+        const legacySelections = pendingBackup.data.dailySelections; // may be undefined (v2 uses dates)
+
+        /* ── 1. re-insert trackers, build oldId → newId map ── */
+        const idMap = {};
+        if (trackers && trackers.length) {
+            for (const t of trackers) {
+                const oldId = t.id;
+                const copy  = { ...t };
+                delete copy.id;
+                const newId = await addTracker(copy);
+                idMap[String(oldId)] = newId;
+            }
+        }
+
+        /* ── 2. rebuild dailySelections keyed by date, with remapped ids ── */
+        let rebuilt = {};
+
+        if (dates && dates.length) {
+            // v2 format – dates array with rawValue
+            dates.forEach(block => {
+                rebuilt[block.date] = {};
+                block.entries.forEach(e => {
+                    const newId = idMap[String(e.trackerId)] || e.trackerId;
+                    rebuilt[block.date][String(newId)] = {
+                        trackerId: newId,
+                        value:     e.rawValue,
+                        type:      e.trackerType,
+                        date:      block.date,
+                        timestamp: new Date().toISOString()
+                    };
+                });
+            });
+        } else if (legacySelections) {
+            // legacy format – dailySelections object
+            for (const [date, entries] of Object.entries(legacySelections)) {
+                rebuilt[date] = {};
+                for (const [oldTid, entry] of Object.entries(entries)) {
+                    const newId = idMap[String(oldTid)] || oldTid;
+                    rebuilt[date][String(newId)] = { ...entry, trackerId: newId };
+                }
+            }
+        }
+
+        /* ── 3. write dailySelections ── */
+        if (mode === 'replace') {
+            localStorage.setItem('dailySelections', JSON.stringify(rebuilt));
+        } else {
+            const existing = JSON.parse(localStorage.getItem('dailySelections') || '{}');
+            for (const [date, entries] of Object.entries(rebuilt)) {
+                existing[date] = { ...(existing[date] || {}), ...entries };
+            }
+            localStorage.setItem('dailySelections', JSON.stringify(existing));
+        }
+
+        /* ── 4. write templates ── */
+        if (customTemplates) {
+            if (mode === 'replace') {
+                localStorage.setItem('customTemplates', JSON.stringify(customTemplates));
+            } else {
+                const existing = JSON.parse(localStorage.getItem('customTemplates') || '[]');
+                localStorage.setItem('customTemplates', JSON.stringify([...existing, ...customTemplates]));
+            }
+        }
+
+        /* ── done ── */
+        showMsg('importSuccess','importSuccessText','All trackers and every date have been restored. Open My Day to see your data.');
+
+        pendingBackup = null;
+        document.getElementById('fileInput').value = '';
+        document.getElementById('previewPanel').classList.remove('show');
+        document.getElementById('importBtnRow').classList.remove('show');
+
+    } catch (err) {
+        console.error('Import error', err);
+        showMsg('importError','importErrorText','Something went wrong. Check the browser console for details.');
+    }
+}
+
+/* ═══ message helpers ══════════════════════════════════════ */
+function hideAll() {
+    ['exportSuccess','importSuccess','importError'].forEach(id => {
+        document.getElementById(id).classList.remove('show');
+    });
+}
+
+function showMsg(boxId, textId, msg) {
+    hideAll();
+    document.getElementById(textId).textContent = msg;
+    document.getElementById(boxId).classList.add('show');
+}
+
+/* ═══ boot ═════════════════════════════════════════════════ */
+initDB();
+</script>
+</body>
+</html>

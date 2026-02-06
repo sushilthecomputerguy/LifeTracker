@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tracker Comparison</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+             background: url('bg2.jpg');
+            color:#2c3e50;
+        }
+
+        .container{
+            max-width: 800px;
+            display: block;
+            margin:auto;
+                  padding: 20px;
+
+        }
+        h1 { margin-bottom: 20px; }
+
+        /* ── controls panel ── */
+        .controls-panel {
+            background: white;
+            border-radius: 8px;
+            padding: 22px;
+            margin-bottom: 20px;
+        }
+
+        .controls-section {
+            margin-bottom: 20px;
+        }
+
+        .controls-section:last-child { margin-bottom: 0; }
+
+        .section-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        /* add tracker row */
+        .add-tracker-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .add-tracker-row select {
+            padding: 9px 12px;
+            font-size: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-width: 250px;
+            flex: 1;
+        }
+
+        .add-tracker-row .btn-add {
+            padding: 9px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .add-tracker-row .btn-add:hover { background: #45a049; }
+        .add-tracker-row .btn-add:disabled { background: #ccc; cursor: not-allowed; }
+
+        /* year + compare button row */
+        .action-row {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .year-select-wrap {
+            display: none;
+        }
+
+        .year-select-wrap.show { display: block; }
+
+        .year-select-wrap select {
+            padding: 9px 12px;
+            font-size: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-primary { background: #2196F3; color: white; }
+        .btn-primary:hover { background: #1976D2; }
+        .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+
+        /* ── comparison table ── */
+        .comparison-card {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        .comparison-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .comparison-meta {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .comparison-table th {
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+            padding: 10px 12px;
+            border-bottom: 2px solid #ddd;
+            background: #f8f9fa;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .comparison-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: top;
+        }
+
+        .comparison-table tr:last-child td { border-bottom: none; }
+
+        .comparison-table .date-col {
+            font-weight: 600;
+            color: #555;
+            white-space: nowrap;
+        }
+
+        /* month header row */
+        .month-header-row {
+            background: #e3f2fd;
+        }
+
+        .month-header-row td {
+            font-weight: 700;
+            color: #1565C0;
+            padding: 8px 12px;
+            border-bottom: 2px solid #2196F3;
+        }
+
+        /* value cells */
+        .value-cell {
+            min-width: 120px;
+        }
+
+        .value-cell.empty {
+            color: #ccc;
+            font-style: italic;
+        }
+
+        /* colored box for dropdown */
+        .option-box {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            color: white;
+        }
+
+        /* yes/no indicator */
+        .yesno-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .yesno-badge.yes { background: #4CAF50; }
+        .yesno-badge.no  { background: #f44336; }
+
+        /* numeric value */
+        .numeric-value {
+            font-weight: 600;
+            color: #222;
+        }
+
+        /* text preview */
+        .text-preview {
+            color: #555;
+            font-size: 13px;
+        }
+
+        /* empty state */
+        .empty-msg {
+            color: #999;
+            font-size: 15px;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        /* selected count badge */
+        .selection-count {
+            display: inline-block;
+            background: #2196F3;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        /* ── selected trackers list (draggable) ── */
+        .selected-trackers-section {
+            display: none;
+            margin-top: 0;
+        }
+
+        .selected-trackers-section.show { display: block; }
+
+        .selected-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .selected-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: #f8f9fa;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: move;
+            transition: all 0.2s;
+        }
+
+        .selected-item:hover {
+            background: #fff;
+            border-color: #2196F3;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .selected-item.dragging {
+            opacity: 0.4;
+            background: #e3f2fd;
+            border-color: #2196F3;
+            transform: scale(1.02);
+        }
+
+        .selected-item .drag-handle {
+            font-size: 20px;
+            color: #999;
+            cursor: grab;
+            user-select: none;
+            line-height: 1;
+        }
+
+        .selected-item .drag-handle:active { cursor: grabbing; }
+
+        .selected-item .tracker-info {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .selected-item .tracker-order {
+            width: 28px;
+            height: 28px;
+            background: #2196F3;
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .selected-item .tracker-title {
+            font-weight: 600;
+            color: #333;
+            font-size: 15px;
+        }
+
+        .selected-item .tracker-badge {
+            font-size: 11px;
+            color: #666;
+            background: #e0e0e0;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .selected-item .remove-btn {
+            padding: 6px 14px;
+            font-size: 13px;
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .selected-item .remove-btn:hover { background: #d32f2f; }
+
+
+
+          .bottom-navigation{
+        position: sticky;
+        bottom: 0;
+        padding-top: 15px;     
+        text-align: center;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        background: #FFF;
+        box-shadow: rgba(0, 0, 0, 0.05) 0px 6px 24px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
+    }
+    .bottom-navigation a{
+        text-decoration: none;
+        color: #333;
+    }
+
+
+    
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Tracker Comparison</h1>
+
+<!-- controls -->
+<div class="controls-panel">
+    <div class="controls-section">
+        <label class="section-label">Add Trackers to Compare</label>
+        <div class="add-tracker-row">
+            <select id="trackerDropdown">
+                <option value="">— Select a tracker —</option>
+            </select>
+            <button class="btn-add" id="addBtn" onclick="addTracker()" disabled>+ Add Tracker</button>
+        </div>
+    </div>
+
+    <!-- Selected trackers (draggable to reorder) -->
+    <div class="selected-trackers-section" id="selectedSection">
+        <label class="section-label">
+            Selected Trackers (drag to reorder)
+            <span class="selection-count" id="selectionCount">0 selected</span>
+        </label>
+        <div class="selected-list" id="selectedList"></div>
+    </div>
+
+    <div class="controls-section">
+        <div class="action-row">
+            <div class="year-select-wrap" id="yearSelectWrap">
+                <label class="section-label" style="margin-bottom:6px;">Year</label>
+                <select id="yearSelect"></select>
+            </div>
+            <button class="btn btn-primary" id="compareBtn" onclick="runComparison()" disabled>
+                Compare Trackers
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- comparison output -->
+<div class="comparison-card" id="comparisonCard">
+    <div class="empty-msg">Select at least 2 trackers above and click "Compare Trackers" to see the side-by-side view.</div>
+</div>
+
+</div>
+ <div class="bottom-navigation">
+            <div><a href="template.html"><img src="tracker_small.png"/><br/>Tracker</a></div>
+            <div><a href="report.html"><img src="calendar_small.png"/><br/>Report</a></div>
+            <div><a href="index.html"><img src="today_small.png"/><br/>My Day</a></div>
+            <div><a href="backup.html"><img src="backup.png"/><br/>Backup</a></div>
+        </div>
+
+<script>
+/* ═══ DB ═══════════════════════════════════════════════════ */
+let db;
+const DB_NAME    = 'TrackerDB';
+const STORE_NAME = 'trackers';
+
+function initDB() {
+    const req = indexedDB.open(DB_NAME, 2);
+    req.onerror   = () => console.error('DB open failed');
+    req.onsuccess = () => { db = req.result; loadTrackerDropdown(); };
+    req.onupgradeneeded = (e) => {
+        const d = e.target.result;
+        if (!d.objectStoreNames.contains(STORE_NAME)) {
+            const s = d.createObjectStore(STORE_NAME, { keyPath:'id', autoIncrement:true });
+            s.createIndex('title','title');
+            s.createIndex('type','type');
+        }
+    };
+}
+
+function getAllTrackers() {
+    return new Promise((res, rej) => {
+        const req = db.transaction([STORE_NAME],'readonly').objectStore(STORE_NAME).getAll();
+        req.onsuccess = () => res(req.result);
+        req.onerror   = () => rej(req.error);
+    });
+}
+
+/* ═══ state ════════════════════════════════════════════════ */
+let allTrackers = [];
+let selectedOrder = [];   // array of tracker IDs in user's chosen order
+
+/* ═══ populate dropdown ════════════════════════════════════ */
+async function loadTrackerDropdown() {
+    allTrackers = await getAllTrackers();
+    const dropdown = document.getElementById('trackerDropdown');
+
+    if (!allTrackers.length) {
+        dropdown.innerHTML = '<option value="">No trackers available</option>';
+        return;
+    }
+
+    dropdown.innerHTML = '<option value="">— Select a tracker —</option>' +
+        allTrackers.map(t => {
+            const type = t.type || 'dropdown';
+            return `<option value="${t.id}">${t.title} (${typeLabel(type)})</option>`;
+        }).join('');
+
+    dropdown.addEventListener('change', updateAddButton);
+}
+
+function updateAddButton() {
+    const dropdown = document.getElementById('trackerDropdown');
+    const btn = document.getElementById('addBtn');
+    btn.disabled = !dropdown.value;
+}
+
+/* ═══ add tracker ══════════════════════════════════════════ */
+function addTracker() {
+    const dropdown = document.getElementById('trackerDropdown');
+    const id = parseInt(dropdown.value);
+
+    if (!id || selectedOrder.includes(id)) {
+        dropdown.value = '';
+        updateAddButton();
+        return;
+    }
+
+    selectedOrder.push(id);
+    dropdown.value = '';
+    updateAddButton();
+    updateSelectionCount();
+    renderSelectedList();
+    updateYearDropdown();
+    updateCompareButton();
+}
+
+function updateSelectionCount() {
+    document.getElementById('selectionCount').textContent = `${selectedOrder.length} selected`;
+}
+
+function updateCompareButton() {
+    document.getElementById('compareBtn').disabled = selectedOrder.length < 2;
+}
+
+/* ═══ render selected trackers list (draggable) ════════════ */
+function renderSelectedList() {
+    const section = document.getElementById('selectedSection');
+    const list    = document.getElementById('selectedList');
+
+    if (selectedOrder.length === 0) {
+        section.classList.remove('show');
+        list.innerHTML = '';
+        return;
+    }
+
+    section.classList.add('show');
+
+    list.innerHTML = selectedOrder.map((id, index) => {
+        const tracker = allTrackers.find(t => t.id === id);
+        if (!tracker) return '';
+        const type = tracker.type || 'dropdown';
+        return `
+            <div class="selected-item" draggable="true" data-id="${id}" 
+                 ondragstart="onDragStart(event)" 
+                 ondragover="onDragOver(event)" 
+                 ondrop="onDrop(event)"
+                 ondragend="onDragEnd(event)">
+                <span class="tracker-order">${index + 1}</span>
+                <span class="drag-handle">⋮⋮</span>
+                <div class="tracker-info">
+                    <span class="tracker-title">${tracker.title}</span>
+                    <span class="tracker-badge">${typeLabel(type)}</span>
+                </div>
+                <button class="remove-btn" onclick="removeTracker(${id})">Remove</button>
+            </div>`;
+    }).join('');
+}
+
+function removeTracker(id) {
+    selectedOrder = selectedOrder.filter(x => x !== id);
+    updateSelectionCount();
+    renderSelectedList();
+    updateYearDropdown();
+    updateCompareButton();
+}
+
+/* ═══ drag and drop ════════════════════════════════════════ */
+let draggedElement = null;
+
+function onDragStart(e) {
+    draggedElement = e.currentTarget;
+    draggedElement.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function onDragOver(e) {
+    e.preventDefault();
+    const target = e.currentTarget;
+    if (target === draggedElement) return;
+
+    const list = document.getElementById('selectedList');
+    const items = [...list.querySelectorAll('.selected-item')];
+    const draggedIndex = items.indexOf(draggedElement);
+    const targetIndex  = items.indexOf(target);
+
+    if (draggedIndex < targetIndex) {
+        target.parentNode.insertBefore(draggedElement, target.nextSibling);
+    } else {
+        target.parentNode.insertBefore(draggedElement, target);
+    }
+}
+
+function onDrop(e) {
+    e.preventDefault();
+}
+
+function onDragEnd(e) {
+    draggedElement.classList.remove('dragging');
+    
+    // rebuild selectedOrder from DOM order
+    const items = [...document.getElementById('selectedList').querySelectorAll('.selected-item')];
+    selectedOrder = items.map(item => parseInt(item.getAttribute('data-id')));
+    
+    draggedElement = null;
+}
+
+/* ═══ year dropdown – only years with data for selected trackers ═══ */
+function updateYearDropdown() {
+    const wrap = document.getElementById('yearSelectWrap');
+    const sel  = document.getElementById('yearSelect');
+
+    if (selectedOrder.length === 0) {
+        wrap.classList.remove('show');
+        sel.innerHTML = '';
+        return;
+    }
+
+    // find all years that have data for ANY of the selected trackers
+    const all   = JSON.parse(localStorage.getItem('dailySelections') || '{}');
+    const years = new Set();
+
+    Object.keys(all).forEach(date => {
+        selectedOrder.forEach(id => {
+            if (all[date][id]) {
+                years.add(new Date(date + 'T00:00:00').getFullYear());
+            }
+        });
+    });
+
+    const sorted = [...years].sort((a, b) => b - a);   // newest first
+
+    if (!sorted.length) {
+        wrap.classList.remove('show');
+        sel.innerHTML = '';
+        return;
+    }
+
+    // populate dropdown
+    sel.innerHTML = sorted.map((y, i) => `<option value="${y}" ${i === 0 ? 'selected' : ''}>${y}</option>`).join('');
+    wrap.classList.add('show');
+}
+
+/* ═══ RUN COMPARISON ═══════════════════════════════════════ */
+function runComparison() {
+    if (selectedOrder.length < 2) return;
+
+    const year = parseInt(document.getElementById('yearSelect').value);
+    if (!year) return;
+
+    // get trackers in the user's chosen order
+    const trackers = selectedOrder.map(id => allTrackers.find(t => t.id === id)).filter(Boolean);
+    const all      = JSON.parse(localStorage.getItem('dailySelections') || '{}');
+
+    // collect all dates in the year that have data for ANY selected tracker
+    const datesSet = new Set();
+    Object.keys(all).forEach(date => {
+        if (new Date(date + 'T00:00:00').getFullYear() === year) {
+            selectedOrder.forEach(id => {
+                if (all[date][id]) datesSet.add(date);
+            });
+        }
+    });
+
+    const sortedDates = [...datesSet].sort();   // chronological
+
+    if (!sortedDates.length) {
+        document.getElementById('comparisonCard').innerHTML = '<div class="empty-msg">No data found for the selected trackers in ' + year + '.</div>';
+        return;
+    }
+
+    // build table
+    renderComparisonTable(trackers, sortedDates, year, all);
+}
+
+/* ═══ RENDER TABLE ═════════════════════════════════════════ */
+function renderComparisonTable(trackers, dates, year, allData) {
+    const card = document.getElementById('comparisonCard');
+
+    // group by month
+    const byMonth = {};   // { 'Jan': [dates], 'Feb': [dates], … }
+    const MONTHS  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    dates.forEach(date => {
+        const m = new Date(date + 'T00:00:00').getMonth();
+        const monthName = MONTHS[m];
+        if (!byMonth[monthName]) byMonth[monthName] = [];
+        byMonth[monthName].push(date);
+    });
+
+    // table header
+    let tableHTML = '<table class="comparison-table"><thead><tr>';
+    tableHTML += '<th class="date-col">Date</th>';
+    trackers.forEach(t => {
+        tableHTML += `<th>${t.title} <span style="font-weight:400;color:#aaa;font-size:11px;">(${typeLabel(t.type || 'dropdown')})</span></th>`;
+    });
+    tableHTML += '</tr></thead><tbody>';
+
+    // rows, grouped by month
+    MONTHS.forEach(monthName => {
+        if (!byMonth[monthName]) return;
+
+        // month header row
+        tableHTML += `<tr class="month-header-row"><td colspan="${trackers.length + 1}">${monthName}</td></tr>`;
+
+        // data rows
+        byMonth[monthName].forEach(date => {
+            const day = new Date(date + 'T00:00:00').getDate();
+            tableHTML += `<tr><td class="date-col">${pad(day)}</td>`;
+
+            trackers.forEach(t => {
+                const entry = allData[date] && allData[date][t.id];
+                tableHTML += `<td class="value-cell">${entry ? renderValue(t, entry) : '<span class="empty">—</span>'}</td>`;
+            });
+
+            tableHTML += '</tr>';
+        });
+    });
+
+    tableHTML += '</tbody></table>';
+
+    card.innerHTML = `
+        <div class="comparison-title">Tracker Comparison</div>
+        <div class="comparison-meta">${trackers.map(t => t.title).join(', ')} · ${year}</div>
+        ${tableHTML}`;
+}
+
+/* ═══ RENDER VALUE (per tracker type) ══════════════════════ */
+function renderValue(tracker, entry) {
+    const type = tracker.type || 'dropdown';
+
+    if (type === 'dropdown') {
+        const opt = tracker.options[parseInt(entry.value)];
+        if (!opt) return entry.value;
+        return `<span class="option-box" style="background:${opt.color}">${opt.title}</span>`;
+    }
+
+    if (type === 'yesno') {
+        const v = entry.value === 'yes';
+        return `<span class="yesno-badge ${v ? 'yes' : 'no'}">${v ? 'Yes' : 'No'}</span>`;
+    }
+
+    if (type === 'numeric') {
+        const p = tracker.numericPrefix || '';
+        const s = tracker.numericSuffix || '';
+        return `<span class="numeric-value">${p}${entry.value}${s ? ' ' + s : ''}</span>`;
+    }
+
+    // text – show first 40 chars
+    const text = entry.value.length > 40 ? entry.value.slice(0, 40) + '…' : entry.value;
+    return `<span class="text-preview">${text}</span>`;
+}
+
+/* ═══ tiny utils ════════════════════════════════════════════ */
+function typeLabel(t) {
+    return { dropdown:'Dropdown', yesno:'Yes/No', numeric:'Numeric', text:'Text' }[t] || 'Dropdown';
+}
+
+function pad(n) { return String(n).padStart(2,'0'); }
+
+/* ═══ boot ═════════════════════════════════════════════════ */
+initDB();
+</script>
+</body>
+</html>
