@@ -35,7 +35,7 @@
             padding: 15px;
             background: #FFF;
             border-radius: 6px;
-	    box-shadow: rgba(0, 0, 0, 0.05) 0px 6px 24px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
+        box-shadow: rgba(0, 0, 0, 0.05) 0px 6px 24px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
         }
 
         .date-controls {
@@ -255,7 +255,7 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
-	    width: 100%;
+        width: 100%;
         }
 
         .btn-save:hover {
@@ -271,13 +271,13 @@
         .save-status.success {
             color: #4CAF50;
         }
-	#trackerList{
-		background: #FFF;
-    		padding: 15px;
-    		border-radius: 6px;
-    		box-shadow: rgba(0, 0, 0, 0.05) 0px 6px 24px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
-    		margin-bottom: 10px;
-	}
+    #trackerList{
+        background: #FFF;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: rgba(0, 0, 0, 0.05) 0px 6px 24px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
+            margin-bottom: 10px;
+    }
 
 
 
@@ -340,7 +340,16 @@
         let db;
         const DB_NAME = 'TrackerDB';
         const STORE_NAME = 'trackers';
-        let currentDate = new Date().toISOString().split('T')[0]; // Current selected date
+        
+        // Helper function to get local date string in YYYY-MM-DD format
+        function getLocalDateString(date = new Date()) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        let currentDate = getLocalDateString(); // Current selected date
         
         // Temporary storage for current edits (before save)
         let tempSelections = {};
@@ -372,7 +381,7 @@
         // Initialize date picker with current date and max date restriction
         function initializeDatePicker() {
             const dateInput = document.getElementById('dateInput');
-            const today = new Date().toISOString().split('T')[0];
+            const today = getLocalDateString();
             
             // Set default value to today
             dateInput.value = currentDate;
@@ -399,11 +408,11 @@
             }
             
             weekDates.innerHTML = dates.map(date => {
-                const dateStr = date.toISOString().split('T')[0];
+                const dateStr = getLocalDateString(date);
                 const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
                 const dayNumber = date.getDate();
                 const monthName = date.toLocaleDateString('en-US', { month: 'short' });
-                const todayStr = new Date().toISOString().split('T')[0];
+                const todayStr = getLocalDateString();
                 
                 const isActive = dateStr === currentDate;
                 const isToday = dateStr === todayStr;
@@ -437,7 +446,7 @@
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             const formattedDate = dateObj.toLocaleDateString('en-US', options);
             
-            const today = new Date().toISOString().split('T')[0];
+            const today = getLocalDateString();
             let displayText = formattedDate;
             
             if (currentDate === today) {
@@ -460,7 +469,7 @@
         // Update Today button state (disable if already on today)
         function updateTodayButtonState() {
             const todayBtn = document.getElementById('todayBtn');
-            const today = new Date().toISOString().split('T')[0];
+            const today = getLocalDateString();
             
             if (currentDate === today) {
                 todayBtn.disabled = true;
@@ -474,7 +483,7 @@
             const dateObj = new Date(currentDate + 'T00:00:00');
             dateObj.setDate(dateObj.getDate() - 1);
             
-            const previousDate = dateObj.toISOString().split('T')[0];
+            const previousDate = getLocalDateString(dateObj);
             currentDate = previousDate;
             
             // Update date input
@@ -486,7 +495,7 @@
 
         // Go to today
         function goToToday() {
-            const today = new Date().toISOString().split('T')[0];
+            const today = getLocalDateString();
             currentDate = today;
             
             // Update date input
@@ -504,7 +513,7 @@
             if (!selectedDate) return;
             
             // Validate that selected date is not in the future
-            const today = new Date().toISOString().split('T')[0];
+            const today = getLocalDateString();
             if (selectedDate > today) {
                 alert('Cannot select future dates');
                 dateInput.value = currentDate;
