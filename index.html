@@ -238,6 +238,117 @@
             padding: 40px 20px;
         }
 
+        /* ── RADIO BUTTONS DISPLAY STYLE ── */
+        .radio-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .radio-option {
+            display: inline-block;
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+            opacity: 0.6;
+        }
+
+        .radio-option:hover {
+            opacity: 0.8;
+            transform: scale(1.05);
+        }
+
+        .radio-option.selected {
+            opacity: 1;
+            border: 2px solid #333;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        /* ── DROPDOWN DISPLAY STYLE ── */
+        .dropdown-select {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        /* ── SLIDER DISPLAY STYLE ── */
+        .slider-container {
+            padding: 20px 10px;
+        }
+
+        .slider-label {
+            text-align: center;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            min-height: 24px;
+        }
+
+        .slider-wrapper {
+            position: relative;
+            padding: 0 10px;
+        }
+
+        .slider-input {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            outline: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
+        .slider-input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid #2196F3;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .slider-input::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid #2196F3;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .slider-marks {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            padding: 0 10px;
+        }
+
+        .slider-mark {
+            font-size: 11px;
+            color: #999;
+            text-align: center;
+            flex: 1;
+        }
+
+        .slider-mark:first-child {
+            text-align: left;
+        }
+
+        .slider-mark:last-child {
+            text-align: right;
+        }
+
         .save-button-container {
             /*position: sticky;*/
             bottom: 0;
@@ -587,16 +698,70 @@
             
             switch(type) {
                 case 'dropdown':
-                    return `
-                        <select id="tracker-${tracker.id}" class="tracker-input" data-tracker-id="${tracker.id}" data-type="${type}">
-                            <option value="">Select an option</option>
-                            ${tracker.options.map((option, index) => `
-                                <option value="${index}" data-color="${option.color}">
-                                    ${option.title}
-                                </option>
-                            `).join('')}
-                        </select>
-                    `;
+                    const displayStyle = tracker.displayStyle || 'radio';
+                    
+                    if (displayStyle === 'radio') {
+                        // Radio buttons style
+                        return `
+                            <div class="radio-options" id="tracker-${tracker.id}-container">
+                                ${tracker.options.map((option, index) => `
+                                    <div class="radio-option" 
+                                         style="background-color: ${option.color}"
+                                         data-tracker-id="${tracker.id}"
+                                         data-value="${index}"
+                                         data-type="dropdown"
+                                         onclick="handleRadioSelection(${tracker.id}, ${index}, '${option.color}')">
+                                        ${option.title}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `;
+                    } else if (displayStyle === 'slider') {
+                        // Slider style
+                        return `
+                            <div class="slider-container">
+                                <div class="slider-label" id="slider-label-${tracker.id}">
+                                    Select an option
+                                </div>
+                                <div class="slider-wrapper">
+                                    <input type="range" 
+                                           class="slider-input" 
+                                           id="slider-${tracker.id}"
+                                           min="0" 
+                                           max="${tracker.options.length - 1}" 
+                                           value=""
+                                           data-tracker-id="${tracker.id}"
+                                           data-type="dropdown"
+                                           oninput="handleSliderChange(${tracker.id}, this.value)"
+                                           onchange="handleSliderChange(${tracker.id}, this.value)"
+                                           style="background: linear-gradient(to right, ${tracker.options.map(o => o.color).join(', ')})">
+                                </div>
+                                <div class="slider-marks">
+                                    ${tracker.options.map((option, index) => {
+                                        if (index === 0 || index === tracker.options.length - 1) {
+                                            return `<div class="slider-mark">${option.title}</div>`;
+                                        } else if (tracker.options.length <= 5) {
+                                            return `<div class="slider-mark">${option.title}</div>`;
+                                        } else {
+                                            return `<div class="slider-mark"></div>`;
+                                        }
+                                    }).join('')}
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        // Dropdown style (default)
+                        return `
+                            <select id="tracker-${tracker.id}" class="tracker-input dropdown-select" data-tracker-id="${tracker.id}" data-type="dropdown">
+                                <option value="">Select an option</option>
+                                ${tracker.options.map((option, index) => `
+                                    <option value="${index}" data-color="${option.color}">
+                                        ${option.title}
+                                    </option>
+                                `).join('')}
+                            </select>
+                        `;
+                    }
                 
                 case 'yesno':
                     return `
@@ -671,6 +836,59 @@
                 type: 'yesno',
                 date: currentDate
             };
+        }
+
+        // Handle radio button selection
+        function handleRadioSelection(trackerId, optionIndex, color) {
+            // Remove 'selected' class from all options in this tracker
+            const container = document.getElementById(`tracker-${trackerId}-container`);
+            container.querySelectorAll('.radio-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            // Add 'selected' class to clicked option
+            const selectedOption = container.querySelector(`[data-value="${optionIndex}"]`);
+            if (selectedOption) {
+                selectedOption.classList.add('selected');
+            }
+            
+            // Store temporarily (don't save yet)
+            if (!tempSelections[currentDate]) {
+                tempSelections[currentDate] = {};
+            }
+            tempSelections[currentDate][trackerId] = {
+                trackerId: trackerId,
+                value: String(optionIndex),
+                type: 'dropdown',
+                date: currentDate
+            };
+        }
+
+        // Handle slider change
+        function handleSliderChange(trackerId, value) {
+            // Get tracker data to find option info
+            getAllTrackers().then(trackers => {
+                const tracker = trackers.find(t => t.id === trackerId);
+                if (tracker && tracker.options && tracker.options[value]) {
+                    const option = tracker.options[value];
+                    const label = document.getElementById(`slider-label-${trackerId}`);
+                    if (label) {
+                        label.textContent = option.title;
+                        label.style.color = option.color;
+                    }
+                    
+                    // Store temporarily (don't save yet)
+                    if (!tempSelections[currentDate]) {
+                        tempSelections[currentDate] = {};
+                    }
+                    tempSelections[currentDate][trackerId] = {
+                        trackerId: trackerId,
+                        value: String(value),
+                        type: 'dropdown',
+                        date: currentDate
+                    };
+                }
+            });
         }
 
         // Save all trackers for the current date
@@ -752,7 +970,7 @@
         }
 
         // Load selections for the currently selected date
-        function loadSelectionsForDate() {
+        async function loadSelectionsForDate() {
             const dailySelections = JSON.parse(localStorage.getItem('dailySelections') || '{}');
             const dateSelections = dailySelections[currentDate] || {};
 
@@ -764,30 +982,71 @@
                 if (element.tagName === 'SELECT') {
                     element.value = '';
                     element.style.borderLeft = '1px solid #ddd';
-                } else if (element.tagName === 'INPUT') {
+                } else if (element.tagName === 'INPUT' && element.type !== 'range') {
                     element.value = '';
                 } else if (element.tagName === 'TEXTAREA') {
                     element.value = '';
                 } else if (element.classList.contains('yesno-btn')) {
                     element.classList.remove('selected-yes', 'selected-no');
+                } else if (element.classList.contains('radio-option')) {
+                    element.classList.remove('selected');
                 }
             });
+
+            // Reset slider labels
+            document.querySelectorAll('[id^="slider-label-"]').forEach(label => {
+                label.textContent = 'Select an option';
+                label.style.color = '';
+            });
+
+            // Get all trackers to know their display styles
+            const trackers = await getAllTrackers();
 
             // Then load selections for this date
             Object.keys(dateSelections).forEach(trackerId => {
                 const selection = dateSelections[trackerId];
                 const type = selection.type || 'dropdown';
+                const tracker = trackers.find(t => t.id == trackerId);
                 
-                if (type === 'dropdown') {
-                    const select = document.getElementById(`tracker-${trackerId}`);
-                    if (select) {
-                        select.value = selection.value;
-                        
-                        // Apply color indicator
-                        const selectedOption = select.options[select.selectedIndex];
-                        const color = selectedOption.getAttribute('data-color');
-                        if (color) {
-                            select.style.borderLeft = `4px solid ${color}`;
+                if (type === 'dropdown' && tracker) {
+                    const displayStyle = tracker.displayStyle || 'radio';
+                    
+                    if (displayStyle === 'radio') {
+                        // Handle radio button selection
+                        const container = document.getElementById(`tracker-${trackerId}-container`);
+                        if (container) {
+                            const selectedOption = container.querySelector(`[data-value="${selection.value}"]`);
+                            if (selectedOption) {
+                                selectedOption.classList.add('selected');
+                            }
+                        }
+                    } else if (displayStyle === 'slider') {
+                        // Handle slider selection
+                        const slider = document.getElementById(`slider-${trackerId}`);
+                        if (slider) {
+                            slider.value = selection.value;
+                            // Update label
+                            const option = tracker.options[parseInt(selection.value)];
+                            if (option) {
+                                const label = document.getElementById(`slider-label-${trackerId}`);
+                                if (label) {
+                                    label.textContent = option.title;
+                                    label.style.color = option.color;
+                                }
+                            }
+                        }
+                    } else {
+                        // Handle dropdown selection
+                        const select = document.getElementById(`tracker-${trackerId}`);
+                        if (select) {
+                            select.value = selection.value;
+                            
+                            // Apply color indicator
+                            const selectedOption = select.options[select.selectedIndex];
+                            const color = selectedOption?.getAttribute('data-color');
+                            if (color) {
+                                select.style.borderLeft = `4px solid ${color}`;
+                            }
                         }
                     }
                 } else if (type === 'yesno') {
