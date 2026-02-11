@@ -246,207 +246,378 @@
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
+            font-size: 14px;
         }
 
-        .option-row input[type="color"] {
-            width: 50px;
+        /* ── COLOR PALETTE DROPDOWN ── */
+        .color-picker-wrapper {
+            position: relative;
+            width: 120px;
+        }
+
+        .color-display-btn {
+            width: 100%;
             height: 36px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
             cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px;
+            background: white;
+        }
+
+        .color-display-btn:hover {
+            border-color: #2196F3;
+        }
+
+        .color-preview {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .color-dropdown-arrow {
+            font-size: 12px;
+            color: #666;
+            margin-right: 4px;
+        }
+
+        .color-palette {
+            display: none;
+            position: absolute;
+            top: 42px;
+            left: 0;
+            z-index: 100;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            width: 200px;
+        }
+
+        .color-palette.show {
+            display: block;
+        }
+
+        .color-palette-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .color-swatch {
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .color-swatch.selected {
+            border: 3px solid #2196F3;
+            transform: scale(1.05);
+        }
+
+        .color-swatch.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
         }
 
         .remove-option-btn {
             background: #f44336;
             color: white;
             border: none;
+            width: 28px;
+            height: 28px;
             border-radius: 4px;
-            padding: 8px 12px;
             cursor: pointer;
-            font-weight: 600;
+            font-size: 18px;
+            line-height: 1;
+            flex-shrink: 0;
         }
 
         .remove-option-btn:hover { background: #d32f2f; }
 
-        .modal-footer {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            margin-top: 20px;
-            padding-top: 16px;
-            border-top: 1px solid #f0f0f0;
+        .btn-outline {
+            background: white;
+            color: #2196F3;
+            border: 1px solid #2196F3;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .btn-outline:hover {
+            background: #e3f2fd;
         }
 
         .hidden { display: none !important; }
 
-        /* ── starter templates ── */
-        .templates-section {
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 24px;
+        .numeric-config {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
         }
 
-        .section-title {
-            font-size: 1.1em;
-            font-weight: 600;
-            margin-bottom: 12px;
+        /* ── templates ── */
+        .templates-section {
+            margin-bottom: 40px;
         }
 
         .templates-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
             gap: 12px;
         }
 
         .template-btn {
-            padding: 12px;
-            background: #f0f4f8;
+            background: white;
             border: 2px solid #e0e0e0;
-            border-radius: 6px;
+            border-radius: 8px;
+            padding: 16px 12px;
             cursor: pointer;
-            font-size: 13px;
+            text-align: center;
+            font-size: 15px;
             font-weight: 600;
-            text-align: left;
             color: #333;
+            transition: all 0.2s;
         }
 
         .template-btn:hover {
-            background: #e3f2fd;
             border-color: #2196F3;
+            background: #f5f9ff;
         }
 
         .template-type {
             font-size: 11px;
-            color: #888;
+            color: #999;
             font-weight: 400;
-            margin-top: 4px;
+            margin-top: 6px;
         }
 
+        /* ── DISPLAY STYLE SELECTOR ── */
+        .display-style-group {
+            margin-bottom: 16px;
+            padding: 12px;
+            background: #f0f4f8;
+            border-radius: 6px;
+        }
 
+        .display-style-label {
+            display: block;
+            font-weight: 600;
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 10px;
+        }
 
-        .bottom-navigation{
-        position: sticky;
-        bottom: 0;
-        padding-top: 15px;     
-        text-align: center;
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr 1fr;
-        background: #FFF;
-        box-shadow: rgba(0, 0, 0, 0.05) 0px 6px 24px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
-    }
-    .bottom-navigation a{
-        text-decoration: none;
-        color: #333;
-    }
+        .display-style-options {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .display-style-option {
+            flex: 1;
+            min-width: 140px;
+        }
+
+        .display-style-option input[type="radio"] {
+            display: none;
+        }
+
+        .display-style-option label {
+            display: block;
+            padding: 10px 14px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+            transition: all 0.2s ease;
+        }
+
+        .display-style-option input[type="radio"]:checked + label {
+            background: #2196F3;
+            border-color: #2196F3;
+            color: white;
+        }
+
+        .display-style-option label:hover {
+            border-color: #2196F3;
+        }
+
+        .display-style-icon {
+            display: block;
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+
+        .display-style-hint {
+            font-size: 11px;
+            color: #999;
+            margin-top: 8px;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
 
-<h1>Manage Trackers</h1>
-<p class="subtitle">Add, edit, or remove trackers. Changes update My Day instantly.</p>
-
 <div class="container">
-    <!-- starter templates -->
-<div class="templates-section">
-    <div class="section-title">Quick Start Templates</div>
-    <div class="templates-grid" id="templatesGrid"></div>
+    <h1>🏛️ Manage Trackers</h1>
+    <p class="subtitle">Create custom trackers for your daily temple visits and habits</p>
+
+    <!-- ── Top Bar ── -->
+    <div class="top-bar">
+        <button class="btn btn-primary" onclick="openAddModal()">+ Add Custom Tracker</button>
+    </div>
+
+    <!-- ── Templates Section ── -->
+    <div class="templates-section">
+        <h3 style="margin-bottom: 12px;">Quick Start Templates</h3>
+        <div class="templates-grid" id="templatesGrid"></div>
+    </div>
+
+    <!-- ── Tracker List ── -->
+    <div class="tracker-grid" id="trackerList"></div>
 </div>
 
-<!-- top bar -->
-<div class="top-bar">
-    <h2 style="margin:0; font-size:1.1em;">My Trackers</h2>
-    <button class="btn btn-primary" onclick="openAddModal()">+ Add New Tracker</button>
-</div>
-
-<!-- tracker list -->
-<div class="tracker-grid" id="trackerList"></div>
-
-<!-- add/edit modal -->
+<!-- ── Modal ── -->
 <div class="modal" id="trackerModal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3 class="modal-title" id="modalTitle">Add Tracker</h3>
+            <h2 class="modal-title" id="modalTitle">Add New Tracker</h2>
             <button class="close-btn" onclick="closeModal()">&times;</button>
         </div>
 
         <form id="trackerForm" onsubmit="saveTracker(event)">
             <div class="form-group">
-                <label class="form-label">Tracker Name</label>
-                <input type="text" id="trackerName" class="form-input" placeholder="e.g., Daily Mood" required>
+                <label class="form-label">Tracker Name *</label>
+                <input type="text" id="trackerName" class="form-input" placeholder="e.g., Temple Visit" required>
             </div>
 
             <div class="form-group">
-                <label class="form-label">Tracker Type</label>
-                <select id="trackerType" class="form-select" onchange="handleTypeChange()" required>
-                    <option value="dropdown">Dropdown (Select from options)</option>
-                    <option value="yesno">Yes / No</option>
-                    <option value="numeric">Numeric (Enter number)</option>
-                    <option value="text">Text Field (Write notes)</option>
+                <label class="form-label">Type *</label>
+                <select id="trackerType" class="form-select" onchange="handleTypeChange()">
+                    <option value="dropdown">Dropdown (multiple choices)</option>
+                    <option value="yesno">Yes/No</option>
+                    <option value="numeric">Numeric</option>
+                    <option value="text">Text</option>
                 </select>
             </div>
 
-            <!-- dropdown options -->
+            <!-- ── Dropdown Options ── -->
             <div id="dropdownSection" class="options-section">
+                <!-- Display Style Selector -->
+                <div class="display-style-group">
+                    <span class="display-style-label">Display Style (how to show on My Day page):</span>
+                    <div class="display-style-options">
+                        <div class="display-style-option">
+                            <input type="radio" id="displayRadio" name="displayStyle" value="radio" checked>
+                            <label for="displayRadio">
+                                <span class="display-style-icon">⚪</span>
+                                Radio Buttons
+                            </label>
+                        </div>
+                        <div class="display-style-option">
+                            <input type="radio" id="displayDropdown" name="displayStyle" value="dropdown">
+                            <label for="displayDropdown">
+                                <span class="display-style-icon">▼</span>
+                                Dropdown
+                            </label>
+                        </div>
+                        <div class="display-style-option">
+                            <input type="radio" id="displaySlider" name="displayStyle" value="slider">
+                            <label for="displaySlider">
+                                <span class="display-style-icon">━━●━━</span>
+                                Level Slider
+                            </label>
+                        </div>
+                    </div>
+                    <div class="display-style-hint" id="sliderHint" style="display: none;">
+                        💡 Tip: Arrange options from low to high (e.g., Sad → Happy) for best slider experience
+                    </div>
+                </div>
+
+                <!-- Options List -->
                 <div class="options-header">
                     <h4>Options</h4>
-                    <button type="button" class="btn btn-success btn-small" onclick="addOption()">+ Add Option</button>
+                    <button type="button" class="btn-outline" onclick="addOption()">+ Add Option</button>
                 </div>
                 <div id="optionsList"></div>
             </div>
 
-            <!-- numeric settings -->
-            <div id="numericSection" class="options-section hidden">
-                <h4 style="margin-bottom:12px;">Numeric Settings</h4>
-                <div class="form-group">
-                    <label class="form-label">Prefix (optional)</label>
-                    <input type="text" id="numericPrefix" class="form-input" placeholder="e.g., $, #" maxlength="10">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Suffix (optional)</label>
-                    <input type="text" id="numericSuffix" class="form-input" placeholder="e.g., lbs, kg, hours" maxlength="20">
+            <!-- ── Numeric Config ── -->
+            <div id="numericSection" class="form-group hidden">
+                <label class="form-label">Numeric Format</label>
+                <div class="numeric-config">
+                    <div>
+                        <input type="text" id="numericPrefix" class="form-input" placeholder="Prefix (e.g., $)">
+                    </div>
+                    <div>
+                        <input type="text" id="numericSuffix" class="form-input" placeholder="Suffix (e.g., kg)">
+                    </div>
                 </div>
             </div>
 
-            <div class="modal-footer">
-                <button type="button" class="btn" onclick="closeModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary">Save Tracker</button>
+            <div style="display: flex; gap: 10px; margin-top: 24px;">
+                <button type="submit" class="btn btn-success" style="flex:1;">Save Tracker</button>
+                <button type="button" class="btn btn-danger" onclick="closeModal()">Cancel</button>
             </div>
         </form>
     </div>
 </div>
 
-</div>
-
-
-  <div class="bottom-navigation">
-            <div><a href="template.html"><img src="tracker_small.png"/><br/>Tracker</a></div>
-            <div><a href="report.html"><img src="calendar_small.png"/><br/>Report</a></div>
-            <div><a href="index.html"><img src="today_small.png"/><br/>My Day</a></div>
-            <div><a href="backup.html"><img src="backup.png"/><br/>Backup</a></div>
-        </div>
-
-
-
 <script>
-/* ═══ DB ═══════════════════════════════════════════════════ */
+/* ═══ INDEXEDDB ═════════════════════════════════════════════ */
 let db;
-const DB_NAME    = 'TrackerDB';
-const STORE_NAME = 'trackers';
 let editingId = null;
+const DB_NAME = 'TrackerDB';
+const STORE_NAME = 'trackers';
+
 
 function initDB() {
     const req = indexedDB.open(DB_NAME, 2);
-    req.onerror   = () => console.error('DB failed');
-    req.onsuccess = () => { db = req.result; loadTrackers(); loadTemplates(); };
+
     req.onupgradeneeded = (e) => {
-        const d = e.target.result;
-        if (d.objectStoreNames.contains(STORE_NAME)) {
-            d.deleteObjectStore(STORE_NAME);
+        db = e.target.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
         }
-        const s = d.createObjectStore(STORE_NAME, { keyPath:'id', autoIncrement:true });
-        s.createIndex('title','title');
-        s.createIndex('type','type');
+    };
+
+    req.onsuccess = (e) => {
+        db = e.target.result;
+        loadTrackers();
+        loadTemplates();
+    };
+
+    req.onerror = (e) => {
+        console.error('IndexedDB error:', e);
     };
 }
 
@@ -481,6 +652,118 @@ function deleteTracker(id) {
         req.onerror   = () => rej(req.error);
     });
 }
+
+/* ═══ COLOR PALETTE ═════════════════════════════════════════ */
+const COLOR_PALETTE = [
+    // Yellow shades
+    '#f1c40f', '#f5d04a', '#f9dc7c', '#fcebaf',
+    // Orange shades
+    '#d35400', '#dc6e1a', '#e58a3d', '#efa570',
+    // Red shades
+    '#c0392b', '#d05446', '#de7268', '#ec9089',
+    // Dark blue shades
+    '#2c3e50', '#465a6f', '#61788e', '#7c95ad',
+    // Purple shades
+    '#8e44ad', '#a15eba', '#b479c7', '#c795d4',
+    // Blue shades
+    '#2980b9', '#4d96c6', '#72acd3', '#96c2e0',
+    // Green shades
+    '#27ae60', '#4dbe7d', '#74cd9a', '#9bddb7',
+    // Teal shades
+    '#16a085', '#3bb39a', '#62c5af', '#89d7c4'
+];
+
+function createColorPalette(selectedColor = '#f1c40f') {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'color-picker-wrapper';
+    
+    // Create display button
+    const displayBtn = document.createElement('div');
+    displayBtn.className = 'color-display-btn';
+    displayBtn.innerHTML = `
+        <div class="color-preview" style="background-color: ${selectedColor}"></div>
+        <span class="color-dropdown-arrow">▼</span>
+    `;
+    
+    // Create dropdown palette
+    const paletteDropdown = document.createElement('div');
+    paletteDropdown.className = 'color-palette';
+    
+    const paletteGrid = document.createElement('div');
+    paletteGrid.className = 'color-palette-grid';
+    
+    COLOR_PALETTE.forEach(color => {
+        const swatch = document.createElement('div');
+        swatch.className = 'color-swatch';
+        swatch.style.backgroundColor = color;
+        swatch.dataset.color = color;
+        
+        if (color === selectedColor) {
+            swatch.classList.add('selected');
+        }
+        
+        swatch.onclick = function(e) {
+            e.stopPropagation();
+            // Remove selected class from all swatches in this palette
+            paletteGrid.querySelectorAll('.color-swatch').forEach(s => {
+                s.classList.remove('selected');
+            });
+            // Add selected class to clicked swatch
+            this.classList.add('selected');
+            // Update the color preview
+            displayBtn.querySelector('.color-preview').style.backgroundColor = color;
+            // Update the selected color
+            wrapper.dataset.selectedColor = color;
+            // Close dropdown
+            paletteDropdown.classList.remove('show');
+        };
+        
+        paletteGrid.appendChild(swatch);
+    });
+    
+    paletteDropdown.appendChild(paletteGrid);
+    
+    // Toggle dropdown on button click
+    displayBtn.onclick = function(e) {
+        e.stopPropagation();
+        // Close all other dropdowns
+        document.querySelectorAll('.color-palette.show').forEach(p => {
+            if (p !== paletteDropdown) p.classList.remove('show');
+        });
+        paletteDropdown.classList.toggle('show');
+    };
+    
+    wrapper.appendChild(displayBtn);
+    wrapper.appendChild(paletteDropdown);
+    wrapper.dataset.selectedColor = selectedColor;
+    
+    return wrapper;
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.color-picker-wrapper')) {
+        document.querySelectorAll('.color-palette.show').forEach(p => {
+            p.classList.remove('show');
+        });
+    }
+});
+
+// Handle display style change to show/hide slider hint
+document.addEventListener('DOMContentLoaded', function() {
+    const radioInputs = document.querySelectorAll('input[name="displayStyle"]');
+    const sliderHint = document.getElementById('sliderHint');
+    
+    radioInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            if (this.value === 'slider') {
+                sliderHint.style.display = 'block';
+            } else {
+                sliderHint.style.display = 'none';
+            }
+        });
+    });
+});
 
 /* ═══ STARTER TEMPLATES ════════════════════════════════════ */
 const TEMPLATES = [
@@ -519,7 +802,10 @@ async function useTemplate(template) {
         type: template.type,
         createdAt: new Date().toISOString()
     };
-    if (template.options) tracker.options = template.options;
+    if (template.options) {
+        tracker.options = template.options;
+        tracker.displayStyle = 'radio'; // Default display style for templates
+    }
     if (template.numericPrefix !== undefined) tracker.numericPrefix = template.numericPrefix;
     if (template.numericSuffix !== undefined) tracker.numericSuffix = template.numericSuffix;
 
@@ -548,6 +834,16 @@ async function loadTrackers() {
             detailHTML = t.options.map(o => 
                 `<span class="option-pill" style="background:${o.color}">${o.title}</span>`
             ).join('');
+            
+            // Add display style indicator
+            const displayStyle = t.displayStyle || 'radio';
+            const displayIcons = {
+                'radio': '⚪ Radio Buttons',
+                'dropdown': '▼ Dropdown',
+                'slider': '━━●━━ Slider'
+            };
+            detailHTML += `<div style="margin-top:8px;font-size:11px;color:#999;">Display: ${displayIcons[displayStyle]}</div>`;
+            
         } else if (type === 'yesno') {
             detailHTML = '<span style="color:#666;font-size:13px;">Yes or No</span>';
         } else if (type === 'numeric') {
@@ -581,6 +877,8 @@ function openAddModal() {
     document.getElementById('trackerForm').reset();
     document.getElementById('trackerType').value = 'dropdown';
     document.getElementById('optionsList').innerHTML = '';
+    document.getElementById('displayRadio').checked = true;
+    document.getElementById('sliderHint').style.display = 'none';
     handleTypeChange();
     addOption(); // default one option
     document.getElementById('trackerModal').classList.add('show');
@@ -606,6 +904,11 @@ async function openEditModal(id) {
     if ((tracker.type === 'dropdown' || !tracker.type) && tracker.options) {
         document.getElementById('optionsList').innerHTML = '';
         tracker.options.forEach(o => addOption(o.title, o.color));
+        
+        // Set display style
+        const displayStyle = tracker.displayStyle || 'radio';
+        document.getElementById('display' + displayStyle.charAt(0).toUpperCase() + displayStyle.slice(1)).checked = true;
+        document.getElementById('sliderHint').style.display = displayStyle === 'slider' ? 'block' : 'none';
     }
 
     document.getElementById('trackerModal').classList.add('show');
@@ -623,17 +926,31 @@ function handleTypeChange() {
 }
 
 /* ═══ OPTIONS ═══════════════════════════════════════════════ */
-function addOption(title = '', color = '#4CAF50') {
+function addOption(title = '', color = '#f1c40f') {
     const list = document.getElementById('optionsList');
     const id = Date.now() + Math.random();
     const div = document.createElement('div');
     div.className = 'option-row';
     div.id = `option-${id}`;
-    div.innerHTML = `
-        <input type="text" class="option-title" placeholder="Option name" value="${title}">
-        <input type="color" class="option-color" value="${color}">
-        <button type="button" class="remove-option-btn" onclick="removeOption('${id}')">×</button>
-    `;
+    
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'option-title';
+    input.placeholder = 'Option name';
+    input.value = title;
+    
+    const colorPicker = createColorPalette(color);
+    
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'remove-option-btn';
+    removeBtn.textContent = '×';
+    removeBtn.onclick = () => removeOption(id);
+    
+    div.appendChild(input);
+    div.appendChild(colorPicker);
+    div.appendChild(removeBtn);
+    
     list.appendChild(div);
 }
 
@@ -656,13 +973,21 @@ async function saveTracker(e) {
         const rows = [...document.querySelectorAll('#optionsList .option-row')];
         if (!rows.length) return alert('Add at least one option');
 
-        const options = rows.map(row => ({
-            title: row.querySelector('.option-title').value.trim(),
-            color: row.querySelector('.option-color').value
-        }));
+        const options = rows.map(row => {
+            const titleInput = row.querySelector('.option-title');
+            const colorPicker = row.querySelector('.color-picker-wrapper');
+            return {
+                title: titleInput.value.trim(),
+                color: colorPicker.dataset.selectedColor
+            };
+        });
 
         if (options.some(o => !o.title)) return alert('Fill in all option names');
         tracker.options = options;
+        
+        // Save display style
+        const displayStyle = document.querySelector('input[name="displayStyle"]:checked').value;
+        tracker.displayStyle = displayStyle;
 
     } else if (type === 'numeric') {
         tracker.numericPrefix = document.getElementById('numericPrefix').value.trim();
