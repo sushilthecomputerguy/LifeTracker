@@ -61,6 +61,71 @@
         .btn:hover { opacity: 0.85; }
         .btn-primary { background: #2196F3; color: white; }
         .btn-success { background: #4CAF50; color: white; }
+        .btn-email     { background: #EA4335; color: white; }
+        .btn-whatsapp  { background: #25D366; color: white; }
+        .btn-share     { background: #6c757d; color: white; }
+
+        /* ── share row ── */
+        .share-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+            align-items: center;
+        }
+
+        .share-label {
+            font-size: 13px;
+            color: #666;
+            width: 100%;
+            margin-bottom: 2px;
+        }
+
+        /* share modal overlay */
+        .share-modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 999;
+            align-items: center;
+            justify-content: center;
+        }
+        .share-modal-overlay.open { display: flex; }
+
+        .share-modal {
+            background: white;
+            border-radius: 10px;
+            padding: 28px 24px;
+            width: 92%;
+            max-width: 420px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .share-modal h3 { font-size: 1.1em; margin-bottom: 16px; }
+        .share-modal label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #444;
+        }
+        .share-modal input {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-bottom: 14px;
+            box-sizing: border-box;
+        }
+        .share-modal input:focus { outline: none; border-color: #2196F3; }
+        .share-modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 4px;
+        }
+        .btn-cancel { background:#eee; color:#333; }
 
         /* ── drop zone ── */
         .drop-zone {
@@ -223,6 +288,14 @@
 
         <button class="btn btn-primary" onclick="exportBackup()">📥 Download Backup</button>
 
+        <!-- Share row -->
+        <div class="share-row">
+            <span class="share-label">📤 Share backup via:</span>
+            <button class="btn btn-email"    onclick="shareViaEmail()">✉️ Email</button>
+            <button class="btn btn-whatsapp" onclick="shareViaWhatsApp()">💬 WhatsApp</button>
+            <button class="btn btn-share"    onclick="shareNative()" id="nativeShareBtn" style="display:none">⬆️ Share…</button>
+        </div>
+
         <div class="box box-info">
             <div class="box-title">What is saved in the file?</div>
             ✓ All trackers with their full settings (options, prefix/suffix, etc.)<br>
@@ -302,11 +375,38 @@
             <span id="importErrorText"></span>
         </div>
     </div>
+    <!-- ═══ SHARE MODAL (Email) ═══ -->
+    <div class="share-modal-overlay" id="emailModal">
+        <div class="share-modal">
+            <h3>✉️ Send Backup via Email</h3>
+            <label for="emailTo">Recipient email address</label>
+            <input type="email" id="emailTo" placeholder="someone@example.com">
+            <p style="font-size:13px;color:#888;margin-top:-8px;margin-bottom:14px;">
+                Your default mail app will open with the backup attached as a <code>.json</code> file.
+            </p>
+            <div class="share-modal-footer">
+                <button class="btn btn-cancel" onclick="closeModal('emailModal')">Cancel</button>
+                <button class="btn btn-email"  onclick="confirmEmail()">Open Mail App ✉️</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SHARE MODAL (WhatsApp) ═══ -->
+    <div class="share-modal-overlay" id="whatsappModal">
+        <div class="share-modal">
+            <h3>💬 Send Backup via WhatsApp</h3>
+            <label for="waPhone">WhatsApp number (with country code)</label>
+            <input type="tel" id="waPhone" placeholder="e.g. 9779812345678">
+            <p style="font-size:13px;color:#888;margin-top:-8px;margin-bottom:14px;">
+                The backup will be <strong>downloaded first</strong>, then WhatsApp will open with a pre-filled message. Attach the downloaded file manually in the chat.
+            </p>
+            <div class="share-modal-footer">
+                <button class="btn btn-cancel"    onclick="closeModal('whatsappModal')">Cancel</button>
+                <button class="btn btn-whatsapp"  onclick="confirmWhatsApp()">Open WhatsApp 💬</button>
+            </div>
+        </div>
+    </div>
 </div>
-
-
-
- <div class="bottom-navigation">
             <div><a href="template.html"><img src="tracker_small.png"/><br/>Tracker</a></div>
             <div><a href="report.html"><img src="calendar_small.png"/><br/>Report</a></div>
             <div><a href="index.html"><img src="today_small.png"/><br/>My Day</a></div>
@@ -676,6 +776,141 @@ function showMsg(boxId, textId, msg) {
     hideAll();
     document.getElementById(textId).textContent = msg;
     document.getElementById(boxId).classList.add('show');
+}
+
+/* ═══ SHARE HELPERS ════════════════════════════════════════ */
+
+/* Build the backup blob (same logic as exportBackup but returns the blob+filename) */
+async function buildBackupBlob() {
+    const trackers        = await getAllTrackers();
+    const dailySelections = JSON.parse(localStorage.getItem('dailySelections') || '{}');
+    const customTemplates = JSON.parse(localStorage.getItem('customTemplates')  || '[]');
+
+    const trackerMap = {};
+    trackers.forEach(t => { trackerMap[t.id] = t; });
+
+    const sortedDates = Object.keys(dailySelections).sort().reverse();
+    const dates = sortedDates.map(dateKey => {
+        const entries = Object.values(dailySelections[dateKey]).map(entry => {
+            const tracker = trackerMap[entry.trackerId];
+            return {
+                trackerId:   entry.trackerId,
+                trackerName: tracker ? tracker.title : 'Unknown Tracker',
+                trackerType: tracker ? (tracker.type || 'dropdown') : entry.type,
+                value:       tracker ? resolveValue(tracker, entry.value) : entry.value,
+                rawValue:    entry.value
+            };
+        });
+        return { date: dateKey, dateFormatted: formatDate(dateKey), entries };
+    });
+
+    const backup = {
+        version:    '2.0',
+        exportDate: new Date().toISOString(),
+        data: { trackers, dates, customTemplates }
+    };
+
+    const blob     = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const filename = `tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+    return { blob, filename };
+}
+
+/* Download helper (reused by share flows that need a local file first) */
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+/* ── open / close modals ── */
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+/* ── Email ── */
+function shareViaEmail()  { openModal('emailModal'); }
+
+async function confirmEmail() {
+    const to = document.getElementById('emailTo').value.trim();
+    closeModal('emailModal');
+
+    try {
+        const { blob, filename } = await buildBackupBlob();
+        const subject = encodeURIComponent('My Tracker Backup');
+        const body    = encodeURIComponent(
+            `Hi,\n\nI am sharing my tracker backup with you.\n\nFile: ${filename}\n\nPlease find the backup file attached.\n\n(Note: attach the downloaded file manually if your mail client does not do so automatically.)`
+        );
+        const toParam = to ? encodeURIComponent(to) : '';
+
+        /* Download the file first so the user can attach it */
+        downloadBlob(blob, filename);
+
+        /* Open mail client */
+        window.location.href = `mailto:${toParam}?subject=${subject}&body=${body}`;
+
+        showMsg('exportSuccess','exportSuccessText',
+            'Backup downloaded. Your mail app has opened — attach the file and send!');
+    } catch (err) {
+        console.error('Email share error', err);
+    }
+}
+
+/* ── WhatsApp ── */
+function shareViaWhatsApp() { openModal('whatsappModal'); }
+
+async function confirmWhatsApp() {
+    const phone = document.getElementById('waPhone').value.trim().replace(/\D/g,'');
+    closeModal('whatsappModal');
+
+    try {
+        const { blob, filename } = await buildBackupBlob();
+
+        /* Download the file first */
+        downloadBlob(blob, filename);
+
+        const text = encodeURIComponent(
+            `Hi! I'm sharing my Tracker backup file with you.\n\nFilename: ${filename}\n\nPlease find the backup JSON file attached to this chat.`
+        );
+        const url  = phone
+            ? `https://wa.me/${phone}?text=${text}`
+            : `https://wa.me/?text=${text}`;
+
+        showMsg('exportSuccess','exportSuccessText',
+            'Backup downloaded. WhatsApp is opening — attach the downloaded file to the chat!');
+
+        setTimeout(() => { window.open(url, '_blank'); }, 600);
+    } catch (err) {
+        console.error('WhatsApp share error', err);
+    }
+}
+
+/* ── Native Web Share API (mobile / modern browsers) ── */
+async function shareNative() {
+    try {
+        const { blob, filename } = await buildBackupBlob();
+        const file = new File([blob], filename, { type: 'application/json' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+                title: 'Tracker Backup',
+                text:  'My tracker backup file',
+                files: [file]
+            });
+            showMsg('exportSuccess','exportSuccessText', 'Backup shared successfully!');
+        } else {
+            /* Fallback: just share a URL-less text */
+            await navigator.share({ title: 'Tracker Backup', text: 'Here is my tracker backup.' });
+        }
+    } catch (err) {
+        if (err.name !== 'AbortError') console.error('Native share error', err);
+    }
+}
+
+/* Show native share button only when the API is available */
+if (navigator.share) {
+    document.getElementById('nativeShareBtn').style.display = 'inline-block';
 }
 
 /* ═══ boot ═════════════════════════════════════════════════ */
