@@ -137,7 +137,7 @@
 
 /* ── BASE ── */
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg-page);background-size:cover;background-attachment:fixed;color:var(--text-body)}
-.container{max-width:800px;display:block;margin:auto;padding:20px}
+.container{max-width:800px;display:block;margin:auto;padding:20px;     min-height: 100vh;}
 h1{margin-bottom:20px;color:var(--text-strong)}
 .hidden{display:none!important}
 
