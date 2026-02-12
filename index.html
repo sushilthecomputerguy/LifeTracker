@@ -4,418 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Day</title>
-    <style>
-        /* Minimal CSS - only for essential functionality */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: url('bg2.jpg');
-
-            color:#2c3e50;
-        }
-
-        .container{
-            max-width: 800px;
-            display: block;
-            margin:auto;
-            padding: 20px;
-        }
-
-
-        h1{
-            margin-bottom: 20px;
-        }
-        .date-selector {
-            margin-bottom: 30px;
-            padding: 15px;
-            background: #FFF;
-            border-radius: 6px;
-        box-shadow: rgba(0, 0, 0, 0.05) 0px 6px 24px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
-        }
-
-        .date-controls {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .date-selector label {
-            margin-right: 10px;
-            font-weight: 600;
-        }
-
-        .date-selector input[type="date"] {
-            padding: 8px 12px;
-            font-size: 16px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        .nav-btn {
-            padding: 8px 16px;
-            font-size: 14px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background: white;
-            cursor: pointer;
-        }
-
-        .nav-btn:hover {
-            background: #e9e9e9;
-        }
-
-        .nav-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .current-date-display {
-            margin-top: 10px;
-            font-size: 14px;
-            color: #666;
-        }
-
-        /* Week navigation */
-        .week-navigation {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #ddd;
-        }
-
-        .week-dates {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            padding: 10px 0;
-        }
-
-        .date-item {
-            flex-shrink: 0;
-            min-width: 70px;
-            padding: 10px;
-            text-align: center;
-            border: 2px solid #ddd;
-            border-radius: 6px;
-            background: white;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .date-item:hover {
-            border-color: #999;
-            background: #f9f9f9;
-        }
-
-        .date-item.active {
-            border-color: #4CAF50;
-            background: #e8f5e9;
-            font-weight: 600;
-        }
-
-        .date-item.today {
-            border-color: #2196F3;
-        }
-
-        .date-item.active.today {
-            border-color: #4CAF50;
-            background: #e8f5e9;
-        }
-
-        .date-day {
-            font-size: 13px;
-            color: #666;
-            text-transform: uppercase;
-        }
-
-        .date-number {
-            font-size: 25px;
-            font-weight: 600;
-            margin: 4px 0;
-        }
-
-        .date-month {
-            font-size: 13px;
-            color: #666;
-        }
-
-        .tracker-item {
-            margin-bottom: 20px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .tracker-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .tracker-title {
-            font-size: 1.2em;
-            font-weight: 600;
-        }
-
-        .tracker-type-badge {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 600;
-            background: #e0e0e0;
-            margin-left: 10px;
-        }
-
-        .tracker-input {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        textarea.tracker-input {
-            min-height: 80px;
-            resize: vertical;
-        }
-
-        .yesno-buttons {
-            display: flex;
-            gap: 10px;
-        }
-
-        .yesno-btn {
-            flex: 1;
-            padding: 12px;
-            font-size: 16px;
-            border: 2px solid #ddd;
-            border-radius: 4px;
-            background: white;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .yesno-btn.selected-yes {
-            background: #4CAF50;
-            color: white;
-            border-color: #4CAF50;
-        }
-
-        .yesno-btn.selected-no {
-            background: #f44336;
-            color: white;
-            border-color: #f44336;
-        }
-
-        .numeric-input-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .numeric-prefix, .numeric-suffix {
-            font-size: 16px;
-            font-weight: 600;
-            color: #666;
-        }
-
-        .numeric-input {
-            flex: 1;
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-        }
-
-        /* ── RADIO BUTTONS DISPLAY STYLE ── */
-        .radio-options {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .radio-option {
-            display: inline-block;
-            padding: 10px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: all 0.2s ease;
-            opacity: 0.6;
-        }
-
-        .radio-option:hover {
-            opacity: 0.8;
-            transform: scale(1.05);
-        }
-
-        .radio-option.selected {
-            opacity: 1;
-            border: 2px solid #333;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        }
-
-        /* ── DROPDOWN DISPLAY STYLE ── */
-        .dropdown-select {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        /* ── SLIDER DISPLAY STYLE ── */
-        .slider-container {
-            padding: 20px 10px;
-        }
-
-        .slider-label {
-            text-align: center;
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 15px;
-            min-height: 24px;
-        }
-
-        .slider-wrapper {
-            position: relative;
-            padding: 0 10px;
-        }
-
-        .slider-input {
-            width: 100%;
-            height: 8px;
-            border-radius: 4px;
-            outline: none;
-            -webkit-appearance: none;
-            cursor: pointer;
-        }
-
-        .slider-input::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: white;
-            border: 3px solid #2196F3;
-            cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .slider-input::-moz-range-thumb {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: white;
-            border: 3px solid #2196F3;
-            cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .slider-marks {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 10px;
-            padding: 0 10px;
-        }
-
-        .slider-mark {
-            font-size: 11px;
-            color: #999;
-            text-align: center;
-            flex: 1;
-        }
-
-        .slider-mark:first-child {
-            text-align: left;
-        }
-
-        .slider-mark:last-child {
-            text-align: right;
-        }
-
-        .save-button-container {
-            /*position: sticky;*/
-            bottom: 0;
-             
-            text-align: center;
-            
-        }
-
-        .btn-save {
-            padding: 15px 40px;
-            font-size: 18px;
-            font-weight: 600;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        width: 100%;
-        }
-
-        .btn-save:hover {
-            background: #45a049;
-        }
-
-        .save-status {
-            margin-top: 10px;
-            font-size: 14px;
-            color: #666;
-        }
-
-        .save-status.success {
-            color: #4CAF50;
-        }
-    #trackerList{
-        background: #FFF;
-            padding: 15px;
-            border-radius: 6px;
-            box-shadow: rgba(0, 0, 0, 0.05) 0px 6px 24px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
-            margin-bottom: 10px;
-    }
-
-
-
-
-
-
-    .bottom-navigation{
-        position: sticky;
-        bottom: 0;
-        padding-top: 15px;     
-        text-align: center;
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr 1fr;
-        background: #FFF;
-        box-shadow: rgba(0, 0, 0, 0.05) 0px 6px 24px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
-    }
-    .bottom-navigation a{
-        text-decoration: none;
-        color: #333;
-    }
-    </style>
+    <link rel="stylesheet" href="styles.css">
+    
 </head>
 <body>
+    <button class="theme-toggle" aria-label="Switch to dark mode">🌙</button>
     <div class="container">
-        <h1>My Day</h1>
-    
-        <div class="date-selector">
+         
+        <h1  id="currentDateDisplay"></h1>
+
+
+
+        <div class="date-selector" style="display: none;">
             <div class="date-controls">
                 <button class="nav-btn" onclick="goToPreviousDay()">← Previous Day</button>
                 <button class="nav-btn" onclick="goToToday()" id="todayBtn">Today</button>
@@ -434,6 +34,14 @@
         <div class="save-button-container">
             <button class="btn-save" onclick="saveAllTrackers()">💾 Save Today's Entries</button>
             <div class="save-status" id="saveStatus"></div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div class="toast" id="toastNotification">
+            <div class="toast-icon">
+                <svg viewBox="0 0 16 16"><polyline points="2 8 6 12 14 4"/></svg>
+            </div>
+            <span id="toastMessage">Saved successfully!</span>
         </div>
 
 
@@ -956,15 +564,8 @@
                 delete tempSelections[currentDate];
             }
             
-            // Show success message
-            const statusEl = document.getElementById('saveStatus');
-            statusEl.textContent = '✓ Saved successfully!';
-            statusEl.className = 'save-status success';
-            
-            setTimeout(() => {
-                statusEl.textContent = '';
-                statusEl.className = 'save-status';
-            }, 3000);
+            // Show toast notification
+            showToast('Saved successfully!');
             
             console.log('Saved selections for', currentDate, currentSelections);
         }
@@ -1073,8 +674,110 @@
             statusEl.className = 'save-status';
         }
 
+        // Toast notification helper
+        let toastTimer = null;
+        function showToast(message) {
+            const toast = document.getElementById('toastNotification');
+            const toastMsg = document.getElementById('toastMessage');
+            toastMsg.textContent = message;
+
+            // Clear any running timer so rapid saves don't stack
+            if (toastTimer) clearTimeout(toastTimer);
+
+            toast.classList.add('show');
+            toastTimer = setTimeout(() => {
+                toast.classList.remove('show');
+                toastTimer = null;
+            }, 3000);
+        }
+
         // Initialize app
         initDB();
     </script>
+
+
+
+
+    <script>
+        /**
+ * theme.js  —  drop this into every page
+ *
+ * What it does:
+ *  1. On load: reads saved preference from localStorage.
+ *              Falls back to OS preference (prefers-color-scheme).
+ *              Applies data-theme to <html> BEFORE paint (no flash).
+ *  2. Toggle:  clicking .theme-toggle cycles light ↔ dark and saves choice.
+ *  3. Sync:    listens for OS-level changes in case the user switches in
+ *              system settings and has no manual preference saved.
+ */
+
+(function () {
+  const STORAGE_KEY = 'theme';
+  const LIGHT = 'light';
+  const DARK  = 'dark';
+
+  // ── 1. Resolve theme ────────────────────────────────────────
+  function getSystemTheme() {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? DARK : LIGHT;
+  }
+
+  function getSavedTheme() {
+    return localStorage.getItem(STORAGE_KEY); // null if never set
+  }
+
+  function resolveTheme() {
+    return getSavedTheme() || getSystemTheme();
+  }
+
+  // ── 2. Apply theme ──────────────────────────────────────────
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    // Update every toggle button icon on the page
+    document.querySelectorAll('.theme-toggle').forEach(btn => {
+      btn.textContent = theme === DARK ? '☀️' : '🌙';
+      btn.setAttribute('aria-label', theme === DARK ? 'Switch to light mode' : 'Switch to dark mode');
+    });
+  }
+
+  // ── 3. Toggle ───────────────────────────────────────────────
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || resolveTheme();
+    const next    = current === DARK ? LIGHT : DARK;
+    localStorage.setItem(STORAGE_KEY, next);
+    applyTheme(next);
+  }
+
+  // ── 4. Wire up toggle buttons (works for buttons added later too) ──
+  //    We use event delegation on <body> so it works even if the button
+  //    is injected by JS after DOMContentLoaded.
+  function attachToggle() {
+    document.body.addEventListener('click', function (e) {
+      if (e.target.closest('.theme-toggle')) toggleTheme();
+    });
+  }
+
+  // ── 5. Sync with OS changes (only if user has no saved pref) ──
+  function watchSystemTheme() {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
+      if (!getSavedTheme()) {
+        applyTheme(e.matches ? DARK : LIGHT);
+      }
+    });
+  }
+
+  // ── INIT ─────────────────────────────────────────────────────
+  // Apply before first paint to avoid flash
+  applyTheme(resolveTheme());
+
+  // Wire up after DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attachToggle);
+  } else {
+    attachToggle();
+  }
+
+  watchSystemTheme();
+})();
+</script>
 </body>
 </html>
