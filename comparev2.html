@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tracker Comparision</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#fef5eb">
+    <link rel="icon" href="/icon.jpg" type="image/x-icon">
+    <script src="https://js.puter.com/v2/"></script>
+
+    <style>
+        /* ── AI Analysis Section ── */
+        .ai-section {
+            margin-top: 24px;
+            border-top: 2px dashed var(--border-color, #e0d6cc);
+            padding-top: 20px;
+        }
+
+        .ai-section-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary, #333);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ai-section-title::before {
+            content: "✦";
+            color: #a78bfa;
+            font-size: 16px;
+        }
+
+        .btn-ai {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 22px;
+            background: linear-gradient(135deg, #a78bfa, #7c3aed);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+            box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35);
+        }
+
+        .btn-ai:hover:not(:disabled) {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-ai:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-ai:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        .btn-ai .spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: none;
+        }
+
+        .btn-ai.loading .spinner { display: inline-block; }
+        .btn-ai.loading .ai-icon { display: none; }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .ai-result-box {
+            margin-top: 16px;
+            background: var(--ai-bg, #f5f0ff);
+            border: 1.5px solid var(--ai-border, #c4b5fd);
+            border-radius: 12px;
+            padding: 18px 20px;
+            font-size: 14px;
+            line-height: 1.75;
+            color: var(--text-primary, #333);
+            white-space: pre-wrap;
+            word-break: break-word;
+            min-height: 60px;
+            display: none;
+        }
+
+        .ai-result-box.show { display: block; }
+
+        .ai-error {
+            color: #dc2626;
+            background: #fff5f5;
+            border-color: #fca5a5;
+        }
+
+        /* dark mode overrides */
+        [data-theme="dark"] .ai-result-box {
+            --ai-bg: #1e1533;
+            --ai-border: #5b21b6;
+        }
+
+        [data-theme="dark"] .ai-section {
+            --border-color: #3a3050;
+        }
+    </style>
+</head>
+<body>
+<button class="theme-toggle" aria-label="Switch to dark mode">🌙</button>
+
+<div class="container">
+
+    <h1>Tracker Comparison</h1>
+
+<!-- controls -->
+<div class="controls-panel">
+    <div class="controls-section">
+        <label class="section-label">Add Trackers to Compare</label>
+        <div class="add-tracker-row">
+            <select id="trackerDropdown">
+                <option value="">— Select a tracker —</option>
+            </select>
+            <button class="btn-add" id="addBtn" onclick="addTracker()" disabled>+ Add Tracker</button>
+        </div>
+    </div>
+
+    <!-- Selected trackers (draggable to reorder) -->
+    <div class="selected-trackers-section" id="selectedSection">
+        <label class="section-label">
+            Selected Trackers (drag to reorder)
+            <span class="selection-count" id="selectionCount">0 selected</span>
+        </label>
+        <div class="selected-list" id="selectedList"></div>
+    </div>
+
+    <div class="controls-section">
+        <div class="action-row">
+            <div class="year-select-wrap" id="yearSelectWrap">
+                <label class="section-label" style="margin-bottom:6px;">Year</label>
+                <select id="yearSelect"></select>
+            </div>
+            <button class="btn btn-primary" id="compareBtn" onclick="runComparison()" disabled>
+                Compare Trackers
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- comparison output -->
+<div class="comparison-card" id="comparisonCard">
+    <div class="empty-msg">Select at least 2 trackers above and click "Compare Trackers" to see the side-by-side view.</div>
+</div>
+
+</div>
+ <div class="bottom-navigation">
+            <div><a href="template.html"><img src="tracker_small.png"/><br/>Tracker</a></div>
+            <div><a href="report.html"><img src="calendar_small.png"/><br/>Report</a></div>
+            <div><a href="index.html"><img src="today_small.png"/><br/>My Day</a></div>
+            <div><a href="backup.html"><img src="backup.png"/><br/>Backup</a></div>
+        </div>
+
+<script>
+/* ═══ DB ═══════════════════════════════════════════════════ */
+let db;
+const DB_NAME    = 'TrackerDB';
+const STORE_NAME = 'trackers';
+
+function initDB() {
+    const req = indexedDB.open(DB_NAME, 2);
+    req.onerror   = () => console.error('DB open failed');
+    req.onsuccess = () => { db = req.result; loadTrackerDropdown(); };
+    req.onupgradeneeded = (e) => {
+        const d = e.target.result;
+        if (!d.objectStoreNames.contains(STORE_NAME)) {
+            const s = d.createObjectStore(STORE_NAME, { keyPath:'id', autoIncrement:true });
+            s.createIndex('title','title');
+            s.createIndex('type','type');
+        }
+    };
+}
+
+function getAllTrackers() {
+    return new Promise((res, rej) => {
+        const req = db.transaction([STORE_NAME],'readonly').objectStore(STORE_NAME).getAll();
+        req.onsuccess = () => res(req.result);
+        req.onerror   = () => rej(req.error);
+    });
+}
+
+/* ═══ state ════════════════════════════════════════════════ */
+let allTrackers = [];
+let selectedOrder = [];   // array of tracker IDs in user's chosen order
+
+/* ═══ populate dropdown ════════════════════════════════════ */
+async function loadTrackerDropdown() {
+    allTrackers = await getAllTrackers();
+    const dropdown = document.getElementById('trackerDropdown');
+
+    if (!allTrackers.length) {
+        dropdown.innerHTML = '<option value="">No trackers available</option>';
+        return;
+    }
+
+    dropdown.innerHTML = '<option value="">— Select a tracker —</option>' +
+        allTrackers.map(t => {
+            const type = t.type || 'dropdown';
+            return `<option value="${t.id}">${t.title} (${typeLabel(type)})</option>`;
+        }).join('');
+
+    dropdown.addEventListener('change', updateAddButton);
+}
+
+function updateAddButton() {
+    const dropdown = document.getElementById('trackerDropdown');
+    const btn = document.getElementById('addBtn');
+    btn.disabled = !dropdown.value;
+}
+
+/* ═══ add tracker ══════════════════════════════════════════ */
+function addTracker() {
+    const dropdown = document.getElementById('trackerDropdown');
+    const id = parseInt(dropdown.value);
+
+    if (!id || selectedOrder.includes(id)) {
+        dropdown.value = '';
+        updateAddButton();
+        return;
+    }
+
+    selectedOrder.push(id);
+    dropdown.value = '';
+    updateAddButton();
+    updateSelectionCount();
+    renderSelectedList();
+    updateYearDropdown();
+    updateCompareButton();
+}
+
+function updateSelectionCount() {
+    document.getElementById('selectionCount').textContent = `${selectedOrder.length} selected`;
+}
+
+function updateCompareButton() {
+    document.getElementById('compareBtn').disabled = selectedOrder.length < 2;
+}
+
+/* ═══ render selected trackers list (draggable) ════════════ */
+function renderSelectedList() {
+    const section = document.getElementById('selectedSection');
+    const list    = document.getElementById('selectedList');
+
+    if (selectedOrder.length === 0) {
+        section.classList.remove('show');
+        list.innerHTML = '';
+        return;
+    }
+
+    section.classList.add('show');
+
+    list.innerHTML = selectedOrder.map((id, index) => {
+        const tracker = allTrackers.find(t => t.id === id);
+        if (!tracker) return '';
+        const type = tracker.type || 'dropdown';
+        return `
+            <div class="selected-item" draggable="true" data-id="${id}" 
+                 ondragstart="onDragStart(event)" 
+                 ondragover="onDragOver(event)" 
+                 ondrop="onDrop(event)"
+                 ondragend="onDragEnd(event)">
+                <span class="tracker-order">${index + 1}</span>
+                <span class="drag-handle">⋮⋮</span>
+                <div class="tracker-info">
+                    <span class="tracker-title">${tracker.title}</span>
+                    <span class="tracker-badge">${typeLabel(type)}</span>
+                </div>
+                <button class="remove-btn" onclick="removeTracker(${id})">Remove</button>
+            </div>`;
+    }).join('');
+}
+
+function removeTracker(id) {
+    selectedOrder = selectedOrder.filter(x => x !== id);
+    updateSelectionCount();
+    renderSelectedList();
+    updateYearDropdown();
+    updateCompareButton();
+}
+
+/* ═══ drag and drop ════════════════════════════════════════ */
+let draggedElement = null;
+
+function onDragStart(e) {
+    draggedElement = e.currentTarget;
+    draggedElement.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function onDragOver(e) {
+    e.preventDefault();
+    const target = e.currentTarget;
+    if (target === draggedElement) return;
+
+    const list = document.getElementById('selectedList');
+    const items = [...list.querySelectorAll('.selected-item')];
+    const draggedIndex = items.indexOf(draggedElement);
+    const targetIndex  = items.indexOf(target);
+
+    if (draggedIndex < targetIndex) {
+        target.parentNode.insertBefore(draggedElement, target.nextSibling);
+    } else {
+        target.parentNode.insertBefore(draggedElement, target);
+    }
+}
+
+function onDrop(e) {
+    e.preventDefault();
+}
+
+function onDragEnd(e) {
+    draggedElement.classList.remove('dragging');
+    
+    // rebuild selectedOrder from DOM order
+    const items = [...document.getElementById('selectedList').querySelectorAll('.selected-item')];
+    selectedOrder = items.map(item => parseInt(item.getAttribute('data-id')));
+    
+    draggedElement = null;
+}
+
+/* ═══ year dropdown – only years with data for selected trackers ═══ */
+function updateYearDropdown() {
+    const wrap = document.getElementById('yearSelectWrap');
+    const sel  = document.getElementById('yearSelect');
+
+    if (selectedOrder.length === 0) {
+        wrap.classList.remove('show');
+        sel.innerHTML = '';
+        return;
+    }
+
+    // find all years that have data for ANY of the selected trackers
+    const all   = JSON.parse(localStorage.getItem('dailySelections') || '{}');
+    const years = new Set();
+
+    Object.keys(all).forEach(date => {
+        selectedOrder.forEach(id => {
+            if (all[date][id]) {
+                years.add(new Date(date + 'T00:00:00').getFullYear());
+            }
+        });
+    });
+
+    const sorted = [...years].sort((a, b) => b - a);   // newest first
+
+    if (!sorted.length) {
+        wrap.classList.remove('show');
+        sel.innerHTML = '';
+        return;
+    }
+
+    // populate dropdown
+    sel.innerHTML = sorted.map((y, i) => `<option value="${y}" ${i === 0 ? 'selected' : ''}>${y}</option>`).join('');
+    wrap.classList.add('show');
+}
+
+/* ═══ RUN COMPARISON ═══════════════════════════════════════ */
+function runComparison() {
+    if (selectedOrder.length < 2) return;
+
+    const year = parseInt(document.getElementById('yearSelect').value);
+    if (!year) return;
+
+    // get trackers in the user's chosen order
+    const trackers = selectedOrder.map(id => allTrackers.find(t => t.id === id)).filter(Boolean);
+    const all      = JSON.parse(localStorage.getItem('dailySelections') || '{}');
+
+    // collect all dates in the year that have data for ANY selected tracker
+    const datesSet = new Set();
+    Object.keys(all).forEach(date => {
+        if (new Date(date + 'T00:00:00').getFullYear() === year) {
+            selectedOrder.forEach(id => {
+                if (all[date][id]) datesSet.add(date);
+            });
+        }
+    });
+
+    const sortedDates = [...datesSet].sort();   // chronological
+
+    if (!sortedDates.length) {
+        document.getElementById('comparisonCard').innerHTML = '<div class="empty-msg">No data found for the selected trackers in ' + year + '.</div>';
+        return;
+    }
+
+    // build table
+    renderComparisonTable(trackers, sortedDates, year, all);
+}
+
+/* ═══ RENDER TABLE ═════════════════════════════════════════ */
+function renderComparisonTable(trackers, dates, year, allData) {
+    const card = document.getElementById('comparisonCard');
+
+    // group by month
+    const byMonth = {};
+    const MONTHS  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    dates.forEach(date => {
+        const m = new Date(date + 'T00:00:00').getMonth();
+        const monthName = MONTHS[m];
+        if (!byMonth[monthName]) byMonth[monthName] = [];
+        byMonth[monthName].push(date);
+    });
+
+    // table header
+    let tableHTML = '<table class="comparison-table"><thead><tr>';
+    tableHTML += '<th class="date-col">Date</th>';
+    trackers.forEach(t => {
+        tableHTML += `<th>${t.title} <span style="font-weight:400;color:#aaa;font-size:11px;">(${typeLabel(t.type || 'dropdown')})</span></th>`;
+    });
+    tableHTML += '</tr></thead><tbody>';
+
+    // rows grouped by month
+    MONTHS.forEach(monthName => {
+        if (!byMonth[monthName]) return;
+
+        tableHTML += `<tr class="month-header-row"><td colspan="${trackers.length + 1}">${monthName}</td></tr>`;
+
+        byMonth[monthName].forEach(date => {
+            const day = new Date(date + 'T00:00:00').getDate();
+            tableHTML += `<tr><td class="date-col">${pad(day)}</td>`;
+
+            trackers.forEach(t => {
+                const entry = allData[date] && allData[date][t.id];
+                tableHTML += `<td class="value-cell">${entry ? renderValue(t, entry) : '<span class="empty">—</span>'}</td>`;
+            });
+
+            tableHTML += '</tr>';
+        });
+    });
+
+    tableHTML += '</tbody></table>';
+
+    card.innerHTML = `
+        <div class="comparison-title">Tracker Comparison</div>
+        <div class="comparison-meta">${trackers.map(t => t.title).join(', ')} · ${year}</div>
+        ${tableHTML}
+
+        <!-- ══ AI ANALYSIS SECTION ══════════════════════════════════ -->
+        <div class="ai-section">
+            <div class="ai-section-title">AI Analysis</div>
+            <button class="btn-ai" id="aiBtn" onclick="generateAIAnalysis()">
+                <span class="ai-icon">✦ Generate Analysis</span>
+                <span class="spinner"></span>
+            </button>
+            <div class="ai-result-box" id="aiResultBox"></div>
+        </div>`;
+
+    // store current comparison data for AI to use
+    window._lastComparisonData = { trackers, dates, year, allData };
+}
+
+/* ═══ RENDER VALUE (per tracker type) ══════════════════════ */
+function renderValue(tracker, entry) {
+    const type = tracker.type || 'dropdown';
+
+    if (type === 'dropdown') {
+        const opt = tracker.options[parseInt(entry.value)];
+        if (!opt) return entry.value;
+        return `<span class="option-box" style="background:${opt.color}">${opt.title}</span>`;
+    }
+
+    if (type === 'yesno') {
+        const v = entry.value === 'yes';
+        return `<span class="yesno-badge ${v ? 'yes' : 'no'}">${v ? 'Yes' : 'No'}</span>`;
+    }
+
+    if (type === 'numeric') {
+        const p = tracker.numericPrefix || '';
+        const s = tracker.numericSuffix || '';
+        return `<span class="numeric-value">${p}${entry.value}${s ? ' ' + s : ''}</span>`;
+    }
+
+    // text – show first 40 chars
+    const text = entry.value.length > 40 ? entry.value.slice(0, 40) + '…' : entry.value;
+    return `<span class="text-preview">${text}</span>`;
+}
+
+/* ═══ AI ANALYSIS (Puter.js) ════════════════════════════════ */
+async function generateAIAnalysis() {
+    const btn       = document.getElementById('aiBtn');
+    const resultBox = document.getElementById('aiResultBox');
+
+    if (!window._lastComparisonData) return;
+
+    const { trackers, dates, year, allData } = window._lastComparisonData;
+
+    // ── Build a compact text summary of the data ──
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    let dataSummary = `Year: ${year}\nTrackers being compared: ${trackers.map(t => `${t.title} (${typeLabel(t.type || 'dropdown')})`).join(', ')}\n\nData log:\n`;
+
+    dates.forEach(date => {
+        const d   = new Date(date + 'T00:00:00');
+        const label = `${MONTHS[d.getMonth()]} ${pad(d.getDate())}`;
+        const rowParts = trackers.map(t => {
+            const entry = allData[date] && allData[date][t.id];
+            if (!entry) return `${t.title}: —`;
+
+            const type = t.type || 'dropdown';
+            if (type === 'dropdown') {
+                const opt = t.options[parseInt(entry.value)];
+                return `${t.title}: ${opt ? opt.title : entry.value}`;
+            }
+            if (type === 'yesno')  return `${t.title}: ${entry.value}`;
+            if (type === 'numeric') {
+                const p = t.numericPrefix || '';
+                const s = t.numericSuffix || '';
+                return `${t.title}: ${p}${entry.value}${s ? ' ' + s : ''}`;
+            }
+            return `${t.title}: ${entry.value}`;
+        });
+        dataSummary += `${label} — ${rowParts.join(' | ')}\n`;
+    });
+
+    const prompt = `You are a personal life-tracker analyst. Below is a user's daily tracking data for ${year}. 
+Analyse the data and provide:
+1. Key patterns or trends you notice across trackers
+2. Correlations between trackers (if any)
+3. Notable streaks, gaps, or outliers
+4. A short motivational insight or actionable suggestion
+
+Keep the tone friendly, supportive, and concise (under 300 words).
+
+${dataSummary}`;
+
+    // ── Loading state ──
+    btn.disabled = true;
+    btn.classList.add('loading');
+    resultBox.classList.remove('show', 'ai-error');
+    resultBox.textContent = '';
+
+    try {
+        const response = await puter.ai.chat(prompt, { model: 'gpt-4o-mini' });
+
+        // puter.ai.chat returns either a string or an object with .message.content
+        const text = typeof response === 'string'
+            ? response
+            : (response?.message?.content ?? response?.content ?? JSON.stringify(response));
+
+        resultBox.textContent = text;
+        resultBox.classList.add('show');
+    } catch (err) {
+        console.error('Puter AI error:', err);
+        resultBox.textContent = '⚠️ Could not generate analysis. Please make sure you are signed in to Puter and try again.';
+        resultBox.classList.add('show', 'ai-error');
+    } finally {
+        btn.disabled = false;
+        btn.classList.remove('loading');
+    }
+}
+
+/* ═══ tiny utils ════════════════════════════════════════════ */
+function typeLabel(t) {
+    return { dropdown:'Dropdown', yesno:'Yes/No', numeric:'Numeric', text:'Text' }[t] || 'Dropdown';
+}
+
+function pad(n) { return String(n).padStart(2,'0'); }
+
+/* ═══ boot ═════════════════════════════════════════════════ */
+initDB();
+</script>
+
+    <script>
+        /**
+ * theme.js  —  drop this into every page
+ */
+(function () {
+  const STORAGE_KEY = 'theme';
+  const LIGHT = 'light';
+  const DARK  = 'dark';
+
+  function getSystemTheme() {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? DARK : LIGHT;
+  }
+
+  function getSavedTheme() {
+    return localStorage.getItem(STORAGE_KEY);
+  }
+
+  function resolveTheme() {
+    return getSavedTheme() || getSystemTheme();
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.querySelectorAll('.theme-toggle').forEach(btn => {
+      btn.textContent = theme === DARK ? '☀️' : '🌙';
+      btn.setAttribute('aria-label', theme === DARK ? 'Switch to light mode' : 'Switch to dark mode');
+    });
+  }
+
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || resolveTheme();
+    const next    = current === DARK ? LIGHT : DARK;
+    localStorage.setItem(STORAGE_KEY, next);
+    applyTheme(next);
+  }
+
+  function attachToggle() {
+    document.body.addEventListener('click', function (e) {
+      if (e.target.closest('.theme-toggle')) toggleTheme();
+    });
+  }
+
+  function watchSystemTheme() {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
+      if (!getSavedTheme()) {
+        applyTheme(e.matches ? DARK : LIGHT);
+      }
+    });
+  }
+
+  applyTheme(resolveTheme());
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attachToggle);
+  } else {
+    attachToggle();
+  }
+
+  watchSystemTheme();
+})();
+</script>
+</body>
+</html>
