@@ -11,13 +11,16 @@
 <body>
     <button class="theme-toggle" aria-label="Switch to dark mode">🌙</button>
     <div class="container">
-         
+        <div style="display: grid;
+    grid-template-columns: 1fr 60px;
+    align-items: center;"> 
         <h1  id="currentDateDisplay"></h1>
 
-	<div class="date-wrapper">
-  <input type="date" id="dateInput" onchange="changeDate()" />
-  <span class="calendar-icon" onclick="openCalendar()">📅</span>
-</div>
+    	<div class="date-wrapper">
+          <input type="date" id="dateInput" onchange="changeDate()" />
+          <span class="calendar-icon" onclick="openCalendar()">📅</span>
+        </div>
+        </div>
 
         <div class="date-selector" style="display: none;">
             <div class="date-controls">
@@ -75,6 +78,9 @@
 .calendar-icon {
   font-size: 22px;
   cursor: pointer;
+      background: var(--bg-card);
+    padding: 8px;
+    border-radius: 50px;
 }
 
 </style>
