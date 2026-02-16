@@ -3,363 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tracker Comparision</title>
+    <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#1976d2">
-    <title>Tracker Comparison</title>
-    <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-             background: url('bg2.jpg');
-            color:#2c3e50;
-        }
-
-        .container{
-            max-width: 800px;
-            display: block;
-            margin:auto;
-                  padding: 20px;
-
-        }
-        h1 { margin-bottom: 20px; }
-
-        /* ── controls panel ── */
-        .controls-panel {
-            background: white;
-            border-radius: 8px;
-            padding: 22px;
-            margin-bottom: 20px;
-        }
-
-        .controls-section {
-            margin-bottom: 20px;
-        }
-
-        .controls-section:last-child { margin-bottom: 0; }
-
-        .section-label {
-            font-size: 14px;
-            font-weight: 600;
-            color: #444;
-            margin-bottom: 12px;
-            display: block;
-        }
-
-        /* add tracker row */
-        .add-tracker-row {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .add-tracker-row select {
-            padding: 9px 12px;
-            font-size: 15px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            min-width: 250px;
-            flex: 1;
-        }
-
-        .add-tracker-row .btn-add {
-            padding: 9px 20px;
-            font-size: 15px;
-            font-weight: 600;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .add-tracker-row .btn-add:hover { background: #45a049; }
-        .add-tracker-row .btn-add:disabled { background: #ccc; cursor: not-allowed; }
-
-        /* year + compare button row */
-        .action-row {
-            display: flex;
-            gap: 14px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .year-select-wrap {
-            display: none;
-        }
-
-        .year-select-wrap.show { display: block; }
-
-        .year-select-wrap select {
-            padding: 9px 12px;
-            font-size: 15px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        .btn {
-            padding: 10px 24px;
-            font-size: 15px;
-            font-weight: 600;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .btn-primary { background: #2196F3; color: white; }
-        .btn-primary:hover { background: #1976D2; }
-        .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
-
-        /* ── comparison table ── */
-        .comparison-card {
-            background: white;
-            border-radius: 8px;
-            padding: 24px;
-        }
-
-        .comparison-title {
-            font-size: 1.2em;
-            font-weight: 600;
-            margin-bottom: 6px;
-        }
-
-        .comparison-meta {
-            font-size: 13px;
-            color: #888;
-            margin-bottom: 20px;
-        }
-
-        .comparison-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-        }
-
-        .comparison-table th {
-            text-align: left;
-            font-size: 13px;
-            font-weight: 600;
-            color: #555;
-            padding: 10px 12px;
-            border-bottom: 2px solid #ddd;
-            background: #f8f9fa;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .comparison-table td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #f0f0f0;
-            vertical-align: top;
-        }
-
-        .comparison-table tr:last-child td { border-bottom: none; }
-
-        .comparison-table .date-col {
-            font-weight: 600;
-            color: #555;
-            white-space: nowrap;
-        }
-
-        /* month header row */
-        .month-header-row {
-            background: #e3f2fd;
-        }
-
-        .month-header-row td {
-            font-weight: 700;
-            color: #1565C0;
-            padding: 8px 12px;
-            border-bottom: 2px solid #2196F3;
-        }
-
-        /* value cells */
-        .value-cell {
-            min-width: 120px;
-        }
-
-        .value-cell.empty {
-            color: #ccc;
-            font-style: italic;
-        }
-
-        /* colored box for dropdown */
-        .option-box {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 13px;
-            font-weight: 600;
-            color: white;
-        }
-
-        /* yes/no indicator */
-        .yesno-badge {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 4px;
-            font-size: 13px;
-            font-weight: 600;
-            color: white;
-        }
-
-        .yesno-badge.yes { background: #4CAF50; }
-        .yesno-badge.no  { background: #f44336; }
-
-        /* numeric value */
-        .numeric-value {
-            font-weight: 600;
-            color: #222;
-        }
-
-        /* text preview */
-        .text-preview {
-            color: #555;
-            font-size: 13px;
-        }
-
-        /* empty state */
-        .empty-msg {
-            color: #999;
-            font-size: 15px;
-            padding: 40px 20px;
-            text-align: center;
-        }
-
-        /* selected count badge */
-        .selection-count {
-            display: inline-block;
-            background: #2196F3;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-left: 8px;
-        }
-
-        /* ── selected trackers list (draggable) ── */
-        .selected-trackers-section {
-            display: none;
-            margin-top: 0;
-        }
-
-        .selected-trackers-section.show { display: block; }
-
-        .selected-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .selected-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 14px 16px;
-            background: #f8f9fa;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            cursor: move;
-            transition: all 0.2s;
-        }
-
-        .selected-item:hover {
-            background: #fff;
-            border-color: #2196F3;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .selected-item.dragging {
-            opacity: 0.4;
-            background: #e3f2fd;
-            border-color: #2196F3;
-            transform: scale(1.02);
-        }
-
-        .selected-item .drag-handle {
-            font-size: 20px;
-            color: #999;
-            cursor: grab;
-            user-select: none;
-            line-height: 1;
-        }
-
-        .selected-item .drag-handle:active { cursor: grabbing; }
-
-        .selected-item .tracker-info {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .selected-item .tracker-order {
-            width: 28px;
-            height: 28px;
-            background: #2196F3;
-            color: white;
-            font-weight: 700;
-            font-size: 14px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .selected-item .tracker-title {
-            font-weight: 600;
-            color: #333;
-            font-size: 15px;
-        }
-
-        .selected-item .tracker-badge {
-            font-size: 11px;
-            color: #666;
-            background: #e0e0e0;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-weight: 600;
-        }
-
-        .selected-item .remove-btn {
-            padding: 6px 14px;
-            font-size: 13px;
-            background: #f44336;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .selected-item .remove-btn:hover { background: #d32f2f; }
-
-
-
-          .bottom-navigation{
-        position: sticky;
-        bottom: 0;
-        padding-top: 15px;     
-        text-align: center;
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr 1fr;
-        background: #FFF;
-        box-shadow: rgba(0, 0, 0, 0.05) 0px 6px 24px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
-    }
-    .bottom-navigation a{
-        text-decoration: none;
-        color: #333;
-    }
-
-
+    <meta name="theme-color" content="#fef5eb">
+    <link rel="icon" href="/icon.jpg" type="image/x-icon">
     
-    </style>
 </head>
 <body>
+<button class="theme-toggle" aria-label="Switch to dark mode">🌙</button>
+
 <div class="container">
+
     <h1>Tracker Comparison</h1>
 
 <!-- controls -->
@@ -402,11 +57,11 @@
 </div>
 
 </div>
- <div class="bottom-navigation">
-            <div><a href="template.html"><img src="tracker_small.png"/><br/>Tracker</a></div>
+<div class="bottom-navigation">
+            <div><a href="template.html"><img src="folder_icon.png"/><br/>Tracker</a></div>
             <div><a href="report.html"><img src="calendar_small.png"/><br/>Report</a></div>
             <div><a href="index.html"><img src="today_small.png"/><br/>My Day</a></div>
-            <div><a href="backup.html"><img src="backup.png"/><br/>Backup</a></div>
+            <div><a href="settings.html"><img src="setting_icon.png"/><br/>Settings</a></div>
         </div>
 
 <script>
@@ -731,6 +386,93 @@ function pad(n) { return String(n).padStart(2,'0'); }
 
 /* ═══ boot ═════════════════════════════════════════════════ */
 initDB();
+</script>
+
+
+
+
+
+
+    <script>
+        /**
+ * theme.js  —  drop this into every page
+ *
+ * What it does:
+ *  1. On load: reads saved preference from localStorage.
+ *              Falls back to OS preference (prefers-color-scheme).
+ *              Applies data-theme to <html> BEFORE paint (no flash).
+ *  2. Toggle:  clicking .theme-toggle cycles light ↔ dark and saves choice.
+ *  3. Sync:    listens for OS-level changes in case the user switches in
+ *              system settings and has no manual preference saved.
+ */
+
+(function () {
+  const STORAGE_KEY = 'theme';
+  const LIGHT = 'light';
+  const DARK  = 'dark';
+
+  // ── 1. Resolve theme ────────────────────────────────────────
+  function getSystemTheme() {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? DARK : LIGHT;
+  }
+
+  function getSavedTheme() {
+    return localStorage.getItem(STORAGE_KEY); // null if never set
+  }
+
+  function resolveTheme() {
+    return getSavedTheme() || getSystemTheme();
+  }
+
+  // ── 2. Apply theme ──────────────────────────────────────────
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    // Update every toggle button icon on the page
+    document.querySelectorAll('.theme-toggle').forEach(btn => {
+      btn.textContent = theme === DARK ? '☀️' : '🌙';
+      btn.setAttribute('aria-label', theme === DARK ? 'Switch to light mode' : 'Switch to dark mode');
+    });
+  }
+
+  // ── 3. Toggle ───────────────────────────────────────────────
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || resolveTheme();
+    const next    = current === DARK ? LIGHT : DARK;
+    localStorage.setItem(STORAGE_KEY, next);
+    applyTheme(next);
+  }
+
+  // ── 4. Wire up toggle buttons (works for buttons added later too) ──
+  //    We use event delegation on <body> so it works even if the button
+  //    is injected by JS after DOMContentLoaded.
+  function attachToggle() {
+    document.body.addEventListener('click', function (e) {
+      if (e.target.closest('.theme-toggle')) toggleTheme();
+    });
+  }
+
+  // ── 5. Sync with OS changes (only if user has no saved pref) ──
+  function watchSystemTheme() {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
+      if (!getSavedTheme()) {
+        applyTheme(e.matches ? DARK : LIGHT);
+      }
+    });
+  }
+
+  // ── INIT ─────────────────────────────────────────────────────
+  // Apply before first paint to avoid flash
+  applyTheme(resolveTheme());
+
+  // Wire up after DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attachToggle);
+  } else {
+    attachToggle();
+  }
+
+  watchSystemTheme();
+})();
 </script>
 </body>
 </html>

@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="styles.css">
+
+    <title>Print Report</title>
+
+    <style>
+        /* ── Reset & Base ─────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f0ece6;
+            color: #1a1a1a;
+            min-height: 100vh;
+        }
+
+        /* ── Screen-only: Controls UI ─────────────────────────── */
+        .screen-ui {
+            padding: 28px 24px 20px;
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        .page-heading {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+
+        .page-sub {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 22px;
+        }
+
+        .controls-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            align-items: flex-end;
+            margin-bottom: 18px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-group label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #666;
+        }
+
+        .control-group select {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1.5px solid #d5cec5;
+            background: #fff;
+            font-size: 14px;
+            color: #1a1a1a;
+            min-width: 180px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .control-group select:focus {
+            border-color: #a78bfa;
+        }
+
+        /* Chart type toggle */
+        .chart-toggle {
+            display: flex;
+            gap: 8px;
+        }
+
+        .toggle-btn {
+            padding: 8px 18px;
+            border-radius: 8px;
+            border: 1.5px solid #d5cec5;
+            background: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .toggle-btn:hover { border-color: #a78bfa; color: #7c3aed; }
+
+        .toggle-btn.active {
+            background: #7c3aed;
+            border-color: #7c3aed;
+            color: #fff;
+        }
+
+        .btn-print {
+            padding: 9px 22px;
+            border-radius: 8px;
+            border: none;
+            background: #1a1a1a;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            transition: background 0.15s;
+            margin-left: auto;
+        }
+
+        .btn-print:hover { background: #333; }
+
+        .empty-msg {
+            text-align: center;
+            color: #aaa;
+            font-size: 14px;
+            padding: 60px 20px;
+        }
+
+        /* ── A4 Print Sheet ───────────────────────────────────── */
+        .a4-sheet {
+            width: 794px;            /* 210mm at 96dpi */
+            min-height: 1123px;      /* 297mm at 96dpi */
+            margin: 0 auto 40px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+            padding: 48px 52px;
+            display: none;           /* hidden until data loaded */
+        }
+
+        .a4-sheet.visible { display: block; }
+
+        /* ── Sheet Header ─────────────────────────────────────── */
+        .sheet-header {
+            border-bottom: 2px solid #1a1a1a;
+            padding-bottom: 14px;
+            margin-bottom: 28px;
+        }
+
+        .sheet-title {
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: #1a1a1a;
+        }
+
+        .sheet-meta {
+            font-size: 13px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        /* ── Options / Legend ─────────────────────────────────── */
+        .section-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #aaa;
+            margin-bottom: 10px;
+        }
+
+        .options-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 28px;
+        }
+
+        .option-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 5px 12px 5px 8px;
+            border-radius: 20px;
+            border: 1.5px solid #e5e5e5;
+            font-size: 13px;
+            font-weight: 600;
+            color: #1a1a1a;
+            background: #fafafa;
+        }
+
+        .option-swatch {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* ── Contribution Grid ────────────────────────────────── */
+        .contribution-grid {
+            display: grid;
+            grid-template-columns: 28px repeat(12, 1fr);
+            gap: 3px;
+            font-size: 10px;
+        }
+
+        .contrib-corner { /* top-left spacer */ }
+
+        .contrib-month-hdr {
+            text-align: center;
+            font-weight: 700;
+            font-size: 10px;
+            color: #666;
+            padding-bottom: 4px;
+        }
+
+        .contrib-day-label {
+            text-align: right;
+            font-size: 9px;
+            color: #aaa;
+            padding-right: 4px;
+            line-height: 18px;
+        }
+
+        .contrib-cell {
+            height: 18px;
+            border-radius: 3px;
+            background: #f0f0f0;
+        }
+
+        .contrib-cell.has-data { opacity: 1; }
+        .contrib-cell.out-of-range { background: transparent; }
+
+        /* ── Calendar Grid ────────────────────────────────────── */
+        .calendar-grid-wrap {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px 22px;
+        }
+
+        .cal-month {
+            font-size: 11px;
+        }
+
+        .cal-month-title {
+            font-weight: 800;
+            font-size: 12px;
+            margin-bottom: 6px;
+            color: #1a1a1a;
+        }
+
+        .cal-week-row {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            margin-bottom: 2px;
+        }
+
+        .cal-dow {
+            text-align: center;
+            font-size: 8px;
+            font-weight: 700;
+            color: #aaa;
+            padding-bottom: 2px;
+        }
+
+        .cal-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8.5px;
+            border-radius: 3px;
+            background: #f4f4f4;
+            color: #555;
+        }
+
+        .cal-day.empty { background: transparent; }
+        .cal-day.has-data { color: #fff; font-weight: 700; }
+
+        /* ── Print Media ──────────────────────────────────────── */
+        @media print {
+            body { background: #fff; }
+
+            .screen-ui { display: none !important; }
+
+            .a4-sheet {
+                display: block !important;
+                width: 100%;
+                min-height: auto;
+                margin: 0;
+                padding: 12mm 14mm;
+                box-shadow: none;
+                border-radius: 0;
+            }
+
+            /* Ensure colours print */
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ══ Screen Controls ════════════════════════════════════════ -->
+<div class="container">
+    <div class="page-heading">🖨 Print Report</div>
+    <div class="page-sub">Choose a tracker and chart style, then print the A4 preview below.</div>
+
+    <div class="controls-row">
+        <!-- Tracker picker -->
+        <div class="control-group">
+            <label>Tracker</label>
+            <select id="trackerSelect" onchange="onTrackerChange()">
+                <option value="">— Choose a tracker —</option>
+            </select>
+        </div>
+
+        <!-- Year picker -->
+        <div class="control-group" id="yearGroup" style="display:none">
+            <label>Year</label>
+            <select id="yearSelect" onchange="renderSheet()"></select>
+        </div>
+
+        <!-- Chart type toggle (only for dropdown / yesno) -->
+        <div class="control-group" id="chartTypeGroup" style="display:none">
+            <label>Chart Type</label>
+            <div class="chart-toggle">
+                <button class="toggle-btn active" id="btnContrib"  onclick="setChartType('contribution')">Contribution</button>
+                <button class="toggle-btn"         id="btnCalendar" onclick="setChartType('calendar')">Calendar</button>
+            </div>
+        </div>
+
+        <button class="btn-print" onclick="window.print()">🖨 Print / Save PDF</button>
+    </div>
+</div>
+
+<!-- ══ A4 Sheet (printed) ═════════════════════════════════════ -->
+<div class="a4-sheet" id="a4Sheet">
+    <div class="empty-msg" id="emptyMsg">Select a tracker above to preview your report.</div>
+
+    <!-- Filled by JS -->
+    <div id="sheetContent" style="display:none">
+        <div class="sheet-header">
+            <div class="sheet-title" id="sheetTitle"></div>
+            <div class="sheet-meta"  id="sheetMeta"></div>
+        </div>
+
+        <!-- Options / legend -->
+        <div id="optionsSection">
+            <div class="section-label">Options</div>
+            <div class="options-row" id="optionsRow"></div>
+        </div>
+
+        <!-- Chart -->
+        <div class="section-label" id="chartLabel">Chart</div>
+        <div id="chartOutput"></div>
+    </div>
+</div>
+
+<div class="bottom-navigation">
+            <div><a href="template.html"><img src="folder_icon.png"/><br/>Tracker</a></div>
+            <div><a href="report.html"><img src="calendar_small.png"/><br/>Report</a></div>
+            <div><a href="index.html"><img src="today_small.png"/><br/>My Day</a></div>
+            <div><a href="settings.html"><img src="setting_icon.png"/><br/>Settings</a></div>
+        </div>
+
+<script>
+/* ═══ DB ════════════════════════════════════════════════════ */
+let db;
+const DB_NAME    = 'TrackerDB';
+const STORE_NAME = 'trackers';
+
+function initDB() {
+    const req = indexedDB.open(DB_NAME, 2);
+    req.onerror   = () => console.error('DB open failed');
+    req.onsuccess = () => { db = req.result; populateTrackerDropdown(); };
+    req.onupgradeneeded = e => {
+        const d = e.target.result;
+        if (!d.objectStoreNames.contains(STORE_NAME)) {
+            const s = d.createObjectStore(STORE_NAME, { keyPath:'id', autoIncrement:true });
+            s.createIndex('title','title');
+            s.createIndex('type','type');
+        }
+    };
+}
+
+function getAllTrackers() {
+    return new Promise((res, rej) => {
+        const req = db.transaction([STORE_NAME],'readonly').objectStore(STORE_NAME).getAll();
+        req.onsuccess = () => res(req.result);
+        req.onerror   = () => rej(req.error);
+    });
+}
+
+function getTrackerById(id) {
+    return new Promise((res, rej) => {
+        const req = db.transaction([STORE_NAME],'readonly').objectStore(STORE_NAME).get(id);
+        req.onsuccess = () => res(req.result);
+        req.onerror   = () => rej(req.error);
+    });
+}
+
+/* ═══ State ═════════════════════════════════════════════════ */
+let chartType = 'contribution';   // 'contribution' | 'calendar'
+
+/* ═══ Populate tracker dropdown ════════════════════════════ */
+async function populateTrackerDropdown() {
+    const trackers = await getAllTrackers();
+    const sel = document.getElementById('trackerSelect');
+    sel.innerHTML = '<option value="">— Choose a tracker —</option>';
+
+    if (!trackers.length) {
+        sel.innerHTML = '<option value="">No trackers found</option>';
+        return;
+    }
+
+    trackers.forEach(t => {
+        const o = document.createElement('option');
+        o.value       = t.id;
+        o.textContent = `${t.title}  (${typeLabel(t.type || 'dropdown')})`;
+        sel.appendChild(o);
+    });
+}
+
+/* ═══ Tracker change ════════════════════════════════════════ */
+async function onTrackerChange() {
+    const id = document.getElementById('trackerSelect').value;
+
+    if (!id) {
+        document.getElementById('yearGroup').style.display      = 'none';
+        document.getElementById('chartTypeGroup').style.display = 'none';
+        document.getElementById('a4Sheet').classList.remove('visible');
+        return;
+    }
+
+    const tracker = await getTrackerById(parseInt(id));
+    const type    = tracker.type || 'dropdown';
+
+    // year dropdown
+    populateYearDropdown(tracker.id);
+    document.getElementById('yearGroup').style.display = 'flex';
+
+    // chart type toggle — only for dropdown / yesno
+    const showToggle = type === 'dropdown' || type === 'yesno';
+    document.getElementById('chartTypeGroup').style.display = showToggle ? 'flex' : 'none';
+
+    renderSheet();
+}
+
+/* ═══ Year dropdown ═════════════════════════════════════════ */
+function populateYearDropdown(trackerId) {
+    const all   = JSON.parse(localStorage.getItem('dailySelections') || '{}');
+    const years = new Set();
+
+    Object.keys(all).forEach(date => {
+        if (all[date][trackerId]) years.add(new Date(date + 'T00:00:00').getFullYear());
+    });
+
+    const sorted = [...years].sort((a, b) => b - a);
+    const sel    = document.getElementById('yearSelect');
+    sel.innerHTML = '';
+
+    if (!sorted.length) {
+        sel.innerHTML = '<option value="">No data</option>';
+        return;
+    }
+
+    sorted.forEach((y, i) => {
+        const o = document.createElement('option');
+        o.value = y; o.textContent = y;
+        if (i === 0) o.selected = true;
+        sel.appendChild(o);
+    });
+}
+
+/* ═══ Chart type toggle ══════════════════════════════════════ */
+function setChartType(type) {
+    chartType = type;
+    document.getElementById('btnContrib').classList.toggle('active',  type === 'contribution');
+    document.getElementById('btnCalendar').classList.toggle('active', type === 'calendar');
+    renderSheet();
+}
+
+/* ═══ Render A4 Sheet ════════════════════════════════════════ */
+async function renderSheet() {
+    const id = document.getElementById('trackerSelect').value;
+    if (!id) return;
+
+    const tracker = await getTrackerById(parseInt(id));
+    const type    = tracker.type || 'dropdown';
+    const year    = parseInt(document.getElementById('yearSelect').value) || new Date().getFullYear();
+
+    // pull entries for this tracker + year
+    const all     = JSON.parse(localStorage.getItem('dailySelections') || '{}');
+    const entries = {};
+    Object.keys(all).forEach(date => {
+        if (all[date][id] && new Date(date + 'T00:00:00').getFullYear() === year) {
+            entries[date] = all[date][id];
+        }
+    });
+
+    const sheet   = document.getElementById('a4Sheet');
+    const content = document.getElementById('sheetContent');
+    const empty   = document.getElementById('emptyMsg');
+
+    sheet.classList.add('visible');
+
+    if (!Object.keys(entries).length) {
+        content.style.display = 'none';
+        empty.style.display   = 'block';
+        empty.textContent     = `No data found for "${tracker.title}" in ${year}.`;
+        return;
+    }
+
+    empty.style.display   = 'none';
+    content.style.display = 'block';
+
+    // Header
+    document.getElementById('sheetTitle').textContent = tracker.title;
+    document.getElementById('sheetMeta').textContent  =
+        `${typeLabel(type)} · ${year} · ${Object.keys(entries).length} entries`;
+
+    // Options / Legend
+    const optSection = document.getElementById('optionsSection');
+    const optRow     = document.getElementById('optionsRow');
+
+    if (type === 'dropdown') {
+        optSection.style.display = 'block';
+        optRow.innerHTML = tracker.options.map(o =>
+            `<div class="option-pill">
+                <span class="option-swatch" style="background:${o.color}"></span>
+                ${o.title}
+            </div>`
+        ).join('');
+    } else if (type === 'yesno') {
+        optSection.style.display = 'block';
+        optRow.innerHTML = `
+            <div class="option-pill"><span class="option-swatch" style="background:#4CAF50"></span>Yes</div>
+            <div class="option-pill"><span class="option-swatch" style="background:#f44336"></span>No</div>`;
+    } else {
+        optSection.style.display = 'none';
+    }
+
+    // Chart label
+    const chartLabelEl = document.getElementById('chartLabel');
+
+    // Chart output
+    const chartOut = document.getElementById('chartOutput');
+
+    if (type === 'dropdown') {
+        const colorFn = (date, entry) => {
+            const opt = tracker.options[parseInt(entry.value)];
+            return opt ? { bg: opt.color, tip: opt.title } : null;
+        };
+        chartLabelEl.textContent = chartType === 'contribution' ? 'Contribution Chart' : 'Calendar Chart';
+        chartOut.innerHTML = chartType === 'contribution'
+            ? buildContributionGraph(year, entries, colorFn)
+            : buildCalendar(year, entries, colorFn);
+
+    } else if (type === 'yesno') {
+        const colorFn = (date, entry) => entry.value === 'yes'
+            ? { bg: '#4CAF50', tip: 'Yes' }
+            : { bg: '#f44336', tip: 'No' };
+        chartLabelEl.textContent = chartType === 'contribution' ? 'Contribution Chart' : 'Calendar Chart';
+        chartOut.innerHTML = chartType === 'contribution'
+            ? buildContributionGraph(year, entries, colorFn)
+            : buildCalendar(year, entries, colorFn);
+
+    } else {
+        // Numeric / Text → no chart toggle, just show a simple value list
+        chartLabelEl.textContent = 'Entries';
+        chartOut.innerHTML       = buildTextList(tracker, entries);
+    }
+}
+
+/* ═══ Contribution Graph Builder ════════════════════════════ */
+function buildContributionGraph(year, entries, colorFn) {
+    const MONTHS      = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const daysInMonth = [31, isLeap(year)?29:28, 31,30,31,30,31,31,30,31,30,31];
+    const maxDays     = 31;
+
+    let html = '<div class="contribution-grid">';
+
+    // corner spacer + month headers
+    html += '<div class="contrib-corner"></div>';
+    MONTHS.forEach(m => { html += `<div class="contrib-month-hdr">${m}</div>`; });
+
+    // day rows
+    for (let d = 1; d <= maxDays; d++) {
+        html += `<div class="contrib-day-label">${d}</div>`;
+        for (let m = 0; m < 12; m++) {
+            if (d > daysInMonth[m]) {
+                html += '<div class="contrib-cell out-of-range"></div>';
+                continue;
+            }
+            const date  = `${year}-${pad(m+1)}-${pad(d)}`;
+            const entry = entries[date];
+
+            if (entry) {
+                const c = colorFn(date, entry);
+                if (c) {
+                    html += `<div class="contrib-cell has-data" style="background:${c.bg}" title="${c.tip}"></div>`;
+                    continue;
+                }
+            }
+            html += `<div class="contrib-cell"></div>`;
+        }
+    }
+
+    html += '</div>';
+    return html;
+}
+
+/* ═══ Calendar Builder ═══════════════════════════════════════ */
+function buildCalendar(year, entries, colorFn) {
+    const MONTHS  = ['January','February','March','April','May','June',
+                     'July','August','September','October','November','December'];
+    const DAYS    = ['S','M','T','W','T','F','S'];
+    const daysIn  = [31, isLeap(year)?29:28, 31,30,31,30,31,31,30,31,30,31];
+
+    let html = '<div class="calendar-grid-wrap">';
+
+    for (let m = 0; m < 12; m++) {
+        html += `<div class="cal-month"><div class="cal-month-title">${MONTHS[m]}</div>`;
+        html += '<div class="cal-week-row">' + DAYS.map(d => `<div class="cal-dow">${d}</div>`).join('') + '</div>';
+
+        const firstDow = new Date(year, m, 1).getDay();
+        html += '<div class="cal-week-row">';
+        for (let i = 0; i < firstDow; i++) html += '<div class="cal-day empty"></div>';
+
+        for (let d = 1; d <= daysIn[m]; d++) {
+            const date  = `${year}-${pad(m+1)}-${pad(d)}`;
+            const entry = entries[date];
+
+            if (entry) {
+                const c = colorFn(date, entry);
+                if (c) {
+                    html += `<div class="cal-day has-data" style="background:${c.bg}" title="${c.tip}">${d}</div>`;
+                    continue;
+                }
+            }
+            html += `<div class="cal-day">${d}</div>`;
+        }
+
+        html += '</div></div>';
+    }
+
+    html += '</div>';
+    return html;
+}
+
+/* ═══ Text / Numeric list (fallback for non-chart types) ════ */
+function buildTextList(tracker, entries) {
+    const type  = tracker.type || 'text';
+    const p     = tracker.numericPrefix || '';
+    const s     = tracker.numericSuffix || '';
+
+    const rows  = Object.keys(entries).sort();
+
+    const items = rows.map(date => {
+        const val = entries[date].value;
+        const display = type === 'numeric' ? `${p}${val}${s ? ' '+s : ''}` : val;
+        return `<div style="display:flex;gap:16px;padding:4px 0;border-bottom:1px solid #f0f0f0;font-size:12px;">
+                    <span style="color:#888;min-width:90px;">${fmtDate(date)}</span>
+                    <span>${display}</span>
+                </div>`;
+    }).join('');
+
+    return `<div>${items}</div>`;
+}
+
+/* ═══ Utils ═════════════════════════════════════════════════ */
+function typeLabel(t) {
+    return { dropdown:'Dropdown', yesno:'Yes / No', numeric:'Numeric', text:'Text' }[t] || 'Dropdown';
+}
+
+function isLeap(y) { return (y%4===0 && y%100!==0) || y%400===0; }
+
+function pad(n) { return String(n).padStart(2,'0'); }
+
+function fmtDate(iso) {
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const parts  = iso.split('-');
+    return `${parts[0]}/${MONTHS[parseInt(parts[1])-1]}/${parts[2]}`;
+}
+
+/* ═══ Boot ══════════════════════════════════════════════════ */
+initDB();
+</script>
+
+</body>
+</html>

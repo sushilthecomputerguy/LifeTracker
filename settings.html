@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#fef5eb">
+    <link rel="icon" href="/icon.jpg" type="image/x-icon">
+</head>
+<body>
+
+<button class="theme-toggle" aria-label="Switch to dark mode">🌙</button>
+
+<div class="container">
+
+    <h1>Settings</h1>
+
+    <!-- ── APPEARANCE ───────────────────────────────────── -->
+    <div class="section">
+
+        <div class="section-title">Appearance</div>
+
+        <!-- Light / Dark -->
+        <div class="form-group">
+            <label class="form-label">Theme</label>
+            <div class="display-style-group">
+                <div class="display-style-options">
+                    <div class="display-style-option">
+                        <input type="radio" name="theme" id="themeLight" value="light">
+                        <label for="themeLight">
+                            <span class="display-style-icon">☀️</span>
+                            Light
+                        </label>
+                    </div>
+                    <div class="display-style-option">
+                        <input type="radio" name="theme" id="themeDark" value="dark">
+                        <label for="themeDark">
+                            <span class="display-style-icon">🌙</span>
+                            Dark
+                        </label>
+                    </div>
+                    <div class="display-style-option">
+                        <input type="radio" name="theme" id="themeSystem" value="system">
+                        <label for="themeSystem">
+                            <span class="display-style-icon">⚙️</span>
+                            System
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Font Size -->
+        <div class="form-group">
+            <label class="form-label">Font Size</label>
+            <div class="slider-container">
+                <div class="slider-label" id="fontSizeLabel">Medium (16px)</div>
+                <div class="slider-wrapper">
+                    <input
+                        type="range"
+                        class="slider-input"
+                        id="fontSizeSlider"
+                        min="1" max="5" step="1" value="3"
+                        oninput="onFontSizeChange(this.value)"
+                    >
+                </div>
+                <div class="slider-marks">
+                    <span class="slider-mark">XS</span>
+                    <span class="slider-mark">S</span>
+                    <span class="slider-mark">M</span>
+                    <span class="slider-mark">L</span>
+                    <span class="slider-mark">XL</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── LANGUAGE & REGION ────────────────────────────── -->
+    <div class="section">
+
+        <div class="section-title">Language &amp; Region</div>
+
+        <!-- Language -->
+        <div class="form-group">
+            <label class="form-label" for="languageSelect">Language</label>
+            <select class="form-select" id="languageSelect" onchange="saveSetting('language', this.value)">
+                <option value="en">🇬🇧  English</option>
+                <option value="es">🇪🇸  Español</option>
+                <option value="fr">🇫🇷  Français</option>
+                <option value="de">🇩🇪  Deutsch</option>
+                <option value="ja">🇯🇵  日本語</option>
+                <option value="zh">🇨🇳  中文</option>
+                <option value="pt">🇵🇹  Português</option>
+                <option value="ar">🇸🇦  العربية</option>
+                <option value="hi">🇮🇳  हिन्दी</option>
+                <option value="ne">🇳🇵  नेपाली</option>
+            </select>
+        </div>
+
+        <!-- Timezone -->
+        <div class="form-group">
+            <label class="form-label" for="timezoneSelect">Timezone</label>
+            <select class="form-select" id="timezoneSelect" onchange="saveSetting('timezone', this.value)">
+            </select>
+            <div class="section-desc" style="margin-top:8px;margin-bottom:0;" id="tzCurrentTime"></div>
+        </div>
+
+    </div>
+
+    <!-- ── BACKUP ────────────────────────────────────────── -->
+    <div class="section">
+
+        <div class="section-title">Backup</div>
+        <div class="section-desc">Export all your tracker data as a JSON file, or restore from a previous backup.</div>
+
+        <div class="drop-zone" id="dropZone"
+             ondragover="onDragOver(event)"
+             ondragleave="onDragLeave(event)"
+             ondrop="onDrop(event)">
+            <div class="icon">📦</div>
+            <div class="hint">Drop a backup file here to restore</div>
+            <div class="hint dim">or</div>
+            <button class="btn btn-outline btn-small" onclick="document.getElementById('fileInput').click()">
+                Choose File
+            </button>
+            <input type="file" id="fileInput" class="file-input" accept=".json" onchange="onFileChosen(event)">
+        </div>
+
+        <div class="box box-success" id="restoreSuccess">
+            <div class="box-title">Restore successful</div>
+            Backup data has been imported. Reload the app to see your trackers.
+        </div>
+        <div class="box box-error" id="restoreError">
+            <div class="box-title">Restore failed</div>
+            <span id="restoreErrorMsg">The file could not be read.</span>
+        </div>
+
+        <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:18px;">
+            <button class="btn btn-primary" onclick="exportBackup()">⬇ Export Backup</button>
+            <a href="backup.html" class="btn btn-outline">Open Backup Page →</a>
+        </div>
+
+    </div>
+
+    <!-- ── ABOUT ─────────────────────────────────────────── -->
+    <div class="section">
+        <div class="section-title">About</div>
+        <div class="section-desc" id="aboutBlock">
+            App version <strong>1.0.0</strong><br>
+            Data is stored locally on your device — nothing is sent to a server.
+        </div>
+
+        <div class="box box-info" style="margin-top:0;">
+            <div class="box-title">Your data stays on your device</div>
+            All trackers and entries are stored in your browser's IndexedDB and localStorage.
+            Use Backup to keep a copy safe.
+        </div>
+    </div>
+
+    <!-- ── TOAST ─────────────────────────────────────────── -->
+    <div class="toast" id="toast">
+        <span class="toast-icon">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        </span>
+        <span id="toastMsg">Saved</span>
+    </div>
+
+</div><!-- /.container -->
+<div class="bottom-navigation">
+            <div><a href="template.html"><img src="folder_icon.png"/><br/>Tracker</a></div>
+            <div><a href="report.html"><img src="calendar_small.png"/><br/>Report</a></div>
+            <div><a href="index.html"><img src="today_small.png"/><br/>My Day</a></div>
+            <div><a href="settings.html"><img src="setting_icon.png"/><br/>Settings</a></div>
+        </div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   SETTINGS  —  settings.html
+   All preferences are persisted in localStorage under the
+   key  "appSettings"  as a JSON object.
+   ═══════════════════════════════════════════════════════════ */
+
+const SETTINGS_KEY = 'appSettings';
+
+/* ── Font size map ────────────────────────────────────────── */
+const FONT_SIZES = {
+    1: { label: 'X-Small (12px)', px: 12 },
+    2: { label: 'Small (14px)',   px: 14 },
+    3: { label: 'Medium (16px)',  px: 16 },
+    4: { label: 'Large (18px)',   px: 18 },
+    5: { label: 'X-Large (20px)', px: 20 },
+};
+
+/* ── Load / save helpers ─────────────────────────────────── */
+function loadSettings() {
+    try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; }
+    catch { return {}; }
+}
+
+function saveSetting(key, value) {
+    const s = loadSettings();
+    s[key]  = value;
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+    showToast('Setting saved');
+}
+
+/* ── Toast ───────────────────────────────────────────────── */
+let toastTimer;
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ════════════════════════════════════════════════════════════
+   THEME
+   ════════════════════════════════════════════════════════════ */
+function applyTheme(value) {
+    if (value === 'system') {
+        localStorage.removeItem('theme');
+        const sys = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', sys);
+    } else {
+        localStorage.setItem('theme', value);
+        document.documentElement.setAttribute('data-theme', value);
+    }
+    // sync floating toggle icon
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.querySelectorAll('.theme-toggle').forEach(btn => {
+        btn.textContent = isDark ? '☀️' : '🌙';
+        btn.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+    });
+}
+
+function initThemeRadios() {
+    const saved = localStorage.getItem('theme'); // 'light' | 'dark' | null(=system)
+    const val   = saved || 'system';
+    const radio = document.querySelector(`input[name="theme"][value="${val}"]`);
+    if (radio) radio.checked = true;
+
+    document.querySelectorAll('input[name="theme"]').forEach(r => {
+        r.addEventListener('change', () => {
+            applyTheme(r.value);
+            saveSetting('theme', r.value);
+        });
+    });
+}
+
+/* ════════════════════════════════════════════════════════════
+   FONT SIZE
+   ════════════════════════════════════════════════════════════ */
+function onFontSizeChange(val) {
+    const size = FONT_SIZES[val];
+    document.getElementById('fontSizeLabel').textContent = size.label;
+    document.documentElement.style.fontSize = size.px + 'px';
+    saveSetting('fontSize', parseInt(val));
+}
+
+function initFontSize() {
+    const s   = loadSettings();
+    const val = s.fontSize || 3;
+    const slider = document.getElementById('fontSizeSlider');
+    slider.value = val;
+    onFontSizeChange(val);
+}
+
+/* ════════════════════════════════════════════════════════════
+   LANGUAGE
+   ════════════════════════════════════════════════════════════ */
+function initLanguage() {
+    const s   = loadSettings();
+    const sel = document.getElementById('languageSelect');
+    if (s.language) sel.value = s.language;
+}
+
+/* ════════════════════════════════════════════════════════════
+   TIMEZONE
+   ════════════════════════════════════════════════════════════ */
+function populateTimezones() {
+    const zones = Intl.supportedValuesOf
+        ? Intl.supportedValuesOf('timeZone')
+        : [ // fallback list for older browsers
+            'UTC','America/New_York','America/Chicago','America/Denver',
+            'America/Los_Angeles','America/Sao_Paulo','Europe/London',
+            'Europe/Paris','Europe/Berlin','Europe/Moscow',
+            'Asia/Dubai','Asia/Kolkata','Asia/Kathmandu','Asia/Bangkok',
+            'Asia/Shanghai','Asia/Tokyo','Australia/Sydney','Pacific/Auckland'
+          ];
+
+    const sel     = document.getElementById('timezoneSelect');
+    const s       = loadSettings();
+    const current = s.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    sel.innerHTML = zones.map(z =>
+        `<option value="${z}" ${z === current ? 'selected' : ''}>${z.replace(/_/g,' ')}</option>`
+    ).join('');
+
+    updateTzClock(current);
+}
+
+function updateTzClock(tz) {
+    try {
+        const now = new Date().toLocaleString('en-GB', {
+            timeZone: tz,
+            weekday: 'short', year: 'numeric', month: 'short',
+            day: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+        document.getElementById('tzCurrentTime').textContent = `Current time: ${now}`;
+    } catch { /* ignore bad tz */ }
+}
+
+document.getElementById('timezoneSelect').addEventListener('change', function () {
+    saveSetting('timezone', this.value);
+    updateTzClock(this.value);
+});
+
+/* ════════════════════════════════════════════════════════════
+   BACKUP — export
+   ════════════════════════════════════════════════════════════ */
+function exportBackup() {
+    // Gather localStorage entries
+    const ls = {};
+    for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        ls[k] = localStorage.getItem(k);
+    }
+
+    const blob = new Blob(
+        [JSON.stringify({ exportedAt: new Date().toISOString(), localStorage: ls }, null, 2)],
+        { type: 'application/json' }
+    );
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `tracker-backup-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Backup exported');
+}
+
+/* ════════════════════════════════════════════════════════════
+   BACKUP — import (drag-drop + file picker)
+   ════════════════════════════════════════════════════════════ */
+function onDragOver(e)  { e.preventDefault(); document.getElementById('dropZone').classList.add('dragover'); }
+function onDragLeave()  { document.getElementById('dropZone').classList.remove('dragover'); }
+function onDrop(e) {
+    e.preventDefault();
+    onDragLeave();
+    const file = e.dataTransfer.files[0];
+    if (file) processBackupFile(file);
+}
+function onFileChosen(e) {
+    const file = e.target.files[0];
+    if (file) processBackupFile(file);
+}
+
+function processBackupFile(file) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+        try {
+            const data = JSON.parse(ev.target.result);
+            // support both raw and wrapped formats
+            const ls = data.localStorage || data;
+            if (typeof ls !== 'object') throw new Error('Invalid format');
+
+            Object.entries(ls).forEach(([k, v]) => {
+                if (typeof v === 'string') localStorage.setItem(k, v);
+            });
+
+            document.getElementById('restoreSuccess').classList.add('show');
+            document.getElementById('restoreError').classList.remove('show');
+            showToast('Backup restored ✓');
+        } catch (err) {
+            document.getElementById('restoreErrorMsg').textContent = err.message || 'Invalid file.';
+            document.getElementById('restoreError').classList.add('show');
+            document.getElementById('restoreSuccess').classList.remove('show');
+        }
+    };
+    reader.readAsText(file);
+}
+
+/* ════════════════════════════════════════════════════════════
+   THEME TOGGLE (floating button — reuse existing theme.js logic)
+   ════════════════════════════════════════════════════════════ */
+(function () {
+    const LIGHT = 'light', DARK = 'dark';
+
+    function resolveTheme() {
+        return localStorage.getItem('theme') ||
+            (window.matchMedia('(prefers-color-scheme: dark)').matches ? DARK : LIGHT);
+    }
+
+    function applyT(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        document.querySelectorAll('.theme-toggle').forEach(btn => {
+            btn.textContent = theme === DARK ? '☀️' : '🌙';
+            btn.setAttribute('aria-label', theme === DARK ? 'Switch to light mode' : 'Switch to dark mode');
+        });
+    }
+
+    applyT(resolveTheme());
+
+    document.body.addEventListener('click', e => {
+        if (!e.target.closest('.theme-toggle')) return;
+        const current = document.documentElement.getAttribute('data-theme') || resolveTheme();
+        const next = current === DARK ? LIGHT : DARK;
+        localStorage.setItem('theme', next);
+        applyT(next);
+        // sync radio
+        const r = document.querySelector(`input[name="theme"][value="${next}"]`);
+        if (r) r.checked = true;
+    });
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+        if (!localStorage.getItem('theme')) applyT(e.matches ? DARK : LIGHT);
+    });
+})();
+
+/* ════════════════════════════════════════════════════════════
+   BOOT
+   ════════════════════════════════════════════════════════════ */
+initThemeRadios();
+initFontSize();
+initLanguage();
+populateTimezones();
+</script>
+
+</body>
+</html>
