@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settings</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#fef5eb">
     <link rel="icon" href="/icon.jpg" type="image/x-icon">
 </head>
@@ -429,6 +429,16 @@ initFontSize();
 initLanguage();
 populateTimezones();
 </script>
+  <script>
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(() => console.log("Service Worker Registered"))
+          .catch(err => console.log("SW failed:", err));
+      });
+    }
+  </script>
 
 </body>
 </html>
