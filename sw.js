@@ -1,9 +1,9 @@
-const CACHE_NAME = "LifeTracker cache";
+const CACHE_NAME = "LifeTracker_cache";
 
 const urlsToCache = [
-  "./",
-  "./index.html",
-  "./manifest.json"
+  "",
+  "index.html",
+  "manifest.json"
 ];
 
 self.addEventListener("install", event => {
