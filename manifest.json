@@ -1,7 +1,7 @@
 {
   "name": "Life Tracker app",
   "short_name": "Lifetracker",
-  "start_url": "index.html",
+  "start_url": "/LifeTracker/index.html",
   "display": "standalone",
   "background_color": "#fef5eb",
   "theme_color": "#fef5eb",
