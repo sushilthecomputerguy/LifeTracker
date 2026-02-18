@@ -11,7 +11,6 @@
 </head>
 <body>
 
-<button class="theme-toggle" aria-label="Switch to dark mode">🌙</button>
 
 <div class="container">
 
@@ -41,13 +40,7 @@
                             Dark
                         </label>
                     </div>
-                    <div class="display-style-option">
-                        <input type="radio" name="theme" id="themeSystem" value="system">
-                        <label for="themeSystem">
-                            <span class="display-style-icon">⚙️</span>
-                            System
-                        </label>
-                    </div>
+
                 </div>
             </div>
         </div>
@@ -114,33 +107,10 @@
     <div class="section">
 
         <div class="section-title">Backup</div>
-        <div class="section-desc">Export all your tracker data as a JSON file, or restore from a previous backup.</div>
+        <div class="section-desc">Export or restore your tracker data.</div>
 
-        <div class="drop-zone" id="dropZone"
-             ondragover="onDragOver(event)"
-             ondragleave="onDragLeave(event)"
-             ondrop="onDrop(event)">
-            <div class="icon">📦</div>
-            <div class="hint">Drop a backup file here to restore</div>
-            <div class="hint dim">or</div>
-            <button class="btn btn-outline btn-small" onclick="document.getElementById('fileInput').click()">
-                Choose File
-            </button>
-            <input type="file" id="fileInput" class="file-input" accept=".json" onchange="onFileChosen(event)">
-        </div>
-
-        <div class="box box-success" id="restoreSuccess">
-            <div class="box-title">Restore successful</div>
-            Backup data has been imported. Reload the app to see your trackers.
-        </div>
-        <div class="box box-error" id="restoreError">
-            <div class="box-title">Restore failed</div>
-            <span id="restoreErrorMsg">The file could not be read.</span>
-        </div>
-
-        <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:18px;">
-            <button class="btn btn-primary" onclick="exportBackup()">⬇ Export Backup</button>
-            <a href="backup.html" class="btn btn-outline">Open Backup Page →</a>
+        <div style="margin-top:12px;">
+            <a href="backup.html" class="btn btn-primary">📦 Open Backup Page</a>
         </div>
 
     </div>
@@ -170,7 +140,7 @@
 
 </div><!-- /.container -->
 <div class="bottom-navigation">
-            <div><a href="template.html"><img src="folder_icon.png"/><br/>Tracker</a></div>
+            <div><a href="trackers.html"><img src="folder_icon.png"/><br/>Tracker</a></div>
             <div><a href="report.html"><img src="calendar_small.png"/><br/>Report</a></div>
             <div><a href="index.html"><img src="today_small.png"/><br/>My Day</a></div>
             <div><a href="settings.html"><img src="setting_icon.png"/><br/>Settings</a></div>
@@ -254,10 +224,14 @@ function initThemeRadios() {
 /* ════════════════════════════════════════════════════════════
    FONT SIZE
    ════════════════════════════════════════════════════════════ */
-function onFontSizeChange(val) {
+function applyFontSize(val) {
     const size = FONT_SIZES[val];
     document.getElementById('fontSizeLabel').textContent = size.label;
     document.documentElement.style.fontSize = size.px + 'px';
+}
+
+function onFontSizeChange(val) {
+    applyFontSize(val);
     saveSetting('fontSize', parseInt(val));
 }
 
@@ -266,7 +240,7 @@ function initFontSize() {
     const val = s.fontSize || 3;
     const slider = document.getElementById('fontSizeSlider');
     slider.value = val;
-    onFontSizeChange(val);
+    applyFontSize(val);
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -318,71 +292,6 @@ document.getElementById('timezoneSelect').addEventListener('change', function ()
     saveSetting('timezone', this.value);
     updateTzClock(this.value);
 });
-
-/* ════════════════════════════════════════════════════════════
-   BACKUP — export
-   ════════════════════════════════════════════════════════════ */
-function exportBackup() {
-    // Gather localStorage entries
-    const ls = {};
-    for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        ls[k] = localStorage.getItem(k);
-    }
-
-    const blob = new Blob(
-        [JSON.stringify({ exportedAt: new Date().toISOString(), localStorage: ls }, null, 2)],
-        { type: 'application/json' }
-    );
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = `tracker-backup-${new Date().toISOString().slice(0,10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('Backup exported');
-}
-
-/* ════════════════════════════════════════════════════════════
-   BACKUP — import (drag-drop + file picker)
-   ════════════════════════════════════════════════════════════ */
-function onDragOver(e)  { e.preventDefault(); document.getElementById('dropZone').classList.add('dragover'); }
-function onDragLeave()  { document.getElementById('dropZone').classList.remove('dragover'); }
-function onDrop(e) {
-    e.preventDefault();
-    onDragLeave();
-    const file = e.dataTransfer.files[0];
-    if (file) processBackupFile(file);
-}
-function onFileChosen(e) {
-    const file = e.target.files[0];
-    if (file) processBackupFile(file);
-}
-
-function processBackupFile(file) {
-    const reader = new FileReader();
-    reader.onload = ev => {
-        try {
-            const data = JSON.parse(ev.target.result);
-            // support both raw and wrapped formats
-            const ls = data.localStorage || data;
-            if (typeof ls !== 'object') throw new Error('Invalid format');
-
-            Object.entries(ls).forEach(([k, v]) => {
-                if (typeof v === 'string') localStorage.setItem(k, v);
-            });
-
-            document.getElementById('restoreSuccess').classList.add('show');
-            document.getElementById('restoreError').classList.remove('show');
-            showToast('Backup restored ✓');
-        } catch (err) {
-            document.getElementById('restoreErrorMsg').textContent = err.message || 'Invalid file.';
-            document.getElementById('restoreError').classList.add('show');
-            document.getElementById('restoreSuccess').classList.remove('show');
-        }
-    };
-    reader.readAsText(file);
-}
 
 /* ════════════════════════════════════════════════════════════
    THEME TOGGLE (floating button — reuse existing theme.js logic)

@@ -10,6 +10,7 @@
 <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 <body>
+        <button class="theme-toggle" aria-label="Switch to dark mode">🌙</button>
 
 <div class="container">
 <h1>Tracker Report</h1>
@@ -32,6 +33,21 @@
         <button class="active" id="btnContrib" onclick="setView('contribution')">Contribution Graph</button>
         <button id="btnCalendar" onclick="setView('calendar')">Calendar</button>
     </div>
+
+    <button id="btnExportCSV" class="hidden" onclick="exportCSV()" style="
+        margin-top: 8px;
+        padding: 8px 16px;
+        background: #4CAF50;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    ">⬇ Export CSV</button>
 </div>
 
 <!-- report output -->
@@ -40,7 +56,7 @@
 </div>
 </div>
 <div class="bottom-navigation">
-            <div><a href="trackers.html"><img src="folder_icon.png"/><br/>Tracker</a></div>
+            <div><a href="template.html"><img src="folder_icon.png"/><br/>Tracker</a></div>
             <div><a href="report.html"><img src="calendar_small.png"/><br/>Report</a></div>
             <div><a href="index.html"><img src="today_small.png"/><br/>My Day</a></div>
             <div><a href="settings.html"><img src="setting_icon.png"/><br/>Settings</a></div>
@@ -120,6 +136,9 @@ async function onTrackerChange() {
         document.getElementById('viewToggle').classList.add('hidden');
     }
 
+    // always show export button when a tracker is chosen
+    document.getElementById('btnExportCSV').classList.remove('hidden');
+
     renderReport();
 }
 
@@ -181,6 +200,7 @@ function setView(v) {
 function hideControls() {
     document.getElementById('yearLabel').classList.add('hidden');
     document.getElementById('viewToggle').classList.add('hidden');
+    document.getElementById('btnExportCSV').classList.add('hidden');
 }
 
 /* ═══ RENDER REPORT ════════════════════════════════════════ */
@@ -430,6 +450,80 @@ function fmtDate(isoDate) {
 
 /* ═══ CSS helper – toggle hidden class ═════════════════════ */
 // (used via inline class strings; nothing extra needed)
+
+/* ═══ CSV EXPORT ════════════════════════════════════════════ */
+async function exportCSV() {
+    const id = document.getElementById('trackerSelect').value;
+    if (!id) return;
+
+    const tracker = await getTrackerById(parseInt(id));
+    const type    = tracker.type || 'dropdown';
+    const year    = parseInt(document.getElementById('yearSelect').value) || new Date().getFullYear();
+
+    // Pull all entries for this tracker & year
+    const all     = JSON.parse(localStorage.getItem('dailySelections') || '{}');
+    const entries = {};
+    Object.keys(all).forEach(date => {
+        if (all[date][id] && new Date(date + 'T00:00:00').getFullYear() === year) {
+            entries[date] = all[date][id];
+        }
+    });
+
+    const rows = Object.keys(entries).sort();   // oldest → newest
+
+    if (!rows.length) {
+        alert('No data to export for this tracker in ' + year + '.');
+        return;
+    }
+
+    // Build human-readable Value depending on tracker type
+    function resolveValue(date) {
+        const entry = entries[date];
+        if (type === 'dropdown') {
+            const opt = tracker.options && tracker.options[parseInt(entry.value)];
+            return opt ? opt.title : entry.value;
+        }
+        if (type === 'yesno') {
+            return entry.value === 'yes' ? 'Yes' : 'No';
+        }
+        if (type === 'numeric') {
+            const p = tracker.numericPrefix || '';
+            const s = tracker.numericSuffix || '';
+            return `${p}${entry.value}${s ? ' ' + s : ''}`.trim();
+        }
+        // text – wrap in quotes if it contains commas/quotes
+        return entry.value;
+    }
+
+    // Escape a CSV field
+    function csvField(val) {
+        const str = String(val ?? '');
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+            return '"' + str.replace(/"/g, '""') + '"';
+        }
+        return str;
+    }
+
+    // Assemble CSV
+    const lines = ['Date,Value'];
+    rows.forEach(date => {
+        lines.push(`${csvField(date)},${csvField(resolveValue(date))}`);
+    });
+
+    const csv      = lines.join('\n');
+    const blob     = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url      = URL.createObjectURL(blob);
+    const filename = `${tracker.title.replace(/[^a-z0-9]/gi, '_')}_${year}.csv`;
+
+    const a   = document.createElement('a');
+    a.href    = url;
+    a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
 
 /* ═══ boot ═════════════════════════════════════════════════ */
 initDB();

@@ -3,23 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Trackers</title>
+    <title>Quick Start Templates</title>
     <link rel="stylesheet" href="styles.css">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#fef5eb">
 <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 <body>
-    <button class="theme-toggle" aria-label="Switch to dark mode">🌙</button>
-
+ 
 <div class="container">
-    <h1>Manage Trackers</h1>
-    <p class="subtitle">Create custom trackers for your daily temple visits and habits</p>
-
-    <!-- ── Top Bar ── -->
-    <div class="top-bar">
-        <button class="btn btn-primary" onclick="openAddModal()">+ Add Custom Tracker</button>
-    </div>
+    <h1>Quick Start Templates</h1>
+    <p class="subtitle">Choose a template to quickly create a tracker</p>
 
     <!-- ── Templates Section ── -->
     <div class="templates-section">
@@ -27,111 +21,22 @@
         <div class="templates-grid" id="templatesGrid"></div>
     </div>
 
-    <!-- ── Tracker List ── -->
-    <div class="tracker-grid" id="trackerList"></div>
+
 </div>
 
 <div class="bottom-navigation">
-            <div><a href="template.html"><img src="folder_icon.png"/><br/>Tracker</a></div>
+            <div><a href="trackers.html"><img src="folder_icon.png"/><br/>Trackers</a></div>
             <div><a href="report.html"><img src="calendar_small.png"/><br/>Report</a></div>
             <div><a href="index.html"><img src="today_small.png"/><br/>My Day</a></div>
             <div><a href="settings.html"><img src="setting_icon.png"/><br/>Settings</a></div>
         </div>
 
-
-<!-- ── Modal ── -->
-<div class="modal" id="trackerModal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2 class="modal-title" id="modalTitle">Add New Tracker</h2>
-            <button class="close-btn" onclick="closeModal()">&times;</button>
-        </div>
-
-        <form id="trackerForm" onsubmit="saveTracker(event)">
-            <div class="form-group">
-                <label class="form-label">Tracker Name *</label>
-                <input type="text" id="trackerName" class="form-input" placeholder="e.g., Temple Visit" required>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Type *</label>
-                <select id="trackerType" class="form-select" onchange="handleTypeChange()">
-                    <option value="dropdown">Dropdown (multiple choices)</option>
-                    <option value="yesno">Yes/No</option>
-                    <option value="numeric">Numeric</option>
-                    <option value="text">Text</option>
-                </select>
-            </div>
-
-            <!-- ── Dropdown Options ── -->
-            <div id="dropdownSection" class="options-section">
-                <!-- Display Style Selector -->
-                <div class="display-style-group">
-                    <span class="display-style-label">Display Style (how to show on My Day page):</span>
-                    <div class="display-style-options">
-                        <div class="display-style-option">
-                            <input type="radio" id="displayRadio" name="displayStyle" value="radio" checked>
-                            <label for="displayRadio">
-                                <span class="display-style-icon">⚪</span>
-                                Radio Buttons
-                            </label>
-                        </div>
-                        <div class="display-style-option">
-                            <input type="radio" id="displayDropdown" name="displayStyle" value="dropdown">
-                            <label for="displayDropdown">
-                                <span class="display-style-icon">▼</span>
-                                Dropdown
-                            </label>
-                        </div>
-                        <div class="display-style-option">
-                            <input type="radio" id="displaySlider" name="displayStyle" value="slider">
-                            <label for="displaySlider">
-                                <span class="display-style-icon">━━●━━</span>
-                                Level Slider
-                            </label>
-                        </div>
-                    </div>
-                    <div class="display-style-hint" id="sliderHint" style="display: none;">
-                        💡 Tip: Arrange options from low to high (e.g., Sad → Happy) for best slider experience
-                    </div>
-                </div>
-
-                <!-- Options List -->
-                <div class="options-header">
-                    <h4>Options</h4>
-                    <button type="button" class="btn-outline" onclick="addOption()">+ Add Option</button>
-                </div>
-                <div id="optionsList"></div>
-            </div>
-
-            <!-- ── Numeric Config ── -->
-            <div id="numericSection" class="form-group hidden">
-                <label class="form-label">Numeric Format</label>
-                <div class="numeric-config">
-                    <div>
-                        <input type="text" id="numericPrefix" class="form-input" placeholder="Prefix (e.g., $)">
-                    </div>
-                    <div>
-                        <input type="text" id="numericSuffix" class="form-input" placeholder="Suffix (e.g., kg)">
-                    </div>
-                </div>
-            </div>
-
-            <div style="display: flex; gap: 10px; margin-top: 24px;">
-                <button type="submit" class="btn btn-success" style="flex:1;">Save Tracker</button>
-                <button type="button" class="btn btn-danger" onclick="closeModal()">Cancel</button>
-            </div>
-        </form>
-    </div>
-</div>
  
 <script>
 /* ═══ INDEXEDDB ═════════════════════════════════════════════ */
 let db;
-let editingId = null;
 const DB_NAME = 'TrackerDB';
 const STORE_NAME = 'trackers';
-
 
 function initDB() {
     const req = indexedDB.open(DB_NAME, 2);
@@ -145,21 +50,12 @@ function initDB() {
 
     req.onsuccess = (e) => {
         db = e.target.result;
-        loadTrackers();
         loadTemplates();
     };
 
     req.onerror = (e) => {
         console.error('IndexedDB error:', e);
     };
-}
-
-function getAllTrackers() {
-    return new Promise((res, rej) => {
-        const req = db.transaction([STORE_NAME],'readonly').objectStore(STORE_NAME).getAll();
-        req.onsuccess = () => res(req.result);
-        req.onerror   = () => rej(req.error);
-    });
 }
 
 function addTracker(tracker) {
@@ -169,134 +65,6 @@ function addTracker(tracker) {
         req.onerror   = () => rej(req.error);
     });
 }
-
-function updateTracker(id, tracker) {
-    return new Promise((res, rej) => {
-        const req = db.transaction([STORE_NAME],'readwrite').objectStore(STORE_NAME).put({...tracker, id});
-        req.onsuccess = () => res();
-        req.onerror   = () => rej(req.error);
-    });
-}
-
-function deleteTracker(id) {
-    return new Promise((res, rej) => {
-        const req = db.transaction([STORE_NAME],'readwrite').objectStore(STORE_NAME).delete(id);
-        req.onsuccess = () => res();
-        req.onerror   = () => rej(req.error);
-    });
-}
-
-/* ═══ COLOR PALETTE ═════════════════════════════════════════ */
-const COLOR_PALETTE = [
-    // Yellow shades
-    '#f1c40f', '#f5d04a', '#f9dc7c', '#fcebaf',
-    // Orange shades
-    '#d35400', '#dc6e1a', '#e58a3d', '#efa570',
-    // Red shades
-    '#c0392b', '#d05446', '#de7268', '#ec9089',
-    // Dark blue shades
-    '#2c3e50', '#465a6f', '#61788e', '#7c95ad',
-    // Purple shades
-    '#8e44ad', '#a15eba', '#b479c7', '#c795d4',
-    // Blue shades
-    '#2980b9', '#4d96c6', '#72acd3', '#96c2e0',
-    // Green shades
-    '#27ae60', '#4dbe7d', '#74cd9a', '#9bddb7',
-    // Teal shades
-    '#16a085', '#3bb39a', '#62c5af', '#89d7c4'
-];
-
-function createColorPalette(selectedColor = '#f1c40f') {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'color-picker-wrapper';
-    
-    // Create display button
-    const displayBtn = document.createElement('div');
-    displayBtn.className = 'color-display-btn';
-    displayBtn.innerHTML = `
-        <div class="color-preview" style="background-color: ${selectedColor}"></div>
-        <span class="color-dropdown-arrow">▼</span>
-    `;
-    
-    // Create dropdown palette
-    const paletteDropdown = document.createElement('div');
-    paletteDropdown.className = 'color-palette';
-    
-    const paletteGrid = document.createElement('div');
-    paletteGrid.className = 'color-palette-grid';
-    
-    COLOR_PALETTE.forEach(color => {
-        const swatch = document.createElement('div');
-        swatch.className = 'color-swatch';
-        swatch.style.backgroundColor = color;
-        swatch.dataset.color = color;
-        
-        if (color === selectedColor) {
-            swatch.classList.add('selected');
-        }
-        
-        swatch.onclick = function(e) {
-            e.stopPropagation();
-            // Remove selected class from all swatches in this palette
-            paletteGrid.querySelectorAll('.color-swatch').forEach(s => {
-                s.classList.remove('selected');
-            });
-            // Add selected class to clicked swatch
-            this.classList.add('selected');
-            // Update the color preview
-            displayBtn.querySelector('.color-preview').style.backgroundColor = color;
-            // Update the selected color
-            wrapper.dataset.selectedColor = color;
-            // Close dropdown
-            paletteDropdown.classList.remove('show');
-        };
-        
-        paletteGrid.appendChild(swatch);
-    });
-    
-    paletteDropdown.appendChild(paletteGrid);
-    
-    // Toggle dropdown on button click
-    displayBtn.onclick = function(e) {
-        e.stopPropagation();
-        // Close all other dropdowns
-        document.querySelectorAll('.color-palette.show').forEach(p => {
-            if (p !== paletteDropdown) p.classList.remove('show');
-        });
-        paletteDropdown.classList.toggle('show');
-    };
-    
-    wrapper.appendChild(displayBtn);
-    wrapper.appendChild(paletteDropdown);
-    wrapper.dataset.selectedColor = selectedColor;
-    
-    return wrapper;
-}
-
-// Close dropdowns when clicking outside
-document.addEventListener('click', function(e) {
-    if (!e.target.closest('.color-picker-wrapper')) {
-        document.querySelectorAll('.color-palette.show').forEach(p => {
-            p.classList.remove('show');
-        });
-    }
-});
-
-// Handle display style change to show/hide slider hint
-document.addEventListener('DOMContentLoaded', function() {
-    const radioInputs = document.querySelectorAll('input[name="displayStyle"]');
-    const sliderHint = document.getElementById('sliderHint');
-    
-    radioInputs.forEach(input => {
-        input.addEventListener('change', function() {
-            if (this.value === 'slider') {
-                sliderHint.style.display = 'block';
-            } else {
-                sliderHint.style.display = 'none';
-            }
-        });
-    });
-});
 
 /* ═══ STARTER TEMPLATES ════════════════════════════════════ */
 const TEMPLATES = [
@@ -319,6 +87,10 @@ const TEMPLATES = [
     { title: 'Gratitude', type: 'text' }
 ];
 
+function typeLabel(t) {
+    return {dropdown:'Dropdown', yesno:'Yes/No', numeric:'Numeric', text:'Text'}[t] || 'Dropdown';
+}
+
 function loadTemplates() {
     const grid = document.getElementById('templatesGrid');
     grid.innerHTML = TEMPLATES.map(t => `
@@ -337,216 +109,16 @@ async function useTemplate(template) {
     };
     if (template.options) {
         tracker.options = template.options;
-        tracker.displayStyle = 'radio'; // Default display style for templates
+        tracker.displayStyle = 'radio';
     }
     if (template.numericPrefix !== undefined) tracker.numericPrefix = template.numericPrefix;
     if (template.numericSuffix !== undefined) tracker.numericSuffix = template.numericSuffix;
 
     await addTracker(tracker);
-    loadTrackers();
-}
-
-/* ═══ LOAD TRACKERS ════════════════════════════════════════ */
-async function loadTrackers() {
-    const trackers = await getAllTrackers();
-    const list = document.getElementById('trackerList');
-
-    if (!trackers.length) {
-        list.innerHTML = `<div class="empty-state">
-            <div class="icon">📊</div>
-            <p>No trackers yet. Use a template above or add your own!</p>
-        </div>`;
-        return;
-    }
-
-    list.innerHTML = trackers.map(t => {
-        const type = t.type || 'dropdown';
-        let detailHTML = '';
-
-        if (type === 'dropdown' && t.options) {
-            detailHTML = t.options.map(o => 
-                `<span class="option-pill" style="background:${o.color}">${o.title}</span>`
-            ).join('');
-            
-            // Add display style indicator
-            const displayStyle = t.displayStyle || 'radio';
-            const displayIcons = {
-                'radio': '⚪ Radio Buttons',
-                'dropdown': '▼ Dropdown',
-                'slider': '━━●━━ Slider'
-            };
-            detailHTML += `<div style="margin-top:8px;font-size:11px;color:#999;">Display: ${displayIcons[displayStyle]}</div>`;
-            
-        } else if (type === 'yesno') {
-            detailHTML = '<span style="color:#666;font-size:13px;">Yes or No</span>';
-        } else if (type === 'numeric') {
-            const p = t.numericPrefix || '';
-            const s = t.numericSuffix || '';
-            detailHTML = `<span style="color:#666;font-size:13px;">Format: ${p}[number]${s ? ' '+s : ''}</span>`;
-        } else {
-            detailHTML = '<span style="color:#666;font-size:13px;">Free text entry</span>';
-        }
-
-        return `
-            <div class="tracker-card">
-                <div class="tracker-header">
-                    <div class="tracker-title">${t.title}</div>
-                    <div class="type-badge">${typeLabel(type)}</div>
-                </div>
-                <div class="tracker-details">${detailHTML}</div>
-                <div class="tracker-meta">Created: ${new Date(t.createdAt).toLocaleDateString()}</div>
-                <div class="tracker-actions">
-                    <button class="btn btn-primary btn-small" onclick="openEditModal(${t.id})">Edit</button>
-                    <button class="btn btn-danger btn-small" onclick="confirmDelete(${t.id}, '${t.title.replace(/'/g, "\\'")}')">Delete</button>
-                </div>
-            </div>`;
-    }).join('');
-}
-
-/* ═══ MODAL ════════════════════════════════════════════════ */
-function openAddModal() {
-    editingId = null;
-    document.getElementById('modalTitle').textContent = 'Add New Tracker';
-    document.getElementById('trackerForm').reset();
-    document.getElementById('trackerType').value = 'dropdown';
-    document.getElementById('optionsList').innerHTML = '';
-    document.getElementById('displayRadio').checked = true;
-    document.getElementById('sliderHint').style.display = 'none';
-    handleTypeChange();
-    addOption(); // default one option
-    document.getElementById('trackerModal').classList.add('show');
-}
-
-async function openEditModal(id) {
-    editingId = id;
-    const trackers = await getAllTrackers();
-    const tracker = trackers.find(t => t.id === id);
-    if (!tracker) return;
-
-    document.getElementById('modalTitle').textContent = 'Edit Tracker';
-    document.getElementById('trackerName').value = tracker.title;
-    document.getElementById('trackerType').value = tracker.type || 'dropdown';
-
-    if (tracker.type === 'numeric') {
-        document.getElementById('numericPrefix').value = tracker.numericPrefix || '';
-        document.getElementById('numericSuffix').value = tracker.numericSuffix || '';
-    }
-
-    handleTypeChange();
-
-    if ((tracker.type === 'dropdown' || !tracker.type) && tracker.options) {
-        document.getElementById('optionsList').innerHTML = '';
-        tracker.options.forEach(o => addOption(o.title, o.color));
-        
-        // Set display style
-        const displayStyle = tracker.displayStyle || 'radio';
-        document.getElementById('display' + displayStyle.charAt(0).toUpperCase() + displayStyle.slice(1)).checked = true;
-        document.getElementById('sliderHint').style.display = displayStyle === 'slider' ? 'block' : 'none';
-    }
-
-    document.getElementById('trackerModal').classList.add('show');
-}
-
-function closeModal() {
-    document.getElementById('trackerModal').classList.remove('show');
-    editingId = null;
-}
-
-function handleTypeChange() {
-    const type = document.getElementById('trackerType').value;
-    document.getElementById('dropdownSection').classList.toggle('hidden', type !== 'dropdown');
-    document.getElementById('numericSection').classList.toggle('hidden', type !== 'numeric');
-}
-
-/* ═══ OPTIONS ═══════════════════════════════════════════════ */
-function addOption(title = '', color = '#f1c40f') {
-    const list = document.getElementById('optionsList');
-    const id = Date.now() + Math.random();
-    const div = document.createElement('div');
-    div.className = 'option-row';
-    div.id = `option-${id}`;
     
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'option-title';
-    input.placeholder = 'Option name';
-    input.value = title;
-    
-    const colorPicker = createColorPalette(color);
-    
-    const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.className = 'remove-option-btn';
-    removeBtn.textContent = '×';
-    removeBtn.onclick = () => removeOption(id);
-    
-    div.appendChild(input);
-    div.appendChild(colorPicker);
-    div.appendChild(removeBtn);
-    
-    list.appendChild(div);
-}
-
-function removeOption(id) {
-    document.getElementById(`option-${id}`)?.remove();
-}
-
-/* ═══ SAVE ══════════════════════════════════════════════════ */
-async function saveTracker(e) {
-    e.preventDefault();
-
-    const title = document.getElementById('trackerName').value.trim();
-    const type  = document.getElementById('trackerType').value;
-
-    if (!title) return alert('Please enter a tracker name');
-
-    const tracker = { title, type, createdAt: new Date().toISOString() };
-
-    if (type === 'dropdown') {
-        const rows = [...document.querySelectorAll('#optionsList .option-row')];
-        if (!rows.length) return alert('Add at least one option');
-
-        const options = rows.map(row => {
-            const titleInput = row.querySelector('.option-title');
-            const colorPicker = row.querySelector('.color-picker-wrapper');
-            return {
-                title: titleInput.value.trim(),
-                color: colorPicker.dataset.selectedColor
-            };
-        });
-
-        if (options.some(o => !o.title)) return alert('Fill in all option names');
-        tracker.options = options;
-        
-        // Save display style
-        const displayStyle = document.querySelector('input[name="displayStyle"]:checked').value;
-        tracker.displayStyle = displayStyle;
-
-    } else if (type === 'numeric') {
-        tracker.numericPrefix = document.getElementById('numericPrefix').value.trim();
-        tracker.numericSuffix = document.getElementById('numericSuffix').value.trim();
-    }
-
-    if (editingId) {
-        await updateTracker(editingId, tracker);
-    } else {
-        await addTracker(tracker);
-    }
-
-    closeModal();
-    loadTrackers();
-}
-
-/* ═══ DELETE ════════════════════════════════════════════════ */
-async function confirmDelete(id, title) {
-    if (!confirm(`Delete "${title}"?\n\nThis will remove the tracker but keep your saved data.`)) return;
-    await deleteTracker(id);
-    loadTrackers();
-}
-
-/* ═══ UTILS ═════════════════════════════════════════════════ */
-function typeLabel(t) {
-    return {dropdown:'Dropdown', yesno:'Yes/No', numeric:'Numeric', text:'Text'}[t] || 'Dropdown';
+    // Show success message and redirect
+    alert(`"${template.title}" tracker created!\n\nRedirecting to your trackers...`);
+    window.location.href = 'trackers.html';
 }
 
 /* ═══ BOOT ══════════════════════════════════════════════════ */
