@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Drive JSON Sync Demo</title>
+
+  <!-- Google Identity -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <style>
+    body { font-family: Arial; padding: 30px; }
+    button { padding: 10px 15px; margin: 5px; }
+    textarea { width: 100%; height: 150px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+<h2>Google Drive JSON Sync</h2>
+
+<button onclick="handleAuth()">Connect Google Drive</button>
+<button onclick="uploadData()">Upload JSON</button>
+<button onclick="downloadData()">Download JSON</button>
+
+<textarea id="jsonArea">
+{
+  "entries": [
+    { "mood": "happy", "date": "2026-02-19" }
+  ]
+}
+</textarea>
+
+<p id="status">Status: Not Connected</p>
+
+<script>
+const CLIENT_ID = "YOUR_CLIENT_ID_HERE";
+const SCOPES = "https://www.googleapis.com/auth/drive.appdata";
+
+let accessToken = null;
+let fileId = null;
+let tokenClient;
+
+// Initialize Google OAuth
+window.onload = () => {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: (tokenResponse) => {
+      accessToken = tokenResponse.access_token;
+      document.getElementById("status").innerText = "Status: Connected";
+      findOrCreateFile();
+    },
+  });
+};
+
+// Trigger login
+function handleAuth() {
+  tokenClient.requestAccessToken();
+}
+
+// Find existing file or create new one
+async function findOrCreateFile() {
+  const res = await fetch(
+    "https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&fields=files(id,name)",
+    {
+      headers: { Authorization: "Bearer " + accessToken },
+    }
+  );
+
+  const data = await res.json();
+
+  if (data.files.length > 0) {
+    fileId = data.files[0].id;
+    console.log("Found existing file");
+  } else {
+    await createFile();
+  }
+}
+
+// Create JSON file
+async function createFile() {
+  const metadata = {
+    name: "data.json",
+    parents: ["appDataFolder"],
+    mimeType: "application/json",
+  };
+
+  const form = new FormData();
+  form.append(
+    "metadata",
+    new Blob([JSON.stringify(metadata)], { type: "application/json" })
+  );
+
+  form.append(
+    "file",
+    new Blob([JSON.stringify({ entries: [] })], {
+      type: "application/json",
+    })
+  );
+
+  const res = await fetch(
+    "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
+    {
+      method: "POST",
+      headers: { Authorization: "Bearer " + accessToken },
+      body: form,
+    }
+  );
+
+  const data = await res.json();
+  fileId = data.id;
+  console.log("Created new file");
+}
+
+// Upload JSON content
+async function uploadData() {
+  if (!fileId) {
+    alert("Not connected or file missing");
+    return;
+  }
+
+  const content = document.getElementById("jsonArea").value;
+
+  await fetch(
+    `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: "Bearer " + accessToken,
+        "Content-Type": "application/json",
+      },
+      body: content,
+    }
+  );
+
+  document.getElementById("status").innerText = "Status: Synced";
+}
+
+// Download JSON content
+async function downloadData() {
+  if (!fileId) {
+    alert("Not connected or file missing");
+    return;
+  }
+
+  const res = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+    {
+      headers: { Authorization: "Bearer " + accessToken },
+    }
+  );
+
+  const data = await res.json();
+  document.getElementById("jsonArea").value = JSON.stringify(data, null, 2);
+
+  document.getElementById("status").innerText = "Status: Downloaded";
+}
+</script>
+
+</body>
+</html>
