@@ -14,9 +14,23 @@
         <div style="display: grid;  grid-template-columns: 1fr 60px;align-items: center;"> 
         <h1  id="currentDateDisplay"></h1>
 
-    	<div class="date-wrapper">
-          <input type="date" id="dateInput" onchange="changeDate()" />
-          <span class="calendar-icon" onclick="openCalendar()">📅</span>
+        <div class="date-wrapper">
+          <!-- Hidden native input used only for value binding -->
+          <input type="date" id="dateInput" onchange="changeDate()" style="display:none;" />
+          <span class="calendar-icon" onclick="toggleCustomCalendar()">📅</span>
+
+          <!-- Custom Calendar Popup -->
+          <div class="custom-calendar" id="customCalendar">
+            <div class="cal-header">
+              <button class="cal-nav" onclick="calNavMonth(-1)">&#8249;</button>
+              <span class="cal-month-label" id="calMonthLabel"></span>
+              <button class="cal-nav" onclick="calNavMonth(1)">&#8250;</button>
+            </div>
+            <div class="cal-weekdays">
+              <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+            </div>
+            <div class="cal-days" id="calDays"></div>
+          </div>
         </div>
         </div>
 
@@ -53,34 +67,107 @@
 
     </div>
     <div class="bottom-navigation">
-            <div><a href="trackers.html"><img src="folder_icon.png"/><br/>Tracker</a></div>
-            <div><a href="report.html"><img src="calendar_small.png"/><br/>Report</a></div>
-            <div><a href="index.html"><img src="today_small.png"/><br/>My Day</a></div>
-            <div><a href="settings.html"><img src="setting_icon.png"/><br/>Settings</a></div>
+            <div><a href="trackers.html"><img src="folder-icon.svg"/><br/>Tracker</a></div>
+            <div><a href="report.html"><img src="report-icon.svg"/><br/>Report</a></div>
+            <div><a href="index.html"><img src="today-icon.svg"/><br/>My Day</a></div>
+            <div><a href="settings.html"><img src="setting-icon.svg"/><br/>Settings</a></div>
         </div>
 <style>
-
 .date-wrapper {
   position: relative;
   display: inline-block;
 }
 
-#dateInput {
-  position: absolute;
-  opacity: 0;
-  width: 100%;
-  height: 100%;
-  cursor: pointer;
-}
-
 .calendar-icon {
   font-size: 22px;
   cursor: pointer;
-      background: var(--bg-card);
-    padding: 8px;
-    border-radius: 50px;
+  background: var(--bg-card);
+  padding: 8px;
+  border-radius: 50px;
+  display: inline-block;
+  user-select: none;
 }
 
+/* Custom Calendar Popup */
+.custom-calendar {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 999;
+  background: var(--bg-card, #fff);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  padding: 14px;
+  min-width: 260px;
+  animation: calPop .15s ease;
+}
+.custom-calendar.open { display: block; }
+
+@keyframes calPop {
+  from { opacity: 0; transform: scale(.95) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.cal-month-label {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary, #333);
+}
+
+.cal-nav {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  color: var(--text-primary, #555);
+  line-height: 1;
+  padding: 0 6px;
+  border-radius: 8px;
+}
+.cal-nav:hover { background: var(--bg-hover, #f0f0f0); }
+
+.cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary, #999);
+  margin-bottom: 6px;
+}
+
+.cal-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  text-align: center;
+}
+
+.cal-day {
+  padding: 6px 2px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background .12s;
+  border:1px solid var(--border);
+}
+.cal-day:hover:not(.cal-empty):not(.cal-disabled) { background: var(--bg-hover, #f0f0f0); }
+.cal-day.cal-empty { cursor: default; }
+.cal-day.cal-disabled { color: var(--text-primary, #333); cursor: default; pointer-events: none; }
+.cal-day.cal-today { font-weight: 700; color: var(--accent, #e07b39); }
+.cal-day.cal-selected {
+  background: var(--accent, #e07b39);
+  color: #fff !important;
+  font-weight: 700;
+}
 </style>
     <script>
         // IndexedDB Setup
@@ -820,3 +907,75 @@
   </script>
 </body>
 </html>
+  <script>
+    // ── Custom Calendar Popup ─────────────────────────────────
+    let calViewYear, calViewMonth;
+
+    function toggleCustomCalendar() {
+      const cal = document.getElementById('customCalendar');
+      if (cal.classList.contains('open')) {
+        cal.classList.remove('open');
+      } else {
+        const parts = currentDate.split('-');
+        calViewYear  = parseInt(parts[0]);
+        calViewMonth = parseInt(parts[1]) - 1;
+        renderCustomCalendar();
+        cal.classList.add('open');
+      }
+    }
+
+    document.addEventListener('click', function(e) {
+      const wrapper = document.querySelector('.date-wrapper');
+      if (wrapper && !wrapper.contains(e.target)) {
+        document.getElementById('customCalendar').classList.remove('open');
+      }
+    });
+
+    function calNavMonth(dir) {
+      calViewMonth += dir;
+      if (calViewMonth > 11) { calViewMonth = 0;  calViewYear++; }
+      if (calViewMonth < 0)  { calViewMonth = 11; calViewYear--; }
+      renderCustomCalendar();
+    }
+
+    function renderCustomCalendar() {
+      const today = getLocalDateString();
+      const label = document.getElementById('calMonthLabel');
+      const grid  = document.getElementById('calDays');
+
+      const monthNames = ['January','February','March','April','May','June',
+                          'July','August','September','October','November','December'];
+      label.textContent = monthNames[calViewMonth] + ' ' + calViewYear;
+
+      const firstDay    = new Date(calViewYear, calViewMonth, 1).getDay();
+      const daysInMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+
+      let html = '';
+      for (let i = 0; i < firstDay; i++) html += '<div class="cal-day cal-empty"></div>';
+      for (let d = 1; d <= daysInMonth; d++) {
+        const mm  = String(calViewMonth + 1).padStart(2,'0');
+        const dd  = String(d).padStart(2,'0');
+        const ds  = calViewYear + '-' + mm + '-' + dd;
+        const isToday    = ds === today;
+        const isSelected = ds === currentDate;
+        const isFuture   = ds > today;
+        let cls = 'cal-day';
+        if (isToday)    cls += ' cal-today';
+        if (isSelected) cls += ' cal-selected';
+        if (isFuture)   cls += ' cal-disabled';
+        html += '<div class="' + cls + '" onclick="calSelectDay(\'' + ds + '\')">' + d + '</div>';
+      }
+      grid.innerHTML = html;
+    }
+
+    function calSelectDay(dateStr) {
+      currentDate = dateStr;
+      document.getElementById('dateInput').value = dateStr;
+      updateDateDisplay();
+      renderWeekNavigation();
+      loadSelectionsForDate();
+      document.getElementById('customCalendar').classList.remove('open');
+    }
+
+    function openCalendar() { toggleCustomCalendar(); }
+  </script>
