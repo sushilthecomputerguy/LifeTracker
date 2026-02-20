@@ -67,10 +67,10 @@
 
     </div>
     <div class="bottom-navigation">
-            <div><a href="trackers.html"><img src="folder-icon.svg"/><br/>Tracker</a></div>
-            <div><a href="report.html"><img src="report-icon.svg"/><br/>Report</a></div>
-            <div><a href="index.html"><img src="today-icon.svg"/><br/>My Day</a></div>
-            <div><a href="settings.html"><img src="setting-icon.svg"/><br/>Settings</a></div>
+            <div><a href="trackers.html"><img src="folder-icon.svg"/>Tracker</a></div>
+            <div><a href="report.html"><img src="report-icon.svg"/>Report</a></div>
+            <div><a href="index.html"><img src="today-icon.svg"/>My Day</a></div>
+            <div><a href="settings.html"><img src="setting-icon.svg"/>Settings</a></div>
         </div>
 <style>
 .date-wrapper {
@@ -167,6 +167,85 @@
   background: var(--accent, #e07b39);
   color: #fff !important;
   font-weight: 700;
+}
+
+/* Slider unset / touched states */
+.slider-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.slider-label {
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.2s;
+}
+
+.slider-label.slider-unset {
+  color: var(--text-secondary, #aaa);
+  font-weight: 400;
+  font-style: italic;
+}
+
+.slider-unset-icon {
+  font-size: 13px;
+  opacity: 0.6;
+}
+
+.slider-set-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.slider-clear-btn {
+  background: none;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  color: var(--text-secondary, #999);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.slider-clear-btn:hover {
+  border-color: #e07b39;
+  color: #e07b39;
+}
+
+/* Dim the slider track when nothing is selected */
+.slider-wrapper-unset {
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+.slider-wrapper-unset:hover {
+  opacity: 0.7;
+}
+.slider-wrapper {
+  transition: opacity 0.2s;
+}
+
+/* Greyed thumb when unset */
+.slider-input-unset::-webkit-slider-thumb {
+  background: #ccc !important;
+  box-shadow: none !important;
+}
+.slider-input-unset::-moz-range-thumb {
+  background: #ccc !important;
+  box-shadow: none !important;
 }
 </style>
     <script>
@@ -443,18 +522,22 @@
                         // Slider style
                         return `
                             <div class="slider-container">
-                                <div class="slider-label" id="slider-label-${tracker.id}">
-                                    Select an option
+                                <div class="slider-status-row">
+                                    <div class="slider-label slider-unset" id="slider-label-${tracker.id}">
+                                        <span class="slider-unset-icon">○</span> Not recorded — slide to pick
+                                    </div>
+                                    <button class="slider-clear-btn" id="slider-clear-${tracker.id}" onclick="clearSlider(${tracker.id})" style="display:none;" title="Clear selection">✕ Clear</button>
                                 </div>
-                                <div class="slider-wrapper">
+                                <div class="slider-wrapper slider-wrapper-unset" id="slider-wrapper-${tracker.id}">
                                     <input type="range" 
-                                           class="slider-input" 
+                                           class="slider-input slider-input-unset" 
                                            id="slider-${tracker.id}"
                                            min="0" 
                                            max="${tracker.options.length - 1}" 
-                                           value=""
+                                           value="0"
                                            data-tracker-id="${tracker.id}"
                                            data-type="dropdown"
+                                           data-touched="false"
                                            oninput="handleSliderChange(${tracker.id}, this.value)"
                                            onchange="handleSliderChange(${tracker.id}, this.value)"
                                            style="background: linear-gradient(to right, ${tracker.options.map(o => o.color).join(', ')})">
@@ -595,8 +678,21 @@
                 if (tracker && tracker.options && tracker.options[value]) {
                     const option = tracker.options[value];
                     const label = document.getElementById(`slider-label-${trackerId}`);
+                    const sliderEl = document.getElementById(`slider-${trackerId}`);
+                    const wrapperEl = document.getElementById(`slider-wrapper-${trackerId}`);
+                    const clearBtn = document.getElementById(`slider-clear-${trackerId}`);
+
+                    // Mark as touched
+                    if (sliderEl) {
+                        sliderEl.dataset.touched = 'true';
+                        sliderEl.classList.remove('slider-input-unset');
+                    }
+                    if (wrapperEl) wrapperEl.classList.remove('slider-wrapper-unset');
+                    if (clearBtn) clearBtn.style.display = 'inline-flex';
+
                     if (label) {
-                        label.textContent = option.title;
+                        label.classList.remove('slider-unset');
+                        label.innerHTML = `<span class="slider-set-dot" style="background:${option.color}"></span> ${option.title}`;
                         label.style.color = option.color;
                     }
                     
@@ -612,6 +708,32 @@
                     };
                 }
             });
+        }
+
+        // Clear slider back to unset state
+        function clearSlider(trackerId) {
+            const sliderEl = document.getElementById(`slider-${trackerId}`);
+            const label = document.getElementById(`slider-label-${trackerId}`);
+            const wrapperEl = document.getElementById(`slider-wrapper-${trackerId}`);
+            const clearBtn = document.getElementById(`slider-clear-${trackerId}`);
+
+            if (sliderEl) {
+                sliderEl.value = 0;
+                sliderEl.dataset.touched = 'false';
+                sliderEl.classList.add('slider-input-unset');
+            }
+            if (wrapperEl) wrapperEl.classList.add('slider-wrapper-unset');
+            if (clearBtn) clearBtn.style.display = 'none';
+            if (label) {
+                label.className = 'slider-label slider-unset';
+                label.style.color = '';
+                label.innerHTML = '<span class="slider-unset-icon">○</span> Not recorded — slide to pick';
+            }
+
+            // Remove from temp selections
+            if (tempSelections[currentDate]) {
+                delete tempSelections[currentDate][trackerId];
+            }
         }
 
         // Save all trackers for the current date
@@ -711,8 +833,22 @@
 
             // Reset slider labels
             document.querySelectorAll('[id^="slider-label-"]').forEach(label => {
-                label.textContent = 'Select an option';
+                label.className = 'slider-label slider-unset';
                 label.style.color = '';
+                label.innerHTML = '<span class="slider-unset-icon">○</span> Not recorded — slide to pick';
+            });
+            document.querySelectorAll('[id^="slider-"]').forEach(el => {
+                if (el.tagName === 'INPUT' && el.type === 'range') {
+                    el.value = 0;
+                    el.dataset.touched = 'false';
+                    el.classList.add('slider-input-unset');
+                }
+            });
+            document.querySelectorAll('[id^="slider-wrapper-"]').forEach(el => {
+                el.classList.add('slider-wrapper-unset');
+            });
+            document.querySelectorAll('[id^="slider-clear-"]').forEach(el => {
+                el.style.display = 'none';
             });
 
             // Get all trackers to know their display styles
@@ -741,13 +877,22 @@
                         const slider = document.getElementById(`slider-${trackerId}`);
                         if (slider) {
                             slider.value = selection.value;
+                            slider.dataset.touched = 'true';
+                            slider.classList.remove('slider-input-unset');
+                            // Update wrapper
+                            const wrapperEl = document.getElementById(`slider-wrapper-${trackerId}`);
+                            if (wrapperEl) wrapperEl.classList.remove('slider-wrapper-unset');
+                            // Show clear button
+                            const clearBtn = document.getElementById(`slider-clear-${trackerId}`);
+                            if (clearBtn) clearBtn.style.display = 'inline-flex';
                             // Update label
                             const option = tracker.options[parseInt(selection.value)];
                             if (option) {
                                 const label = document.getElementById(`slider-label-${trackerId}`);
                                 if (label) {
-                                    label.textContent = option.title;
+                                    label.className = 'slider-label';
                                     label.style.color = option.color;
+                                    label.innerHTML = `<span class="slider-set-dot" style="background:${option.color}"></span> ${option.title}`;
                                 }
                             }
                         }

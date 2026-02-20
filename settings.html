@@ -8,6 +8,22 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#fef5eb">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <style>
+        .btn-danger {
+            background-color: #e53935;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 18px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, opacity 0.2s;
+        }
+        .btn-danger:hover  { background-color: #c62828; }
+        .btn-danger:active { opacity: 0.85; }
+        .btn-danger:disabled { opacity: 0.55; cursor: not-allowed; }
+    </style>
 </head>
 <body>
 
@@ -115,6 +131,52 @@
 
     </div>
 
+
+    <!-- ── BACKUP ────────────────────────────────────────── -->
+    <div class="section">
+
+        <div class="section-title">Feedback</div>
+        <div class="section-desc">We’re trying hard to improve it, so your feedback would be greatly appreciated.😊</div>
+
+        <div style="margin-top:12px;">
+            <a href="mailto:sushilfiles@gmail.com" class="btn btn-primary">📧 sushilfiles@gmail.com</a>
+        </div>
+
+    </div>
+
+    <!-- ── PURGING ──────────────────────────────────────────── -->
+    <div class="section">
+
+        <div class="section-title">Purging</div>
+        <div class="section-desc">Clear cached data stored on your device.</div>
+
+        <!-- Purge PWA Offline Cache -->
+        <div class="form-group">
+            <label class="form-label">PWA Offline Cache</label>
+            <div class="section-desc" style="margin-bottom: 10px;">
+                Removes all Service Worker cache files (scripts, styles, images, etc.).
+                Your IndexedDB data will <strong>not</strong> be affected.
+            </div>
+            <button class="btn btn-danger" id="btnPurgeCache" onclick="purgeOfflineCache()">
+                🗑️ Purge Offline Cache
+            </button>
+        </div>
+
+        <!-- Purge IndexedDB -->
+        <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">IndexedDB Data</label>
+            <div class="section-desc" style="margin-bottom: 10px;">
+                Permanently deletes all tracker and entry data stored in IndexedDB (trackers you have created and all logged entries).
+                Quick Start Templates are built into the app and will still be available, but any trackers created from them will be gone.
+                Export a backup first if needed.
+            </div>
+            <button class="btn btn-danger" id="btnPurgeIDB" onclick="purgeIndexedDB()">
+                🗑️ Purge IndexedDB
+            </button>
+        </div>
+
+    </div>
+
     <!-- ── ABOUT ─────────────────────────────────────────── -->
     <div class="section">
         <div class="section-title">About</div>
@@ -140,10 +202,10 @@
 
 </div><!-- /.container -->
 <div class="bottom-navigation">
-            <div><a href="trackers.html"><img src="folder-icon.svg"/><br/>Tracker</a></div>
-            <div><a href="report.html"><img src="report-icon.svg"/><br/>Report</a></div>
-            <div><a href="index.html"><img src="today-icon.svg"/><br/>My Day</a></div>
-            <div><a href="settings.html"><img src="setting-icon.svg"/><br/>Settings</a></div>
+            <div><a href="trackers.html"><img src="folder-icon.svg"/>Tracker</a></div>
+            <div><a href="report.html"><img src="report-icon.svg"/>Report</a></div>
+            <div><a href="index.html"><img src="today-icon.svg"/>My Day</a></div>
+            <div><a href="settings.html"><img src="setting-icon.svg"/>Settings</a></div>
         </div>
 
 <script>
@@ -329,6 +391,57 @@ document.getElementById('timezoneSelect').addEventListener('change', function ()
         if (!localStorage.getItem('theme')) applyT(e.matches ? DARK : LIGHT);
     });
 })();
+
+/* ════════════════════════════════════════════════════════════
+   PURGING
+   ════════════════════════════════════════════════════════════ */
+
+async function purgeOfflineCache() {
+    const btn = document.getElementById('btnPurgeCache');
+    if (!confirm('Purge all PWA offline cache?\n\nThis removes cached files (scripts, styles, pages) but your tracker data (IndexedDB) will NOT be affected.\n\nThe app will re-cache files automatically on next load.')) return;
+    btn.disabled = true;
+    btn.textContent = '⏳ Purging…';
+    try {
+        if ('caches' in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(k => caches.delete(k)));
+        }
+        // ✅ Do NOT unregister the Service Worker — unregistering it would
+        //    prevent the PWA from serving cached pages (including template.html)
+        //    and break offline functionality until the next full page reload.
+        //    The SW will automatically re-populate the cache on next navigation.
+        showToast('Offline cache purged ✓');
+    } catch (err) {
+        console.error(err);
+        showToast('Error purging cache');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '🗑️ Purge Offline Cache';
+    }
+}
+
+async function purgeIndexedDB() {
+    const btn = document.getElementById('btnPurgeIDB');
+    if (!confirm('⚠️ WARNING: This will permanently delete ALL tracker data stored in IndexedDB.\n\nThis includes every tracker and every entry you have logged.\nThe Quick Start Templates themselves will remain, but any trackers you created from them will be gone.\n\nExport a backup first if you want to keep your data.\n\nThis CANNOT be undone. Continue?')) return;
+    btn.disabled = true;
+    btn.textContent = '⏳ Purging…';
+    try {
+        const dbs = await indexedDB.databases();
+        await Promise.all(dbs.map(db => new Promise((resolve, reject) => {
+            const req = indexedDB.deleteDatabase(db.name);
+            req.onsuccess = resolve;
+            req.onerror   = () => reject(req.error);
+            req.onblocked = resolve; // proceed even if blocked
+        })));
+        showToast('IndexedDB purged ✓');
+    } catch (err) {
+        console.error(err);
+        showToast('Error purging IndexedDB');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '🗑️ Purge IndexedDB';
+    }
+}
 
 /* ════════════════════════════════════════════════════════════
    BOOT

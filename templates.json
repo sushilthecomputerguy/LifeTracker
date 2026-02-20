@@ -1,0 +1,387 @@
+[
+  {
+    "category": "😊 Mood & Emotions",
+    "id": "mood",
+    "templates": [
+      {
+        "title": "Daily Mood",
+        "type": "dropdown",
+        "displayStyle": "radio",
+        "options": [
+          { "title": "Very Happy",  "color": "#4CAF50", "value": 100 },
+          { "title": "Happy",       "color": "#8BC34A", "value": 75  },
+          { "title": "Neutral",     "color": "#FFC107", "value": 50  },
+          { "title": "Sad",         "color": "#FF9800", "value": 25  },
+          { "title": "Very Sad",    "color": "#F44336", "value": 5   }
+        ]
+      },
+      {
+        "title": "Anxiety Level",
+        "type": "dropdown",
+        "displayStyle": "slider",
+        "options": [
+          { "title": "No Anxiety",       "color": "#4CAF50", "value": 100 },
+          { "title": "Semi Anxious",     "color": "#CDDC39", "value": 65  },
+          { "title": "Severe Anxiety",   "color": "#FF9800", "value": 30  },
+          { "title": "Hardcore Anxious", "color": "#F44336", "value": 5   }
+        ]
+      },
+      {
+        "title": "Stress Level",
+        "type": "dropdown",
+        "displayStyle": "slider",
+        "options": [
+          { "title": "No Stress",     "color": "#4CAF50", "value": 100 },
+          { "title": "Low Stress",    "color": "#8BC34A", "value": 75  },
+          { "title": "Moderate",      "color": "#FFC107", "value": 50  },
+          { "title": "High Stress",   "color": "#FF9800", "value": 25  },
+          { "title": "Overwhelmed",   "color": "#F44336", "value": 5   }
+        ]
+      },
+      {
+        "title": "Energy Level",
+        "type": "dropdown",
+        "displayStyle": "slider",
+        "options": [
+          { "title": "Supercharged", "color": "#4CAF50", "value": 100 },
+          { "title": "Good",         "color": "#8BC34A", "value": 75  },
+          { "title": "Okay",         "color": "#FFC107", "value": 50  },
+          { "title": "Low",          "color": "#FF9800", "value": 25  },
+          { "title": "Drained",      "color": "#F44336", "value": 5   }
+        ]
+      },
+      {
+        "title": "Daily Journal",
+        "type": "text"
+      },
+      {
+        "title": "Gratitude",
+        "type": "text"
+      }
+    ]
+  },
+  {
+    "category": "😴 Sleep",
+    "id": "sleep",
+    "templates": [
+      {
+        "title": "Sleep Quality",
+        "type": "dropdown",
+        "displayStyle": "radio",
+        "options": [
+          { "title": "Excellent", "color": "#4CAF50", "value": 100 },
+          { "title": "Good",      "color": "#8BC34A", "value": 75  },
+          { "title": "Fair",      "color": "#FFC107", "value": 50  },
+          { "title": "Poor",      "color": "#FF9800", "value": 25  },
+          { "title": "Terrible",  "color": "#F44336", "value": 5   }
+        ]
+      },
+      {
+        "title": "Sleep Duration",
+        "type": "numeric",
+        "numericPrefix": "",
+        "numericSuffix": "hrs",
+        "valueMap": { "min": 0, "max": 12, "optimalMin": 7, "optimalMax": 9, "value": 80 }
+      },
+      {
+        "title": "Nap Today",
+        "type": "yesno",
+        "valueMap": { "yes": 60, "no": 50 }
+      },
+      {
+        "title": "Bedtime Routine",
+        "type": "yesno",
+        "valueMap": { "yes": 85, "no": 20 }
+      }
+    ]
+  },
+  {
+    "category": "🏃 Physical Health",
+    "id": "physical",
+    "templates": [
+      {
+        "title": "Exercise",
+        "type": "dropdown",
+        "displayStyle": "radio",
+        "options": [
+          { "title": "Intense Workout",    "color": "#E91E63", "value": 100 },
+          { "title": "Moderate Exercise",  "color": "#9C27B0", "value": 80  },
+          { "title": "Light Activity",     "color": "#673AB7", "value": 55  },
+          { "title": "Stretching",         "color": "#3F51B5", "value": 35  },
+          { "title": "No Exercise",        "color": "#9E9E9E", "value": 5   }
+        ]
+      },
+      {
+        "title": "Water Intake",
+        "type": "numeric",
+        "numericPrefix": "",
+        "numericSuffix": "glasses",
+        "valueMap": { "min": 0, "max": 15, "optimalMin": 8, "optimalMax": 12, "value": 75 }
+      },
+      {
+        "title": "Weight",
+        "type": "numeric",
+        "numericPrefix": "",
+        "numericSuffix": "lbs",
+        "valueMap": { "min": 0, "max": 500, "value": 50 }
+      },
+      {
+        "title": "Steps",
+        "type": "numeric",
+        "numericPrefix": "",
+        "numericSuffix": "steps",
+        "valueMap": { "min": 0, "max": 30000, "optimalMin": 8000, "optimalMax": 15000, "value": 70 }
+      },
+      {
+        "title": "Workout Duration",
+        "type": "numeric",
+        "numericPrefix": "",
+        "numericSuffix": "min",
+        "valueMap": { "min": 0, "max": 180, "optimalMin": 30, "optimalMax": 90, "value": 80 }
+      },
+      {
+        "title": "Headache",
+        "type": "yesno",
+        "valueMap": { "yes": 10, "no": 90 }
+      },
+      {
+        "title": "Sick Today",
+        "type": "yesno",
+        "valueMap": { "yes": 5, "no": 95 }
+      }
+    ]
+  },
+  {
+    "category": "🥗 Nutrition",
+    "id": "nutrition",
+    "templates": [
+      {
+        "title": "Diet Quality",
+        "type": "dropdown",
+        "displayStyle": "radio",
+        "options": [
+          { "title": "Very Healthy",  "color": "#4CAF50", "value": 100 },
+          { "title": "Healthy",       "color": "#8BC34A", "value": 75  },
+          { "title": "Moderate",      "color": "#FFC107", "value": 50  },
+          { "title": "Unhealthy",     "color": "#FF9800", "value": 25  },
+          { "title": "Very Unhealthy","color": "#F44336", "value": 5   }
+        ]
+      },
+      {
+        "title": "Calories",
+        "type": "numeric",
+        "numericPrefix": "",
+        "numericSuffix": "kcal",
+        "valueMap": { "min": 0, "max": 5000, "optimalMin": 1500, "optimalMax": 2500, "value": 65 }
+      },
+      {
+        "title": "Ate Vegetables",
+        "type": "yesno",
+        "valueMap": { "yes": 90, "no": 20 }
+      },
+      {
+        "title": "Alcohol",
+        "type": "yesno",
+        "valueMap": { "yes": 15, "no": 85 }
+      },
+      {
+        "title": "Caffeine Intake",
+        "type": "dropdown",
+        "displayStyle": "radio",
+        "options": [
+          { "title": "None",     "color": "#4CAF50", "value": 90 },
+          { "title": "Low",      "color": "#8BC34A", "value": 75 },
+          { "title": "Moderate", "color": "#FFC107", "value": 50 },
+          { "title": "High",     "color": "#FF9800", "value": 25 },
+          { "title": "Very High","color": "#F44336", "value": 5  }
+        ]
+      }
+    ]
+  },
+  {
+    "category": "🧘 Mental Wellness",
+    "id": "mental",
+    "templates": [
+      {
+        "title": "Meditation",
+        "type": "yesno",
+        "valueMap": { "yes": 90, "no": 30 }
+      },
+      {
+        "title": "Mindfulness",
+        "type": "yesno",
+        "valueMap": { "yes": 85, "no": 30 }
+      },
+      {
+        "title": "Focus Level",
+        "type": "dropdown",
+        "displayStyle": "slider",
+        "options": [
+          { "title": "Laser Focus",   "color": "#4CAF50", "value": 100 },
+          { "title": "Good Focus",    "color": "#8BC34A", "value": 75  },
+          { "title": "Distracted",    "color": "#FFC107", "value": 45  },
+          { "title": "Very Scattered","color": "#F44336", "value": 10  }
+        ]
+      },
+      {
+        "title": "Therapy / Counseling",
+        "type": "yesno",
+        "valueMap": { "yes": 95, "no": 50 }
+      },
+      {
+        "title": "Screen Time",
+        "type": "dropdown",
+        "displayStyle": "radio",
+        "options": [
+          { "title": "< 1 hr",   "color": "#4CAF50", "value": 100 },
+          { "title": "1–3 hrs",  "color": "#8BC34A", "value": 70  },
+          { "title": "3–5 hrs",  "color": "#FFC107", "value": 45  },
+          { "title": "5–8 hrs",  "color": "#FF9800", "value": 20  },
+          { "title": "8+ hrs",   "color": "#F44336", "value": 5   }
+        ]
+      }
+    ]
+  },
+  {
+    "category": "📚 Productivity",
+    "id": "productivity",
+    "templates": [
+      {
+        "title": "Productivity Level",
+        "type": "dropdown",
+        "displayStyle": "slider",
+        "options": [
+          { "title": "Crushing It",  "color": "#4CAF50", "value": 100 },
+          { "title": "Productive",   "color": "#8BC34A", "value": 75  },
+          { "title": "So-so",        "color": "#FFC107", "value": 50  },
+          { "title": "Low Output",   "color": "#FF9800", "value": 25  },
+          { "title": "Unproductive", "color": "#F44336", "value": 5   }
+        ]
+      },
+      {
+        "title": "Reading",
+        "type": "yesno",
+        "valueMap": { "yes": 85, "no": 30 }
+      },
+      {
+        "title": "Learning / Study",
+        "type": "numeric",
+        "numericPrefix": "",
+        "numericSuffix": "min",
+        "valueMap": { "min": 0, "max": 480, "optimalMin": 30, "optimalMax": 120, "value": 75 }
+      },
+      {
+        "title": "Goal Progress",
+        "type": "dropdown",
+        "displayStyle": "radio",
+        "options": [
+          { "title": "Exceeded",   "color": "#4CAF50", "value": 100 },
+          { "title": "On Track",   "color": "#8BC34A", "value": 75  },
+          { "title": "Partial",    "color": "#FFC107", "value": 45  },
+          { "title": "Missed",     "color": "#F44336", "value": 10  }
+        ]
+      }
+    ]
+  },
+  {
+    "category": "🤝 Social",
+    "id": "social",
+    "templates": [
+      {
+        "title": "Social Interaction",
+        "type": "dropdown",
+        "displayStyle": "radio",
+        "options": [
+          { "title": "Very Social",    "color": "#4CAF50", "value": 90  },
+          { "title": "Some Socializing","color": "#8BC34A","value": 70  },
+          { "title": "Minimal",        "color": "#FFC107", "value": 45  },
+          { "title": "Isolated",       "color": "#F44336", "value": 10  }
+        ]
+      },
+      {
+        "title": "Quality Time w/ Family",
+        "type": "yesno",
+        "valueMap": { "yes": 90, "no": 30 }
+      },
+      {
+        "title": "Arguments / Conflict",
+        "type": "yesno",
+        "valueMap": { "yes": 10, "no": 85 }
+      },
+      {
+        "title": "Helped Someone",
+        "type": "yesno",
+        "valueMap": { "yes": 95, "no": 50 }
+      }
+    ]
+  },
+  {
+    "category": "💊 Health Symptoms",
+    "id": "symptoms",
+    "templates": [
+      {
+        "title": "Pain Level",
+        "type": "dropdown",
+        "displayStyle": "slider",
+        "options": [
+          { "title": "No Pain",     "color": "#4CAF50", "value": 100 },
+          { "title": "Mild Pain",   "color": "#CDDC39", "value": 65  },
+          { "title": "Moderate",    "color": "#FF9800", "value": 35  },
+          { "title": "Severe Pain", "color": "#F44336", "value": 5   }
+        ]
+      },
+      {
+        "title": "Medication Taken",
+        "type": "yesno",
+        "valueMap": { "yes": 80, "no": 50 }
+      },
+      {
+        "title": "Period / Cycle",
+        "type": "yesno",
+        "valueMap": { "yes": 50, "no": 50 }
+      },
+      {
+        "title": "Symptoms Notes",
+        "type": "text"
+      }
+    ]
+  },
+  {
+    "category": "🌿 Habits",
+    "id": "habits",
+    "templates": [
+      {
+        "title": "Smoking",
+        "type": "yesno",
+        "valueMap": { "yes": 5, "no": 95 }
+      },
+      {
+        "title": "Journaling",
+        "type": "yesno",
+        "valueMap": { "yes": 85, "no": 30 }
+      },
+      {
+        "title": "Cold Shower",
+        "type": "yesno",
+        "valueMap": { "yes": 90, "no": 40 }
+      },
+      {
+        "title": "Morning Routine",
+        "type": "yesno",
+        "valueMap": { "yes": 88, "no": 25 }
+      },
+      {
+        "title": "Overall Day Rating",
+        "type": "dropdown",
+        "displayStyle": "slider",
+        "options": [
+          { "title": "Amazing",    "color": "#4CAF50", "value": 100 },
+          { "title": "Good",       "color": "#8BC34A", "value": 75  },
+          { "title": "Average",    "color": "#FFC107", "value": 50  },
+          { "title": "Bad",        "color": "#FF9800", "value": 25  },
+          { "title": "Terrible",   "color": "#F44336", "value": 5   }
+        ]
+      }
+    ]
+  }
+]
