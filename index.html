@@ -826,9 +826,12 @@
                     element.value = '';
                 } else if (element.classList.contains('yesno-btn')) {
                     element.classList.remove('selected-yes', 'selected-no');
-                } else if (element.classList.contains('radio-option')) {
-                    element.classList.remove('selected');
                 }
+            });
+
+            // Reset all radio options (these don't have tracker- IDs, so handle separately)
+            document.querySelectorAll('.radio-option').forEach(element => {
+                element.classList.remove('selected');
             });
 
             // Reset slider labels
