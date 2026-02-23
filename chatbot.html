@@ -7,9 +7,7 @@
   <link rel="stylesheet" href="styles.css" />
   <script src="https://js.puter.com/v2/"></script>
   <style>
-    html, body {
-      height: 100%;
-    }
+    html, body { height: 100%; }
     body {
       display: flex;
       flex-direction: column;
@@ -17,7 +15,7 @@
       overflow: hidden;
     }
 
-    /* Header */
+    /* ── Header ── */
     .ai-header {
       display: flex;
       align-items: center;
@@ -27,33 +25,16 @@
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
-    .ai-header-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+    .ai-header-left { display: flex; align-items: center; gap: 10px; }
     .ai-avatar {
-      width: 38px;
-      height: 38px;
+      width: 38px; height: 38px;
       background: var(--blue);
       border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
     }
-    .ai-header-info h1 {
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--text-strong);
-      margin-bottom: 0;
-    }
-    .ai-header-info p {
-      font-size: 11px;
-      color: var(--text-muted);
-      margin-top: 1px;
-    }
+    .ai-header-info h1 { font-size: 16px; font-weight: 700; color: var(--text-strong); margin-bottom: 0; }
+    .ai-header-info p  { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
     .ai-header-actions { display: flex; gap: 8px; }
     .icon-btn {
       width: 36px; height: 36px;
@@ -64,68 +45,53 @@
       display: flex; align-items: center; justify-content: center;
       font-size: 15px;
       transition: background .15s;
-      color: var(--text-muted);
     }
     .icon-btn:hover { background: var(--bg-hover); }
 
-    /* Status bar */
+    /* ── Status bar ── */
     .status-bar {
       padding: 6px 16px;
       background: var(--bg-info);
       border-bottom: 1px solid var(--border-light);
       font-size: 11px;
       color: var(--text-info);
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      display: flex; align-items: center; gap: 8px;
       flex-shrink: 0;
-      cursor: pointer;
-      user-select: none;
     }
-    .status-bar:hover { opacity: .85; }
     .status-dot {
-      width: 7px; height: 7px;
-      border-radius: 50%;
+      width: 7px; height: 7px; border-radius: 50%;
       background: var(--green);
-      animation: statusPulse 2s infinite;
+      animation: pulse 2s infinite;
       flex-shrink: 0;
     }
     .status-dot.loading { background: var(--blue); }
     .status-dot.error   { background: var(--red); animation: none; }
-    @keyframes statusPulse {
-      0%,100% { opacity:1; } 50% { opacity:.4; }
-    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
 
-    /* Data debug panel */
-    .debug-panel {
+    /* ── Data badge strip ── */
+    .data-strip {
       display: none;
-      background: var(--bg-subtle);
-      border-bottom: 1px solid var(--border);
-      padding: 10px 16px;
-      font-size: 12px;
-      color: var(--text-muted);
-      flex-shrink: 0;
-      max-height: 180px;
-      overflow-y: auto;
-    }
-    .debug-panel.open { display: block; }
-    .debug-panel pre {
-      white-space: pre-wrap;
-      word-break: break-all;
-      font-family: monospace;
+      padding: 6px 16px;
+      background: var(--bg-success);
+      border-bottom: 1px solid var(--border-light);
       font-size: 11px;
-      color: var(--text-body);
-      margin-top: 6px;
+      color: var(--text-success);
+      gap: 12px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
     }
-    .debug-title {
-      font-weight: 700;
-      color: var(--text-strong);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+    .data-strip.show { display: flex; align-items: center; }
+    .data-badge {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
     }
 
-    /* Chat scroll area */
+    /* ── Chat scroll area ── */
     .chat-area {
       flex: 1;
       overflow-y: auto;
@@ -138,120 +104,79 @@
     .chat-area::-webkit-scrollbar { width: 4px; }
     .chat-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
-    /* Empty state */
+    /* ── Empty state ── */
     .ai-empty-state {
       flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 30px 20px;
-      gap: 8px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 30px 20px; gap: 8px;
     }
     .ai-empty-state .empty-icon { font-size: 44px; margin-bottom: 6px; }
     .ai-empty-state h2 { font-size: 17px; font-weight: 700; color: var(--text-strong); margin-bottom: 0; }
     .ai-empty-state p  { font-size: 13px; color: var(--text-muted); max-width: 260px; line-height: 1.5; }
 
-    /* Messages */
-    .msg {
-      display: flex;
-      gap: 8px;
-      max-width: 100%;
-      animation: msgIn .18s ease;
-    }
-    @keyframes msgIn {
-      from { opacity:0; transform:translateY(5px); }
-      to   { opacity:1; transform:translateY(0); }
-    }
+    /* ── Messages ── */
+    .msg { display: flex; gap: 8px; max-width: 100%; animation: msgIn .18s ease; }
+    @keyframes msgIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
     .msg.user { flex-direction: row-reverse; }
 
     .msg-avatar {
-      width: 28px; height: 28px;
-      border-radius: 50%;
+      width: 28px; height: 28px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      font-size: 13px;
-      flex-shrink: 0;
-      margin-top: 2px;
+      font-size: 13px; flex-shrink: 0; margin-top: 2px;
     }
     .msg.ai   .msg-avatar { background: var(--blue); }
     .msg.user .msg-avatar { background: var(--bg-badge); }
 
     .msg-bubble {
       max-width: calc(100% - 80px);
-      padding: 10px 14px;
-      border-radius: 16px;
-      font-size: 14px;
-      line-height: 1.55;
-      word-break: break-word;
+      padding: 10px 14px; border-radius: 16px;
+      font-size: 14px; line-height: 1.55; word-break: break-word;
     }
     .msg.ai .msg-bubble {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-bottom-left-radius: 4px;
-      color: var(--text-body);
-      box-shadow: var(--shadow);
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-bottom-left-radius: 4px; color: var(--text-body); box-shadow: var(--shadow);
     }
     .msg.user .msg-bubble {
-      background: var(--blue);
-      color: #fff;
-      border-bottom-right-radius: 4px;
+      background: var(--blue); color: #fff; border-bottom-right-radius: 4px;
     }
-    .msg.ai .msg-bubble strong { font-weight:700; color:var(--text-strong); }
-    .msg.ai .msg-bubble em     { font-style:italic; }
+    .msg.ai .msg-bubble strong { font-weight: 700; color: var(--text-strong); }
+    .msg.ai .msg-bubble em     { font-style: italic; }
     .msg.ai .msg-bubble code   {
-      background: var(--bg-subtle);
-      border: 1px solid var(--border-faint);
-      padding: 1px 5px; border-radius: 3px;
-      font-size: 12px; font-family: monospace;
+      background: var(--bg-subtle); border: 1px solid var(--border-faint);
+      padding: 1px 5px; border-radius: 3px; font-size: 12px; font-family: monospace;
     }
     .msg.ai .msg-bubble ul, .msg.ai .msg-bubble ol { margin: 6px 0 6px 18px; }
     .msg.ai .msg-bubble li { margin: 3px 0; }
     .msg.ai .msg-bubble p  { margin-bottom: 6px; }
     .msg.ai .msg-bubble p:last-child { margin-bottom: 0; }
 
-    /* Typing dots */
-    .typing-dots { display:flex; gap:5px; align-items:center; padding:4px 0; }
+    /* ── Typing dots ── */
+    .typing-dots { display: flex; gap: 5px; align-items: center; padding: 4px 0; }
     .typing-dots span {
-      width:7px; height:7px; border-radius:50%;
+      width: 7px; height: 7px; border-radius: 50%;
       background: var(--text-faint);
-      animation: typingBounce 1.2s infinite;
+      animation: bounce 1.2s infinite;
     }
-    .typing-dots span:nth-child(2) { animation-delay:.2s; }
-    .typing-dots span:nth-child(3) { animation-delay:.4s; }
-    @keyframes typingBounce {
-      0%,60%,100% { transform:translateY(0); }
-      30%          { transform:translateY(-6px); }
-    }
+    .typing-dots span:nth-child(2) { animation-delay: .2s; }
+    .typing-dots span:nth-child(3) { animation-delay: .4s; }
+    @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
 
-    /* Suggestion chips */
+    /* ── Suggestion chips ── */
     .suggestions-wrap {
       padding: 0 16px 8px;
-      display: flex; gap: 7px;
-      overflow-x: auto;
-      flex-shrink: 0;
+      display: flex; gap: 7px; overflow-x: auto; flex-shrink: 0;
     }
-    .suggestions-wrap::-webkit-scrollbar { display:none; }
+    .suggestions-wrap::-webkit-scrollbar { display: none; }
     .suggestion-chip {
-      white-space: nowrap;
-      padding: 6px 13px;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      background: var(--bg-card);
-      font-size: 12px;
-      color: var(--text-muted);
-      cursor: pointer;
-      transition: all .15s;
-      flex-shrink: 0;
-      font-weight: 500;
+      white-space: nowrap; padding: 6px 13px; border-radius: 20px;
+      border: 1px solid var(--border); background: var(--bg-card);
+      font-size: 12px; color: var(--text-muted); cursor: pointer;
+      transition: all .15s; flex-shrink: 0; font-weight: 500;
     }
-    .suggestion-chip:hover {
-      border-color: var(--blue);
-      color: var(--blue);
-      background: var(--blue-pale);
-    }
+    .suggestion-chip:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-pale); }
 
-    /* Input row */
+    /* ── Input ── */
     .input-area {
       padding: 8px 12px 10px;
       background: var(--bg-card);
@@ -260,37 +185,30 @@
     }
     .input-row {
       display: flex; gap: 8px; align-items: flex-end;
-      background: var(--bg-input);
-      border: 1.5px solid var(--border);
-      border-radius: 20px;
-      padding: 6px 6px 6px 14px;
+      background: var(--bg-input); border: 1.5px solid var(--border);
+      border-radius: 20px; padding: 6px 6px 6px 14px;
       transition: border-color .2s;
     }
     .input-row:focus-within { border-color: var(--blue); }
     #userInput {
-      flex: 1; border: none; background: transparent;
-      resize: none; font-family: inherit;
-      font-size: 14px; line-height: 1.5;
+      flex: 1; border: none; background: transparent; resize: none;
+      font-family: inherit; font-size: 14px; line-height: 1.5;
       color: var(--text-body); max-height: 110px; outline: none;
     }
     #userInput::placeholder { color: var(--text-faint); }
     .send-btn {
-      width: 34px; height: 34px;
-      border-radius: 50%; background: var(--blue);
-      border: none; cursor: pointer;
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--blue); border: none; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      transition: background .15s, transform .1s;
+      flex-shrink: 0; transition: background .15s, transform .1s;
     }
     .send-btn:hover  { background: var(--blue-dark); }
     .send-btn:active { transform: scale(.92); }
     .send-btn:disabled { background: var(--border); cursor: not-allowed; }
-    .send-btn svg { width:15px; height:15px; fill:#fff; }
+    .send-btn svg { width: 15px; height: 15px; fill: #fff; }
 
-    /* 5-tab bottom nav */
-    .bottom-navigation {
-      grid-template-columns: 1fr 1fr 1fr 1fr 1fr !important;
-    }
+    /* 5-column nav */
+    .bottom-navigation { grid-template-columns: 1fr 1fr 1fr 1fr 1fr !important; }
   </style>
 </head>
 <body>
@@ -301,7 +219,7 @@
       <div class="ai-avatar">🤖</div>
       <div class="ai-header-info">
         <h1>AI Assistant</h1>
-        <p>Ask about your tracker data</p>
+        <p>Powered by your tracker data</p>
       </div>
     </div>
     <div class="ai-header-actions">
@@ -310,31 +228,30 @@
     </div>
   </div>
 
-  <!-- Status bar — click to toggle data debug view -->
-  <div class="status-bar" id="statusBar" onclick="toggleDebug()" title="Click to inspect loaded data">
+  <!-- Status bar -->
+  <div class="status-bar" id="statusBar">
     <div class="status-dot loading" id="statusDot"></div>
-    <span id="statusText">Loading your tracker data…</span>
-    <span style="margin-left:auto;font-size:10px;opacity:.6">tap to inspect ▾</span>
+    <span id="statusText">Reading your data…</span>
   </div>
 
-  <!-- Debug / data-inspection panel -->
-  <div class="debug-panel" id="debugPanel">
-    <div class="debug-title">
-      <span>📦 Loaded Data Preview</span>
-    </div>
-    <pre id="debugContent">—</pre>
+  <!-- Data summary badges (shown after load) -->
+  <div class="data-strip" id="dataStrip">
+    <span style="font-weight:600;">✓ Data loaded:</span>
+    <span class="data-badge" id="badgeTrackers">0 trackers</span>
+    <span class="data-badge" id="badgeDays">0 days</span>
+    <span class="data-badge" id="badgeEntries">0 entries</span>
   </div>
 
-  <!-- Chat messages -->
+  <!-- Chat area -->
   <div class="chat-area" id="chatArea">
     <div class="ai-empty-state" id="emptyState">
       <div class="empty-icon">✨</div>
       <h2>What would you like to know?</h2>
-      <p>Ask me about your habits, trends, or anything you've logged.</p>
+      <p>Ask me about your habits, trends, streaks, or anything you've logged.</p>
     </div>
   </div>
 
-  <!-- Suggestion chips -->
+  <!-- Suggestions -->
   <div class="suggestions-wrap" id="suggestions">
     <div class="suggestion-chip" onclick="sendSuggestion(this)">How am I doing this week?</div>
     <div class="suggestion-chip" onclick="sendSuggestion(this)">What did I log today?</div>
@@ -359,7 +276,7 @@
     </div>
   </div>
 
-  <!-- Bottom nav — 5 tabs -->
+  <!-- Bottom nav -->
   <div class="bottom-navigation">
     <div><a href="trackers.html"><img src="folder-icon.svg" alt=""/>Tracker</a></div>
     <div><a href="report.html"><img src="report-icon.svg" alt=""/>Report</a></div>
@@ -368,340 +285,343 @@
     <div><a href="settings.html"><img src="setting-icon.svg" alt=""/>Settings</a></div>
   </div>
 
-  <script>
-  // ── Theme (mirrors your existing theme.js) ──────────────────────
-  (function () {
-    const saved = localStorage.getItem('theme');
-    const sys   = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', saved || sys);
-    document.querySelectorAll('.theme-toggle').forEach(b => {
-      b.textContent = (saved || sys) === 'dark' ? '☀️' : '🌙';
-    });
-  })();
-  document.body.addEventListener('click', e => {
-    if (!e.target.closest('.theme-toggle')) return;
-    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('theme', next);
-    document.querySelectorAll('.theme-toggle').forEach(b => b.textContent = next === 'dark' ? '☀️' : '🌙');
+<script>
+// ══════════════════════════════════════════════════════════════════
+//  THEME
+// ══════════════════════════════════════════════════════════════════
+(function () {
+  const saved = localStorage.getItem('theme');
+  const sys   = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', saved || sys);
+  document.querySelectorAll('.theme-toggle').forEach(b => {
+    b.textContent = (saved || sys) === 'dark' ? '☀️' : '🌙';
   });
+})();
+document.body.addEventListener('click', e => {
+  if (!e.target.closest('.theme-toggle')) return;
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  document.querySelectorAll('.theme-toggle').forEach(b => b.textContent = next === 'dark' ? '☀️' : '🌙');
+});
 
-  // ════════════════════════════════════════════════════════════════
-  //  DATA LOADING
-  //  • Tracker definitions  → IndexedDB  "TrackerDB" / "trackers"
-  //  • Daily logs           → localStorage key "dailySelections"
-  // ════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
+//  STEP 1 — EXPORT INDEXEDDB + LOCALSTORAGE → JSON OBJECT
+//  This mirrors exactly how comparev2.html opens the DB:
+//  open with version 2, let onupgradeneeded create stores if needed,
+//  then read everything in onsuccess.
+// ══════════════════════════════════════════════════════════════════
 
-  let appData = { trackers: [], dailySelections: {} };
-  let aiReady = false;
+let exportedJSON   = null;   // the full data snapshot
+let aiContextReady = false;
 
-  function loadTrackerDefinitions() {
-    return new Promise((resolve) => {
-      // Open WITHOUT specifying a version — this avoids triggering
-      // onupgradeneeded on an already-existing database, which was
-      // the bug that caused the read to silently fail.
-      const req = indexedDB.open('TrackerDB');
+function exportAllDataToJSON() {
+  return new Promise((resolve) => {
+    const req = indexedDB.open('TrackerDB', 2);
 
-      req.onerror = (e) => {
-        console.warn('[AI] IndexedDB open error:', e.target.error);
-        resolve([]);
-      };
+    req.onerror = () => {
+      console.error('[AI] IndexedDB open error');
+      resolve({ trackers: [], dailySelections: {}, exportedAt: new Date().toISOString() });
+    };
 
-      req.onsuccess = (e) => {
-        const db = e.target.result;
-        console.log('[AI] DB opened. Stores:', Array.from(db.objectStoreNames));
+    // Create store if DB is brand-new (matches your other pages exactly)
+    req.onupgradeneeded = (e) => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('trackers')) {
+        const s = d.createObjectStore('trackers', { keyPath: 'id', autoIncrement: true });
+        s.createIndex('title', 'title');
+        s.createIndex('type',  'type');
+      }
+    };
 
-        if (!db.objectStoreNames.contains('trackers')) {
-          console.warn('[AI] "trackers" store not found in DB.');
-          db.close();
-          resolve([]);
-          return;
-        }
+    req.onsuccess = (e) => {
+      const db = e.target.result;
 
-        const tx      = db.transaction(['trackers'], 'readonly');
-        const store   = tx.objectStore('trackers');
-        const getAll  = store.getAll();
+      // Read all trackers from IndexedDB
+      const tx      = db.transaction(['trackers'], 'readonly');
+      const store   = tx.objectStore('trackers');
+      const getAll  = store.getAll();
 
-        getAll.onsuccess = () => {
-          console.log('[AI] Trackers loaded:', getAll.result);
-          db.close();
-          resolve(getAll.result || []);
+      getAll.onsuccess = () => {
+        const trackers = getAll.result || [];
+
+        // Read daily selections from localStorage
+        let dailySelections = {};
+        try {
+          dailySelections = JSON.parse(localStorage.getItem('dailySelections') || '{}');
+        } catch (_) {}
+
+        db.close();
+
+        // Count total entries across all days
+        let totalEntries = 0;
+        Object.values(dailySelections).forEach(day => {
+          totalEntries += Object.keys(day).length;
+        });
+
+        const snapshot = {
+          exportedAt:      new Date().toISOString(),
+          today:           new Date().toISOString().slice(0, 10),
+          trackers,
+          dailySelections,
+          summary: {
+            totalTrackers: trackers.length,
+            totalDays:     Object.keys(dailySelections).length,
+            totalEntries,
+          }
         };
-        getAll.onerror = (e) => {
-          console.warn('[AI] getAll error:', e.target.error);
-          db.close();
-          resolve([]);
-        };
+
+        console.log('[AI] Snapshot:', snapshot.summary);
+        resolve(snapshot);
       };
 
-      // If this fires it means the DB doesn't exist yet at all —
-      // do NOT abort; let it create an empty DB and resolve empty.
-      req.onupgradeneeded = (e) => {
-        console.warn('[AI] DB did not exist yet — no tracker data available.');
-        // Don't abort — just let it finish creating the empty DB,
-        // onsuccess will fire next with an empty trackers list.
+      getAll.onerror = () => {
+        db.close();
+        resolve({ trackers: [], dailySelections: {}, exportedAt: new Date().toISOString() });
       };
+    };
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  STEP 2 — CONVERT SNAPSHOT TO A READABLE CONTEXT STRING FOR AI
+// ══════════════════════════════════════════════════════════════════
+
+function snapshotToContext(snap) {
+  const { trackers, dailySelections, today, summary } = snap;
+  let ctx = '';
+
+  ctx += `=== MY DAY — TRACKER DATA SNAPSHOT ===\n`;
+  ctx += `Exported: ${snap.exportedAt}\n`;
+  ctx += `Today: ${today}\n`;
+  ctx += `Totals: ${summary.totalTrackers} trackers, ${summary.totalDays} days logged, ${summary.totalEntries} total entries\n\n`;
+
+  // --- Tracker definitions ---
+  ctx += `--- TRACKER DEFINITIONS (${trackers.length}) ---\n`;
+  if (!trackers.length) {
+    ctx += 'None created yet.\n';
+  } else {
+    trackers.forEach(t => {
+      ctx += `[ID:${t.id}] "${t.title}" | type: ${t.type || 'dropdown'}`;
+      if (t.options && t.options.length) {
+        const opts = t.options.map(o =>
+          typeof o === 'object' ? `${o.title || o.label}${o.color ? `(${o.color})` : ''}` : String(o)
+        ).join(', ');
+        ctx += ` | options: ${opts}`;
+      }
+      if (t.unit)            ctx += ` | unit: ${t.unit}`;
+      if (t.min !== undefined) ctx += ` | range: ${t.min}–${t.max}`;
+      ctx += '\n';
     });
   }
 
-  function loadDailySelections() {
-    try {
-      const raw  = localStorage.getItem('dailySelections');
-      const data = raw ? JSON.parse(raw) : {};
-      console.log('[AI] dailySelections keys:', Object.keys(data));
-      return data;
-    } catch (e) {
-      console.warn('[AI] Could not parse dailySelections:', e);
-      return {};
-    }
-  }
-
-  async function loadAllData() {
-    const [trackers, dailySelections] = await Promise.all([
-      loadTrackerDefinitions(),
-      Promise.resolve(loadDailySelections()),
-    ]);
-    return { trackers, dailySelections };
-  }
-
-  // ════════════════════════════════════════════════════════════════
-  //  BUILD AI CONTEXT STRING
-  // ════════════════════════════════════════════════════════════════
-
-  function buildAIContext({ trackers, dailySelections }) {
-    const today = new Date().toISOString().slice(0, 10);
-    let ctx = `## My Day — User Tracker Data\nToday's date: ${today}\n\n`;
-
-    // --- Tracker definitions ---
-    if (!trackers.length) {
-      ctx += '### Trackers\nNo trackers have been created yet.\n\n';
-    } else {
-      ctx += `### Trackers (${trackers.length} total)\n`;
-      trackers.forEach(t => {
-        ctx += `- **${t.title}** [type: ${t.type || 'dropdown'}]`;
-        if (t.options && t.options.length) {
-          const opts = t.options.map(o => {
-            if (typeof o === 'string') return o;
-            return o.title || o.label || JSON.stringify(o);
-          }).join(' | ');
-          ctx += `\n  Options: ${opts}`;
-        }
-        if (t.unit)  ctx += `\n  Unit: ${t.unit}`;
-        if (t.min !== undefined) ctx += `\n  Range: ${t.min}–${t.max}`;
+  // --- Daily logs ---
+  const dates = Object.keys(dailySelections).sort().reverse();
+  ctx += `\n--- DAILY LOGS (${dates.length} days) ---\n`;
+  if (!dates.length) {
+    ctx += 'No entries saved yet.\n';
+  } else {
+    dates.forEach(date => {
+      ctx += `\n[${date}]\n`;
+      const entries = Object.values(dailySelections[date]);
+      entries.forEach(entry => {
+        const tracker = trackers.find(t => String(t.id) === String(entry.trackerId));
+        const name    = tracker ? `"${tracker.title}"` : `Tracker#${entry.trackerId}`;
+        ctx += `  ${name}: ${entry.value}`;
+        if (entry.type) ctx += ` (${entry.type})`;
         ctx += '\n';
       });
-    }
-
-    // --- Daily logs ---
-    const dates = Object.keys(dailySelections).sort().reverse();
-    if (!dates.length) {
-      ctx += '\n### Daily Logs\nNo entries have been saved yet.\n';
-    } else {
-      ctx += `\n### Daily Logs (${dates.length} days recorded)\n`;
-      // Send up to 90 days to give the AI enough data for trend analysis
-      dates.slice(0, 90).forEach(date => {
-        const entries = dailySelections[date];
-        ctx += `\n**${date}**\n`;
-        Object.values(entries).forEach(entry => {
-          const tracker = trackers.find(t => String(t.id) === String(entry.trackerId));
-          const name    = tracker ? tracker.title : `Tracker #${entry.trackerId}`;
-          ctx += `  - ${name}: ${entry.value}\n`;
-        });
-      });
-      if (dates.length > 90) {
-        ctx += `\n(${dates.length - 90} older days omitted for brevity)\n`;
-      }
-    }
-
-    return ctx;
+    });
   }
 
-  // ════════════════════════════════════════════════════════════════
-  //  INIT
-  // ════════════════════════════════════════════════════════════════
+  ctx += `\n=== END OF SNAPSHOT ===\n`;
+  return ctx;
+}
 
-  async function init() {
-    setStatus('loading', 'Loading your tracker data…');
-    try {
-      appData = await loadAllData();
+// ══════════════════════════════════════════════════════════════════
+//  STEP 3 — WRITE SNAPSHOT AS A .JSON FILE IN MEMORY (Blob/File)
+//  Then on first chat message, "upload" it to the AI as context.
+// ══════════════════════════════════════════════════════════════════
 
-      const tc   = appData.trackers.length;
-      const dc   = Object.keys(appData.dailySelections).length;
-      const msg  = tc === 0 && dc === 0
-        ? 'No data found yet — create trackers and save some entries first'
-        : `${tc} tracker${tc !== 1 ? 's' : ''} · ${dc} day${dc !== 1 ? 's' : ''} of logs loaded ✓`;
+let dataContextString = '';   // plain-text version sent with every message
 
-      setStatus(tc === 0 && dc === 0 ? 'error' : 'ready', msg);
+async function init() {
+  setStatus('loading', 'Reading IndexedDB and localStorage…');
 
-      // Populate debug panel
-      document.getElementById('debugContent').textContent = buildAIContext(appData);
+  exportedJSON = await exportAllDataToJSON();
+  dataContextString = snapshotToContext(exportedJSON);
 
-      aiReady = true;
-    } catch (err) {
-      console.error('[AI] init error:', err);
-      setStatus('error', 'Could not load data — check console for details');
-      document.getElementById('debugContent').textContent = 'Error: ' + err.message;
-      aiReady = true;
-    }
+  const { totalTrackers, totalDays, totalEntries } = exportedJSON.summary;
+
+  // Update badges
+  document.getElementById('badgeTrackers').textContent = `${totalTrackers} tracker${totalTrackers !== 1 ? 's' : ''}`;
+  document.getElementById('badgeDays').textContent     = `${totalDays} day${totalDays !== 1 ? 's' : ''}`;
+  document.getElementById('badgeEntries').textContent  = `${totalEntries} entries`;
+
+  if (totalTrackers === 0 && totalDays === 0) {
+    setStatus('error', 'No data found — create some trackers and save entries first');
+  } else {
+    setStatus('ready', `Data snapshot ready — ${totalTrackers} trackers · ${totalDays} days · ${totalEntries} entries`);
+    document.getElementById('dataStrip').classList.add('show');
   }
 
-  function setStatus(state, text) {
-    const dot = document.getElementById('statusDot');
-    const bar = document.getElementById('statusBar');
-    dot.className = 'status-dot' + (state === 'loading' ? ' loading' : state === 'error' ? ' error' : '');
-    document.getElementById('statusText').textContent = text;
-    if (state === 'error') {
-      bar.style.background = 'var(--bg-error)';
-      bar.style.color      = 'var(--text-error)';
-    } else {
-      bar.style.background = 'var(--bg-info)';
-      bar.style.color      = 'var(--text-info)';
-    }
+  aiContextReady = true;
+}
+
+function setStatus(state, text) {
+  const dot = document.getElementById('statusDot');
+  const bar = document.getElementById('statusBar');
+  dot.className = 'status-dot' + (state === 'loading' ? ' loading' : state === 'error' ? ' error' : '');
+  document.getElementById('statusText').textContent = text;
+  bar.style.background = state === 'error' ? 'var(--bg-error)' : 'var(--bg-info)';
+  bar.style.color      = state === 'error' ? 'var(--text-error)' : 'var(--text-info)';
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  CONVERSATION
+// ══════════════════════════════════════════════════════════════════
+
+const history = [];
+
+async function sendMessage(text) {
+  if (!aiContextReady) return;
+
+  const input = document.getElementById('userInput');
+  const msg   = (text || input.value).trim();
+  if (!msg) return;
+
+  if (!text) { input.value = ''; autoResize(input); }
+
+  document.getElementById('emptyState')?.remove();
+  document.getElementById('suggestions').style.display = 'none';
+
+  appendMessage('user', msg);
+  history.push({ role: 'user', content: msg });
+
+  const typingEl = showTyping();
+  setSendDisabled(true);
+
+  try {
+    // System prompt embeds the full data snapshot as plain text.
+    // This is equivalent to "uploading a file" — the entire JSON
+    // is included in the system context on every turn.
+    const systemPrompt = `You are a smart, friendly personal AI assistant inside a habit and mood tracker app called "My Day".
+
+The user's COMPLETE tracker data has been exported from their device (IndexedDB + localStorage) and is provided below as a structured snapshot. Use this data to answer every question with real, specific details.
+
+When the user asks about:
+- Today's entries → look up today's date in the logs
+- Trends / patterns → compare values across multiple dates
+- Streaks → count consecutive days with a specific value
+- Best/worst days → scan all entries for that tracker
+- Summaries → aggregate the relevant date range
+
+Always be warm, specific, and data-driven. If data is missing for a date, say so clearly.
+Never make up values — only use what is in the snapshot below.
+
+${dataContextString}`;
+
+    const response = await puter.ai.chat(
+      history.map(m => ({ role: m.role, content: m.content })),
+      { model: 'gpt-4o-mini', system: systemPrompt }
+    );
+
+    typingEl.remove();
+    const reply =
+      response?.message?.content ||
+      response?.text ||
+      (typeof response === 'string' ? response : null) ||
+      'I received an empty response. Please try again.';
+
+    appendMessage('ai', reply);
+    history.push({ role: 'assistant', content: reply });
+
+  } catch (err) {
+    typingEl.remove();
+    console.error('[AI] chat error:', err);
+    appendMessage('ai',
+      `Something went wrong: **${err.message || 'Unknown error'}**\n\n` +
+      `If this is your first time, Puter will show a sign-in popup — please allow it and try again.`
+    );
   }
 
-  function toggleDebug() {
-    document.getElementById('debugPanel').classList.toggle('open');
-  }
+  setSendDisabled(false);
+  document.getElementById('userInput').focus();
+}
 
-  // ════════════════════════════════════════════════════════════════
-  //  CONVERSATION
-  // ════════════════════════════════════════════════════════════════
+function sendSuggestion(el) { sendMessage(el.textContent.trim()); }
 
-  const history = [];
+// ── DOM helpers ──────────────────────────────────────────────────
+function appendMessage(role, text) {
+  const area    = document.getElementById('chatArea');
+  const div     = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.innerHTML =
+    `<div class="msg-avatar">${role === 'ai' ? '🤖' : '🧑'}</div>` +
+    `<div class="msg-bubble">${role === 'ai' ? renderMarkdown(text) : escapeHtml(text)}</div>`;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
 
-  async function sendMessage(text) {
-    if (!aiReady) return;
-    const input = document.getElementById('userInput');
-    const msg   = (text || input.value).trim();
-    if (!msg) return;
+function showTyping() {
+  const area    = document.getElementById('chatArea');
+  const div     = document.createElement('div');
+  div.className = 'msg ai';
+  div.innerHTML =
+    `<div class="msg-avatar">🤖</div>` +
+    `<div class="msg-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+  return div;
+}
 
-    if (!text) { input.value = ''; autoResize(input); }
+function setSendDisabled(v) { document.getElementById('sendBtn').disabled = v; }
 
-    document.getElementById('emptyState')?.remove();
-    document.getElementById('suggestions').style.display = 'none';
+function clearChat() {
+  history.length = 0;
+  document.getElementById('chatArea').innerHTML =
+    `<div class="ai-empty-state" id="emptyState">
+      <div class="empty-icon">✨</div>
+      <h2>What would you like to know?</h2>
+      <p>Ask me about your habits, trends, streaks, or anything you've logged.</p>
+    </div>`;
+  document.getElementById('suggestions').style.display = 'flex';
+}
 
-    appendMessage('user', msg);
-    history.push({ role: 'user', content: msg });
+// ── Input ────────────────────────────────────────────────────────
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 110) + 'px';
+}
 
-    const typingEl = showTyping();
-    setSendDisabled(true);
+// ── Markdown renderer ────────────────────────────────────────────
+function renderMarkdown(text) {
+  let html = text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,     '<em>$1</em>')
+    .replace(/`(.+?)`/g,       '<code>$1</code>')
+    .replace(/^#{1,3} (.+)$/gm,'<strong>$1</strong>')
+    .replace(/^[-*] (.+)$/gm,  '<li>$1</li>');
 
-    try {
-      // Rebuild context fresh each send so any new data is included
-      const context = buildAIContext(appData);
+  html = html.replace(/(<li>[\s\S]*?<\/li>\n?)+/g, m => `<ul>${m}</ul>`);
+  html = html.split(/\n\n+/).map(block => {
+    block = block.trim();
+    if (!block) return '';
+    if (/^<(ul|li|strong|em|code)/.test(block)) return block;
+    return `<p>${block.replace(/\n/g,'<br>')}</p>`;
+  }).join('');
+  return html;
+}
+function escapeHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
 
-      const systemPrompt = [
-        'You are a friendly, insightful personal AI assistant inside a habit/mood tracker app called "My Day".',
-        'You have complete access to the user\'s tracker data provided below.',
-        'Always use this data to give specific, personalised, data-driven answers.',
-        'If the user asks about trends, patterns, streaks, or scores — calculate them from the data.',
-        'Be warm, concise, and actionable. Use bullet points for lists; plain prose otherwise.',
-        'If no data is logged yet, encourage the user to start tracking.',
-        '',
-        context
-      ].join('\n');
-
-      const response = await puter.ai.chat(
-        history.map(m => ({ role: m.role, content: m.content })),
-        { model: 'gpt-4o-mini', system: systemPrompt }
-      );
-
-      typingEl.remove();
-      const reply = response?.message?.content
-        || response?.text
-        || (typeof response === 'string' ? response : null)
-        || 'Sorry, I received an empty response.';
-
-      appendMessage('ai', reply);
-      history.push({ role: 'assistant', content: reply });
-
-    } catch (err) {
-      typingEl.remove();
-      console.error('[AI] chat error:', err);
-      appendMessage('ai',
-        `Something went wrong: **${err.message || 'Unknown error'}**.\n\n` +
-        `Make sure you're signed in to Puter — a sign-in popup will appear on first use.`
-      );
-    }
-
-    setSendDisabled(false);
-    document.getElementById('userInput').focus();
-  }
-
-  function sendSuggestion(el) { sendMessage(el.textContent.trim()); }
-
-  // ── DOM helpers ─────────────────────────────────────────────────
-  function appendMessage(role, text) {
-    const area    = document.getElementById('chatArea');
-    const div     = document.createElement('div');
-    div.className = `msg ${role}`;
-    div.innerHTML =
-      `<div class="msg-avatar">${role === 'ai' ? '🤖' : '🧑'}</div>` +
-      `<div class="msg-bubble">${role === 'ai' ? renderMarkdown(text) : escapeHtml(text)}</div>`;
-    area.appendChild(div);
-    area.scrollTop = area.scrollHeight;
-  }
-
-  function showTyping() {
-    const area    = document.getElementById('chatArea');
-    const div     = document.createElement('div');
-    div.className = 'msg ai';
-    div.innerHTML =
-      `<div class="msg-avatar">🤖</div>` +
-      `<div class="msg-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
-    area.appendChild(div);
-    area.scrollTop = area.scrollHeight;
-    return div;
-  }
-
-  function setSendDisabled(v) { document.getElementById('sendBtn').disabled = v; }
-
-  function clearChat() {
-    history.length = 0;
-    document.getElementById('chatArea').innerHTML =
-      `<div class="ai-empty-state" id="emptyState">
-        <div class="empty-icon">✨</div>
-        <h2>What would you like to know?</h2>
-        <p>Ask me about your habits, trends, or anything you've logged.</p>
-      </div>`;
-    document.getElementById('suggestions').style.display = 'flex';
-  }
-
-  // ── Input helpers ───────────────────────────────────────────────
-  function handleKey(e) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-  }
-  function autoResize(el) {
-    el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 110) + 'px';
-  }
-
-  // ── Lightweight Markdown → HTML ─────────────────────────────────
-  function renderMarkdown(text) {
-    let html = text
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.+?)\*/g,     '<em>$1</em>')
-      .replace(/`(.+?)`/g,       '<code>$1</code>')
-      .replace(/^#{1,3} (.+)$/gm,'<strong>$1</strong>')
-      .replace(/^[-*] (.+)$/gm,  '<li>$1</li>');
-
-    html = html.replace(/(<li>[\s\S]*?<\/li>\n?)+/g, m => `<ul>${m}</ul>`);
-    html = html.split(/\n\n+/).map(block => {
-      block = block.trim();
-      if (!block) return '';
-      if (/^<(ul|li|strong|em|code)/.test(block)) return block;
-      return `<p>${block.replace(/\n/g,'<br>')}</p>`;
-    }).join('');
-
-    return html;
-  }
-  function escapeHtml(t) {
-    return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  // ── Boot ────────────────────────────────────────────────────────
-  init();
-  </script>
+// ── Boot ─────────────────────────────────────────────────────────
+init();
+</script>
 </body>
 </html>
