@@ -267,7 +267,7 @@ textarea.tracker-input{min-height:80px}
   padding-top: 0;
   text-align: center;
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
   background: var(--nav-bg, var(--bg-card));
   box-shadow: 0 -1px 0 var(--nav-border, var(--border-light)), var(--shadow);
   backdrop-filter: blur(12px);
