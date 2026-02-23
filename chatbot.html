@@ -8,206 +8,125 @@
   <script src="https://js.puter.com/v2/"></script>
   <style>
     html, body { height: 100%; }
-    body {
-      display: flex;
-      flex-direction: column;
-      height: 100dvh;
-      overflow: hidden;
-    }
+    body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
 
-    /* ── Header ── */
     .ai-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      display: flex; align-items: center; justify-content: space-between;
       padding: 14px 16px 12px;
-      background: var(--bg-card);
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
+      background: var(--bg-card); border-bottom: 1px solid var(--border); flex-shrink: 0;
     }
     .ai-header-left { display: flex; align-items: center; gap: 10px; }
     .ai-avatar {
-      width: 38px; height: 38px;
-      background: var(--blue);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px; flex-shrink: 0;
+      width: 38px; height: 38px; background: var(--blue); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
     }
     .ai-header-info h1 { font-size: 16px; font-weight: 700; color: var(--text-strong); margin-bottom: 0; }
     .ai-header-info p  { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
     .ai-header-actions { display: flex; gap: 8px; }
     .icon-btn {
-      width: 36px; height: 36px;
-      background: var(--bg-subtle);
-      border: 1px solid var(--border);
-      border-radius: 50%;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 15px;
-      transition: background .15s;
+      width: 36px; height: 36px; background: var(--bg-subtle); border: 1px solid var(--border);
+      border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 15px; transition: background .15s;
     }
     .icon-btn:hover { background: var(--bg-hover); }
 
-    /* ── Status bar ── */
-    .status-bar {
-      padding: 6px 16px;
-      background: var(--bg-info);
-      border-bottom: 1px solid var(--border-light);
-      font-size: 11px;
-      color: var(--text-info);
-      display: flex; align-items: center; gap: 8px;
-      flex-shrink: 0;
+    /* ── Data preview panel (shown before chat) ── */
+    .data-preview {
+      flex: 1; overflow-y: auto; padding: 16px;
+      display: flex; flex-direction: column; gap: 12px;
     }
-    .status-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--green);
-      animation: pulse 2s infinite;
-      flex-shrink: 0;
-    }
-    .status-dot.loading { background: var(--blue); }
-    .status-dot.error   { background: var(--red); animation: none; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+    .data-preview.hidden { display: none; }
 
-    /* ── Data badge strip ── */
-    .data-strip {
-      display: none;
-      padding: 6px 16px;
+    .preview-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 8px; padding: 16px; box-shadow: var(--shadow);
+    }
+    .preview-card h3 { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+
+    .preview-row { display: flex; align-items: baseline; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--border-faint); font-size: 13px; }
+    .preview-row:last-child { border-bottom: none; }
+    .preview-name { font-weight: 600; color: var(--text-strong); min-width: 120px; }
+    .preview-val  { color: var(--text-muted); }
+    .preview-badge { background: var(--bg-badge); color: var(--text-badge); font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
+
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    .stat-box { background: var(--bg-subtle); border-radius: 6px; padding: 12px; text-align: center; }
+    .stat-num  { font-size: 24px; font-weight: 700; color: var(--blue); }
+    .stat-lbl  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    .start-btn {
+      display: block; width: 100%;
+      padding: 14px; font-size: 16px; font-weight: 700;
+      background: var(--blue); color: #fff; border: none;
+      border-radius: 8px; cursor: pointer; transition: background .15s;
+    }
+    .start-btn:hover { background: var(--blue-dark); }
+    .start-btn:disabled { background: var(--border); cursor: not-allowed; }
+
+    .raw-toggle { font-size: 12px; color: var(--blue); cursor: pointer; text-decoration: underline; margin-top: 8px; display: inline-block; }
+    .raw-box { display: none; margin-top: 10px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 11px; color: var(--text-body); white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow-y: auto; }
+    .raw-box.show { display: block; }
+
+    .warn-box { background: var(--bg-warn); border-left: 4px solid var(--orange); padding: 12px 14px; border-radius: 4px; font-size: 13px; color: var(--text-warn); }
+    .error-box { background: var(--bg-error); border-left: 4px solid var(--red); padding: 12px 14px; border-radius: 4px; font-size: 13px; color: var(--text-error); }
+
+    /* ── Chat area ── */
+    .chat-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .chat-wrap.hidden { display: none; }
+
+    .chat-topbar {
+      padding: 8px 16px;
       background: var(--bg-success);
       border-bottom: 1px solid var(--border-light);
-      font-size: 11px;
-      color: var(--text-success);
-      gap: 12px;
-      flex-shrink: 0;
-      flex-wrap: wrap;
+      font-size: 11px; color: var(--text-success);
+      display: flex; align-items: center; gap: 8px; flex-shrink: 0;
     }
-    .data-strip.show { display: flex; align-items: center; }
-    .data-badge {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 2px 10px;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-muted);
-    }
-
-    /* ── Chat scroll area ── */
     .chat-area {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      scroll-behavior: smooth;
+      flex: 1; overflow-y: auto; padding: 16px;
+      display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth;
     }
     .chat-area::-webkit-scrollbar { width: 4px; }
     .chat-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
-    /* ── Empty state ── */
-    .ai-empty-state {
-      flex: 1;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      text-align: center; padding: 30px 20px; gap: 8px;
-    }
-    .ai-empty-state .empty-icon { font-size: 44px; margin-bottom: 6px; }
-    .ai-empty-state h2 { font-size: 17px; font-weight: 700; color: var(--text-strong); margin-bottom: 0; }
-    .ai-empty-state p  { font-size: 13px; color: var(--text-muted); max-width: 260px; line-height: 1.5; }
-
-    /* ── Messages ── */
     .msg { display: flex; gap: 8px; max-width: 100%; animation: msgIn .18s ease; }
     @keyframes msgIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
     .msg.user { flex-direction: row-reverse; }
-
-    .msg-avatar {
-      width: 28px; height: 28px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 13px; flex-shrink: 0; margin-top: 2px;
-    }
+    .msg-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; margin-top: 2px; }
     .msg.ai   .msg-avatar { background: var(--blue); }
     .msg.user .msg-avatar { background: var(--bg-badge); }
-
-    .msg-bubble {
-      max-width: calc(100% - 80px);
-      padding: 10px 14px; border-radius: 16px;
-      font-size: 14px; line-height: 1.55; word-break: break-word;
-    }
-    .msg.ai .msg-bubble {
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-bottom-left-radius: 4px; color: var(--text-body); box-shadow: var(--shadow);
-    }
-    .msg.user .msg-bubble {
-      background: var(--blue); color: #fff; border-bottom-right-radius: 4px;
-    }
+    .msg-bubble { max-width: calc(100% - 80px); padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.55; word-break: break-word; }
+    .msg.ai .msg-bubble { background: var(--bg-card); border: 1px solid var(--border); border-bottom-left-radius: 4px; color: var(--text-body); box-shadow: var(--shadow); }
+    .msg.user .msg-bubble { background: var(--blue); color: #fff; border-bottom-right-radius: 4px; }
     .msg.ai .msg-bubble strong { font-weight: 700; color: var(--text-strong); }
     .msg.ai .msg-bubble em     { font-style: italic; }
-    .msg.ai .msg-bubble code   {
-      background: var(--bg-subtle); border: 1px solid var(--border-faint);
-      padding: 1px 5px; border-radius: 3px; font-size: 12px; font-family: monospace;
-    }
+    .msg.ai .msg-bubble code   { background: var(--bg-subtle); border: 1px solid var(--border-faint); padding: 1px 5px; border-radius: 3px; font-size: 12px; font-family: monospace; }
     .msg.ai .msg-bubble ul, .msg.ai .msg-bubble ol { margin: 6px 0 6px 18px; }
     .msg.ai .msg-bubble li { margin: 3px 0; }
     .msg.ai .msg-bubble p  { margin-bottom: 6px; }
     .msg.ai .msg-bubble p:last-child { margin-bottom: 0; }
 
-    /* ── Typing dots ── */
     .typing-dots { display: flex; gap: 5px; align-items: center; padding: 4px 0; }
-    .typing-dots span {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--text-faint);
-      animation: bounce 1.2s infinite;
-    }
+    .typing-dots span { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); animation: bounce 1.2s infinite; }
     .typing-dots span:nth-child(2) { animation-delay: .2s; }
     .typing-dots span:nth-child(3) { animation-delay: .4s; }
     @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
 
-    /* ── Suggestion chips ── */
-    .suggestions-wrap {
-      padding: 0 16px 8px;
-      display: flex; gap: 7px; overflow-x: auto; flex-shrink: 0;
-    }
+    .suggestions-wrap { padding: 0 16px 8px; display: flex; gap: 7px; overflow-x: auto; flex-shrink: 0; }
     .suggestions-wrap::-webkit-scrollbar { display: none; }
-    .suggestion-chip {
-      white-space: nowrap; padding: 6px 13px; border-radius: 20px;
-      border: 1px solid var(--border); background: var(--bg-card);
-      font-size: 12px; color: var(--text-muted); cursor: pointer;
-      transition: all .15s; flex-shrink: 0; font-weight: 500;
-    }
+    .suggestion-chip { white-space: nowrap; padding: 6px 13px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg-card); font-size: 12px; color: var(--text-muted); cursor: pointer; transition: all .15s; flex-shrink: 0; font-weight: 500; }
     .suggestion-chip:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-pale); }
 
-    /* ── Input ── */
-    .input-area {
-      padding: 8px 12px 10px;
-      background: var(--bg-card);
-      border-top: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-    .input-row {
-      display: flex; gap: 8px; align-items: flex-end;
-      background: var(--bg-input); border: 1.5px solid var(--border);
-      border-radius: 20px; padding: 6px 6px 6px 14px;
-      transition: border-color .2s;
-    }
+    .input-area { padding: 8px 12px 10px; background: var(--bg-card); border-top: 1px solid var(--border); flex-shrink: 0; }
+    .input-row { display: flex; gap: 8px; align-items: flex-end; background: var(--bg-input); border: 1.5px solid var(--border); border-radius: 20px; padding: 6px 6px 6px 14px; transition: border-color .2s; }
     .input-row:focus-within { border-color: var(--blue); }
-    #userInput {
-      flex: 1; border: none; background: transparent; resize: none;
-      font-family: inherit; font-size: 14px; line-height: 1.5;
-      color: var(--text-body); max-height: 110px; outline: none;
-    }
+    #userInput { flex: 1; border: none; background: transparent; resize: none; font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--text-body); max-height: 110px; outline: none; }
     #userInput::placeholder { color: var(--text-faint); }
-    .send-btn {
-      width: 34px; height: 34px; border-radius: 50%;
-      background: var(--blue); border: none; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0; transition: background .15s, transform .1s;
-    }
-    .send-btn:hover  { background: var(--blue-dark); }
+    .send-btn { width: 34px; height: 34px; border-radius: 50%; background: var(--blue); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background .15s, transform .1s; }
+    .send-btn:hover { background: var(--blue-dark); }
     .send-btn:active { transform: scale(.92); }
     .send-btn:disabled { background: var(--border); cursor: not-allowed; }
     .send-btn svg { width: 15px; height: 15px; fill: #fff; }
 
-    /* 5-column nav */
     .bottom-navigation { grid-template-columns: 1fr 1fr 1fr 1fr 1fr !important; }
   </style>
 </head>
@@ -219,60 +138,69 @@
       <div class="ai-avatar">🤖</div>
       <div class="ai-header-info">
         <h1>AI Assistant</h1>
-        <p>Powered by your tracker data</p>
+        <p id="headerSub">Loading your data…</p>
       </div>
     </div>
     <div class="ai-header-actions">
       <button class="icon-btn theme-toggle" title="Toggle theme">🌙</button>
-      <button class="icon-btn" title="Clear chat" onclick="clearChat()">🗑️</button>
+      <button class="icon-btn" title="Back to data view" onclick="showDataView()" id="backBtn" style="display:none">📊</button>
+      <button class="icon-btn" title="Clear chat" onclick="clearChat()" id="clearBtn" style="display:none">🗑️</button>
     </div>
   </div>
 
-  <!-- Status bar -->
-  <div class="status-bar" id="statusBar">
-    <div class="status-dot loading" id="statusDot"></div>
-    <span id="statusText">Reading your data…</span>
-  </div>
-
-  <!-- Data summary badges (shown after load) -->
-  <div class="data-strip" id="dataStrip">
-    <span style="font-weight:600;">✓ Data loaded:</span>
-    <span class="data-badge" id="badgeTrackers">0 trackers</span>
-    <span class="data-badge" id="badgeDays">0 days</span>
-    <span class="data-badge" id="badgeEntries">0 entries</span>
-  </div>
-
-  <!-- Chat area -->
-  <div class="chat-area" id="chatArea">
-    <div class="ai-empty-state" id="emptyState">
-      <div class="empty-icon">✨</div>
-      <h2>What would you like to know?</h2>
-      <p>Ask me about your habits, trends, streaks, or anything you've logged.</p>
+  <!-- DATA PREVIEW PANEL -->
+  <div class="data-preview" id="dataView">
+    <div class="preview-card" id="statsCard">
+      <h3>📦 Data loaded from your device</h3>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-num" id="statTrackers">…</div><div class="stat-lbl">Trackers</div></div>
+        <div class="stat-box"><div class="stat-num" id="statDays">…</div><div class="stat-lbl">Days logged</div></div>
+        <div class="stat-box"><div class="stat-num" id="statEntries">…</div><div class="stat-lbl">Total entries</div></div>
+      </div>
     </div>
+
+    <div class="preview-card" id="trackersCard">
+      <h3>🗂 Your trackers</h3>
+      <div id="trackersList"><em style="color:var(--text-faint)">Loading…</em></div>
+    </div>
+
+    <div class="preview-card" id="recentCard">
+      <h3>📅 Recent log entries</h3>
+      <div id="recentList"><em style="color:var(--text-faint)">Loading…</em></div>
+    </div>
+
+    <div class="preview-card">
+      <h3>🔍 Raw data sent to AI</h3>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">This is the exact text the AI will receive. Verify your data is here before chatting.</p>
+      <span class="raw-toggle" onclick="toggleRaw()">▶ Show raw context</span>
+      <div class="raw-box" id="rawBox"></div>
+    </div>
+
+    <button class="start-btn" id="startBtn" onclick="startChat()" disabled>
+      Start chatting with AI →
+    </button>
   </div>
 
-  <!-- Suggestions -->
-  <div class="suggestions-wrap" id="suggestions">
-    <div class="suggestion-chip" onclick="sendSuggestion(this)">How am I doing this week?</div>
-    <div class="suggestion-chip" onclick="sendSuggestion(this)">What did I log today?</div>
-    <div class="suggestion-chip" onclick="sendSuggestion(this)">Show my tracker names</div>
-    <div class="suggestion-chip" onclick="sendSuggestion(this)">Any patterns in my data?</div>
-    <div class="suggestion-chip" onclick="sendSuggestion(this)">What was my best day?</div>
-    <div class="suggestion-chip" onclick="sendSuggestion(this)">Give me a weekly summary</div>
-  </div>
-
-  <!-- Input -->
-  <div class="input-area">
-    <div class="input-row">
-      <textarea
-        id="userInput" rows="1"
-        placeholder="Ask about your trackers…"
-        onkeydown="handleKey(event)"
-        oninput="autoResize(this)"
-      ></textarea>
-      <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="Send">
-        <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
-      </button>
+  <!-- CHAT PANEL -->
+  <div class="chat-wrap hidden" id="chatView">
+    <div class="chat-topbar" id="chatTopbar">
+      ✓ AI has your data · <span id="topbarSummary"></span>
+    </div>
+    <div class="chat-area" id="chatArea"></div>
+    <div class="suggestions-wrap" id="suggestions">
+      <div class="suggestion-chip" onclick="sendSuggestion(this)">How am I doing this week?</div>
+      <div class="suggestion-chip" onclick="sendSuggestion(this)">What did I log today?</div>
+      <div class="suggestion-chip" onclick="sendSuggestion(this)">Any patterns in my data?</div>
+      <div class="suggestion-chip" onclick="sendSuggestion(this)">What was my best day?</div>
+      <div class="suggestion-chip" onclick="sendSuggestion(this)">Give me a weekly summary</div>
+    </div>
+    <div class="input-area">
+      <div class="input-row">
+        <textarea id="userInput" rows="1" placeholder="Ask about your trackers…" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="Send">
+          <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -293,206 +221,273 @@
   const saved = localStorage.getItem('theme');
   const sys   = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   document.documentElement.setAttribute('data-theme', saved || sys);
-  document.querySelectorAll('.theme-toggle').forEach(b => {
-    b.textContent = (saved || sys) === 'dark' ? '☀️' : '🌙';
-  });
+  document.querySelectorAll('.theme-toggle').forEach(b => b.textContent = (saved||sys)==='dark'?'☀️':'🌙');
 })();
 document.body.addEventListener('click', e => {
   if (!e.target.closest('.theme-toggle')) return;
   const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('theme', next);
-  document.querySelectorAll('.theme-toggle').forEach(b => b.textContent = next === 'dark' ? '☀️' : '🌙');
+  document.querySelectorAll('.theme-toggle').forEach(b => b.textContent = next==='dark'?'☀️':'🌙');
 });
 
 // ══════════════════════════════════════════════════════════════════
-//  STEP 1 — EXPORT INDEXEDDB + LOCALSTORAGE → JSON OBJECT
-//  This mirrors exactly how comparev2.html opens the DB:
-//  open with version 2, let onupgradeneeded create stores if needed,
-//  then read everything in onsuccess.
+//  DATABASE — exact same pattern as comparev2.html
 // ══════════════════════════════════════════════════════════════════
+let db;
+const DB_NAME    = 'TrackerDB';
+const STORE_NAME = 'trackers';
 
-let exportedJSON   = null;   // the full data snapshot
-let aiContextReady = false;
-
-function exportAllDataToJSON() {
-  return new Promise((resolve) => {
-    const req = indexedDB.open('TrackerDB', 2);
+function initDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 2);
 
     req.onerror = () => {
-      console.error('[AI] IndexedDB open error');
-      resolve({ trackers: [], dailySelections: {}, exportedAt: new Date().toISOString() });
+      console.error('[AI] DB open failed:', req.error);
+      reject(req.error);
     };
 
-    // Create store if DB is brand-new (matches your other pages exactly)
     req.onupgradeneeded = (e) => {
       const d = e.target.result;
-      if (!d.objectStoreNames.contains('trackers')) {
-        const s = d.createObjectStore('trackers', { keyPath: 'id', autoIncrement: true });
+      if (!d.objectStoreNames.contains(STORE_NAME)) {
+        const s = d.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
         s.createIndex('title', 'title');
         s.createIndex('type',  'type');
       }
     };
 
-    req.onsuccess = (e) => {
-      const db = e.target.result;
-
-      // Read all trackers from IndexedDB
-      const tx      = db.transaction(['trackers'], 'readonly');
-      const store   = tx.objectStore('trackers');
-      const getAll  = store.getAll();
-
-      getAll.onsuccess = () => {
-        const trackers = getAll.result || [];
-
-        // Read daily selections from localStorage
-        let dailySelections = {};
-        try {
-          dailySelections = JSON.parse(localStorage.getItem('dailySelections') || '{}');
-        } catch (_) {}
-
-        db.close();
-
-        // Count total entries across all days
-        let totalEntries = 0;
-        Object.values(dailySelections).forEach(day => {
-          totalEntries += Object.keys(day).length;
-        });
-
-        const snapshot = {
-          exportedAt:      new Date().toISOString(),
-          today:           new Date().toISOString().slice(0, 10),
-          trackers,
-          dailySelections,
-          summary: {
-            totalTrackers: trackers.length,
-            totalDays:     Object.keys(dailySelections).length,
-            totalEntries,
-          }
-        };
-
-        console.log('[AI] Snapshot:', snapshot.summary);
-        resolve(snapshot);
-      };
-
-      getAll.onerror = () => {
-        db.close();
-        resolve({ trackers: [], dailySelections: {}, exportedAt: new Date().toISOString() });
-      };
+    req.onsuccess = () => {
+      db = req.result;
+      console.log('[AI] DB ready, stores:', Array.from(db.objectStoreNames));
+      resolve(db);
     };
   });
 }
 
+function getAllTrackers() {
+  return new Promise((resolve, reject) => {
+    const req = db.transaction([STORE_NAME], 'readonly')
+                  .objectStore(STORE_NAME)
+                  .getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror   = () => reject(req.error);
+  });
+}
+
 // ══════════════════════════════════════════════════════════════════
-//  STEP 2 — CONVERT SNAPSHOT TO A READABLE CONTEXT STRING FOR AI
+//  DATA SNAPSHOT
 // ══════════════════════════════════════════════════════════════════
+let snapshot = null;      // raw data
+let aiContext = '';       // plain-text sent to AI
 
-function snapshotToContext(snap) {
-  const { trackers, dailySelections, today, summary } = snap;
-  let ctx = '';
+async function buildSnapshot() {
+  const trackers = await getAllTrackers();
 
-  ctx += `=== MY DAY — TRACKER DATA SNAPSHOT ===\n`;
-  ctx += `Exported: ${snap.exportedAt}\n`;
-  ctx += `Today: ${today}\n`;
-  ctx += `Totals: ${summary.totalTrackers} trackers, ${summary.totalDays} days logged, ${summary.totalEntries} total entries\n\n`;
-
-  // --- Tracker definitions ---
-  ctx += `--- TRACKER DEFINITIONS (${trackers.length}) ---\n`;
-  if (!trackers.length) {
-    ctx += 'None created yet.\n';
-  } else {
-    trackers.forEach(t => {
-      ctx += `[ID:${t.id}] "${t.title}" | type: ${t.type || 'dropdown'}`;
-      if (t.options && t.options.length) {
-        const opts = t.options.map(o =>
-          typeof o === 'object' ? `${o.title || o.label}${o.color ? `(${o.color})` : ''}` : String(o)
-        ).join(', ');
-        ctx += ` | options: ${opts}`;
-      }
-      if (t.unit)            ctx += ` | unit: ${t.unit}`;
-      if (t.min !== undefined) ctx += ` | range: ${t.min}–${t.max}`;
-      ctx += '\n';
-    });
+  let dailySelections = {};
+  try {
+    dailySelections = JSON.parse(localStorage.getItem('dailySelections') || '{}');
+  } catch(e) {
+    console.warn('[AI] Could not parse dailySelections', e);
   }
 
-  // --- Daily logs ---
-  const dates = Object.keys(dailySelections).sort().reverse();
-  ctx += `\n--- DAILY LOGS (${dates.length} days) ---\n`;
-  if (!dates.length) {
-    ctx += 'No entries saved yet.\n';
+  const dates = Object.keys(dailySelections);
+  let totalEntries = 0;
+  dates.forEach(d => { totalEntries += Object.keys(dailySelections[d]).length; });
+
+  snapshot = { trackers, dailySelections, dates, totalEntries };
+  return snapshot;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  BUILD PLAIN-TEXT CONTEXT FOR AI
+// ══════════════════════════════════════════════════════════════════
+function buildContext({ trackers, dailySelections, dates }) {
+  const today = new Date().toISOString().slice(0, 10);
+  const lines = [];
+
+  lines.push('=== MY DAY APP — FULL DATA EXPORT ===');
+  lines.push(`Today: ${today}`);
+  lines.push(`Trackers: ${trackers.length}`);
+  lines.push(`Days with logs: ${dates.length}`);
+  lines.push('');
+
+  // Tracker definitions
+  lines.push('--- TRACKER DEFINITIONS ---');
+  if (trackers.length === 0) {
+    lines.push('(no trackers found)');
   } else {
-    dates.forEach(date => {
-      ctx += `\n[${date}]\n`;
+    trackers.forEach(t => {
+      lines.push(`ID=${t.id} | Name="${t.title}" | Type=${t.type || 'dropdown'}`);
+      if (t.options && t.options.length > 0) {
+        const opts = t.options.map((o, i) => {
+          if (typeof o === 'string') return `${i}:${o}`;
+          return `${i}:${o.title || o.label || JSON.stringify(o)}`;
+        }).join(', ');
+        lines.push(`  Options: ${opts}`);
+      }
+      if (t.unit) lines.push(`  Unit: ${t.unit}`);
+      if (t.min !== undefined) lines.push(`  Range: ${t.min} to ${t.max}`);
+    });
+  }
+  lines.push('');
+
+  // Daily logs — most recent first
+  lines.push('--- DAILY LOG ENTRIES ---');
+  const sortedDates = [...dates].sort().reverse();
+  if (sortedDates.length === 0) {
+    lines.push('(no entries saved yet)');
+  } else {
+    sortedDates.forEach(date => {
+      lines.push(`[${date}]`);
       const entries = Object.values(dailySelections[date]);
       entries.forEach(entry => {
-        const tracker = trackers.find(t => String(t.id) === String(entry.trackerId));
-        const name    = tracker ? `"${tracker.title}"` : `Tracker#${entry.trackerId}`;
-        ctx += `  ${name}: ${entry.value}`;
-        if (entry.type) ctx += ` (${entry.type})`;
-        ctx += '\n';
+        const t = trackers.find(tr => String(tr.id) === String(entry.trackerId));
+        const name = t ? t.title : `Tracker#${entry.trackerId}`;
+        lines.push(`  ${name}: ${entry.value}`);
       });
     });
   }
 
-  ctx += `\n=== END OF SNAPSHOT ===\n`;
-  return ctx;
+  lines.push('');
+  lines.push('=== END OF DATA ===');
+
+  return lines.join('\n');
 }
 
 // ══════════════════════════════════════════════════════════════════
-//  STEP 3 — WRITE SNAPSHOT AS A .JSON FILE IN MEMORY (Blob/File)
-//  Then on first chat message, "upload" it to the AI as context.
+//  RENDER DATA PREVIEW (so user can SEE what AI will receive)
 // ══════════════════════════════════════════════════════════════════
+function renderPreview() {
+  const { trackers, dailySelections, dates, totalEntries } = snapshot;
 
-let dataContextString = '';   // plain-text version sent with every message
+  // Stats
+  document.getElementById('statTrackers').textContent = trackers.length;
+  document.getElementById('statDays').textContent     = dates.length;
+  document.getElementById('statEntries').textContent  = totalEntries;
 
-async function init() {
-  setStatus('loading', 'Reading IndexedDB and localStorage…');
-
-  exportedJSON = await exportAllDataToJSON();
-  dataContextString = snapshotToContext(exportedJSON);
-
-  const { totalTrackers, totalDays, totalEntries } = exportedJSON.summary;
-
-  // Update badges
-  document.getElementById('badgeTrackers').textContent = `${totalTrackers} tracker${totalTrackers !== 1 ? 's' : ''}`;
-  document.getElementById('badgeDays').textContent     = `${totalDays} day${totalDays !== 1 ? 's' : ''}`;
-  document.getElementById('badgeEntries').textContent  = `${totalEntries} entries`;
-
-  if (totalTrackers === 0 && totalDays === 0) {
-    setStatus('error', 'No data found — create some trackers and save entries first');
+  // Trackers list
+  const tList = document.getElementById('trackersList');
+  if (trackers.length === 0) {
+    tList.innerHTML = `<div class="warn-box">No trackers found in IndexedDB. Go to Trackers and create some first.</div>`;
   } else {
-    setStatus('ready', `Data snapshot ready — ${totalTrackers} trackers · ${totalDays} days · ${totalEntries} entries`);
-    document.getElementById('dataStrip').classList.add('show');
+    tList.innerHTML = trackers.map(t => `
+      <div class="preview-row">
+        <span class="preview-name">${t.title}</span>
+        <span class="preview-badge">${t.type || 'dropdown'}</span>
+        <span class="preview-val">${t.options ? t.options.map(o => typeof o === 'object' ? (o.title||o.label) : o).join(', ') : ''}</span>
+      </div>`).join('');
   }
 
-  aiContextReady = true;
+  // Recent entries (last 5 days)
+  const rList = document.getElementById('recentList');
+  const sortedDates = [...dates].sort().reverse();
+  if (sortedDates.length === 0) {
+    rList.innerHTML = `<div class="warn-box">No daily entries found in localStorage. Save some entries from "My Day" first.</div>`;
+  } else {
+    const recentDates = sortedDates.slice(0, 5);
+    rList.innerHTML = recentDates.map(date => {
+      const entries = Object.values(dailySelections[date]);
+      return `<div style="margin-bottom:10px">
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:4px">${date}</div>
+        ${entries.map(e => {
+          const t = trackers.find(tr => String(tr.id) === String(e.trackerId));
+          return `<div class="preview-row">
+            <span class="preview-name">${t ? t.title : 'Unknown'}</span>
+            <span class="preview-val">${e.value}</span>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }).join('');
+  }
+
+  // Raw context box
+  document.getElementById('rawBox').textContent = aiContext;
+
+  // Enable start button only if there's actual data
+  const hasData = trackers.length > 0 || dates.length > 0;
+  const btn = document.getElementById('startBtn');
+  btn.disabled = false;
+  btn.textContent = hasData
+    ? `Start chatting → (${trackers.length} trackers, ${dates.length} days)`
+    : 'Start chatting → (no data yet — AI will tell you what to do)';
 }
 
-function setStatus(state, text) {
-  const dot = document.getElementById('statusDot');
-  const bar = document.getElementById('statusBar');
-  dot.className = 'status-dot' + (state === 'loading' ? ' loading' : state === 'error' ? ' error' : '');
-  document.getElementById('statusText').textContent = text;
-  bar.style.background = state === 'error' ? 'var(--bg-error)' : 'var(--bg-info)';
-  bar.style.color      = state === 'error' ? 'var(--text-error)' : 'var(--text-info)';
+function toggleRaw() {
+  const box = document.getElementById('rawBox');
+  const tog = document.querySelector('.raw-toggle');
+  box.classList.toggle('show');
+  tog.textContent = box.classList.contains('show') ? '▼ Hide raw context' : '▶ Show raw context';
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════════════
+async function init() {
+  document.getElementById('headerSub').textContent = 'Reading IndexedDB…';
+  try {
+    await initDB();
+    await buildSnapshot();
+    aiContext = buildContext(snapshot);
+
+    document.getElementById('headerSub').textContent =
+      `${snapshot.trackers.length} trackers · ${snapshot.dates.length} days loaded`;
+
+    renderPreview();
+
+  } catch(err) {
+    console.error('[AI] init error:', err);
+    document.getElementById('trackersList').innerHTML =
+      `<div class="error-box"><strong>Error reading IndexedDB:</strong> ${err.message}<br><br>
+       Make sure you have created trackers in the app first.</div>`;
+    document.getElementById('startBtn').disabled = false;
+    document.getElementById('startBtn').textContent = 'Start anyway (no data)';
+    aiContext = 'No tracker data available.';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  VIEW SWITCHING
+// ══════════════════════════════════════════════════════════════════
+function startChat() {
+  document.getElementById('dataView').classList.add('hidden');
+  document.getElementById('chatView').classList.remove('hidden');
+  document.getElementById('backBtn').style.display  = 'flex';
+  document.getElementById('clearBtn').style.display = 'flex';
+
+  const s = snapshot;
+  document.getElementById('topbarSummary').textContent =
+    `${s.trackers.length} trackers · ${s.dates.length} days · ${s.totalEntries} entries`;
+
+  // Greet user with a first message from AI
+  appendMessage('ai',
+    `Hi! I've loaded your tracker data:\n\n` +
+    `- **${s.trackers.length}** tracker${s.trackers.length !== 1 ? 's' : ''}: ${s.trackers.map(t => t.title).join(', ') || 'none'}\n` +
+    `- **${s.dates.length}** day${s.dates.length !== 1 ? 's' : ''} of entries\n` +
+    `- **${s.totalEntries}** total log entries\n\n` +
+    `What would you like to know about your data?`
+  );
+
+  document.getElementById('userInput').focus();
+}
+
+function showDataView() {
+  document.getElementById('dataView').classList.remove('hidden');
+  document.getElementById('chatView').classList.add('hidden');
+  document.getElementById('backBtn').style.display  = 'none';
+  document.getElementById('clearBtn').style.display = 'none';
 }
 
 // ══════════════════════════════════════════════════════════════════
 //  CONVERSATION
 // ══════════════════════════════════════════════════════════════════
-
 const history = [];
 
 async function sendMessage(text) {
-  if (!aiContextReady) return;
-
   const input = document.getElementById('userInput');
   const msg   = (text || input.value).trim();
   if (!msg) return;
 
   if (!text) { input.value = ''; autoResize(input); }
-
-  document.getElementById('emptyState')?.remove();
   document.getElementById('suggestions').style.display = 'none';
 
   appendMessage('user', msg);
@@ -502,24 +497,13 @@ async function sendMessage(text) {
   setSendDisabled(true);
 
   try {
-    // System prompt embeds the full data snapshot as plain text.
-    // This is equivalent to "uploading a file" — the entire JSON
-    // is included in the system context on every turn.
-    const systemPrompt = `You are a smart, friendly personal AI assistant inside a habit and mood tracker app called "My Day".
+    const systemPrompt =
+`You are a personal AI assistant inside a habit/mood tracker app called "My Day".
+The user's complete tracker data has been exported from their device and is pasted below.
+Use ONLY this data to answer questions. Be specific — reference actual tracker names and real logged values.
+Never invent data. If something wasn't logged, say so.
 
-The user's COMPLETE tracker data has been exported from their device (IndexedDB + localStorage) and is provided below as a structured snapshot. Use this data to answer every question with real, specific details.
-
-When the user asks about:
-- Today's entries → look up today's date in the logs
-- Trends / patterns → compare values across multiple dates
-- Streaks → count consecutive days with a specific value
-- Best/worst days → scan all entries for that tracker
-- Summaries → aggregate the relevant date range
-
-Always be warm, specific, and data-driven. If data is missing for a date, say so clearly.
-Never make up values — only use what is in the snapshot below.
-
-${dataContextString}`;
+${aiContext}`;
 
     const response = await puter.ai.chat(
       history.map(m => ({ role: m.role, content: m.content })),
@@ -531,18 +515,15 @@ ${dataContextString}`;
       response?.message?.content ||
       response?.text ||
       (typeof response === 'string' ? response : null) ||
-      'I received an empty response. Please try again.';
+      'Empty response received.';
 
     appendMessage('ai', reply);
     history.push({ role: 'assistant', content: reply });
 
-  } catch (err) {
+  } catch(err) {
     typingEl.remove();
     console.error('[AI] chat error:', err);
-    appendMessage('ai',
-      `Something went wrong: **${err.message || 'Unknown error'}**\n\n` +
-      `If this is your first time, Puter will show a sign-in popup — please allow it and try again.`
-    );
+    appendMessage('ai', `Error: **${err.message}**\n\nIf this is your first use, sign in to Puter when prompted and try again.`);
   }
 
   setSendDisabled(false);
@@ -551,7 +532,9 @@ ${dataContextString}`;
 
 function sendSuggestion(el) { sendMessage(el.textContent.trim()); }
 
-// ── DOM helpers ──────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+//  DOM HELPERS
+// ══════════════════════════════════════════════════════════════════
 function appendMessage(role, text) {
   const area    = document.getElementById('chatArea');
   const div     = document.createElement('div');
@@ -579,16 +562,11 @@ function setSendDisabled(v) { document.getElementById('sendBtn').disabled = v; }
 
 function clearChat() {
   history.length = 0;
-  document.getElementById('chatArea').innerHTML =
-    `<div class="ai-empty-state" id="emptyState">
-      <div class="empty-icon">✨</div>
-      <h2>What would you like to know?</h2>
-      <p>Ask me about your habits, trends, streaks, or anything you've logged.</p>
-    </div>`;
+  document.getElementById('chatArea').innerHTML = '';
   document.getElementById('suggestions').style.display = 'flex';
+  startChat(); // re-show greeting
 }
 
-// ── Input ────────────────────────────────────────────────────────
 function handleKey(e) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 }
@@ -597,16 +575,14 @@ function autoResize(el) {
   el.style.height = Math.min(el.scrollHeight, 110) + 'px';
 }
 
-// ── Markdown renderer ────────────────────────────────────────────
 function renderMarkdown(text) {
   let html = text
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g,     '<em>$1</em>')
-    .replace(/`(.+?)`/g,       '<code>$1</code>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/`(.+?)`/g,'<code>$1</code>')
     .replace(/^#{1,3} (.+)$/gm,'<strong>$1</strong>')
-    .replace(/^[-*] (.+)$/gm,  '<li>$1</li>');
-
+    .replace(/^[-*] (.+)$/gm,'<li>$1</li>');
   html = html.replace(/(<li>[\s\S]*?<\/li>\n?)+/g, m => `<ul>${m}</ul>`);
   html = html.split(/\n\n+/).map(block => {
     block = block.trim();
@@ -620,7 +596,7 @@ function escapeHtml(t) {
   return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// ── Boot ─────────────────────────────────────────────────────────
+// Boot
 init();
 </script>
 </body>
