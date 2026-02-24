@@ -31,49 +31,41 @@
     }
     .icon-btn:hover { background: var(--bg-hover); }
 
-    /* Loading screen */
+    /* Loading */
     .loading-screen {
       flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 16px; padding: 30px;
+      align-items: center; justify-content: center; gap: 14px; padding: 30px;
     }
     .loading-screen.hidden { display: none; }
     .spinner {
-      width: 36px; height: 36px;
-      border: 3px solid var(--border);
-      border-top-color: var(--blue);
-      border-radius: 50%;
-      animation: spin .7s linear infinite;
+      width: 34px; height: 34px;
+      border: 3px solid var(--border); border-top-color: var(--blue);
+      border-radius: 50%; animation: spin .7s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
     .loading-screen p { font-size: 14px; color: var(--text-muted); text-align: center; }
 
-    /* Data loaded banner */
+    /* Banner */
     .data-banner {
-      display: none;
-      padding: 8px 16px;
-      background: var(--bg-success);
-      border-bottom: 1px solid var(--border-light);
+      display: none; padding: 7px 16px;
+      background: var(--bg-success); border-bottom: 1px solid var(--border-light);
       font-size: 12px; color: var(--text-success);
-      align-items: center; gap: 10px; flex-shrink: 0; flex-wrap: wrap;
+      align-items: center; gap: 8px; flex-shrink: 0; flex-wrap: wrap;
     }
     .data-banner.show { display: flex; }
-    .data-banner strong { color: var(--text-success); }
     .data-pill {
       background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: 20px; padding: 2px 10px;
-      font-size: 11px; font-weight: 600; color: var(--text-muted);
+      border-radius: 20px; padding: 2px 10px; font-size: 11px; font-weight: 600; color: var(--text-muted);
     }
-    .banner-right { margin-left: auto; }
     .csv-link {
-      font-size: 11px; color: var(--blue); cursor: pointer;
-      text-decoration: underline; background: none; border: none;
+      margin-left: auto; font-size: 11px; color: var(--blue);
+      cursor: pointer; text-decoration: underline; background: none; border: none;
     }
 
-    /* CSV preview modal */
+    /* CSV modal */
     .csv-modal {
       display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,.5); z-index: 1000;
-      align-items: flex-end; justify-content: center;
+      background: rgba(0,0,0,.5); z-index: 1000; align-items: flex-end; justify-content: center;
     }
     .csv-modal.show { display: flex; }
     .csv-modal-inner {
@@ -92,7 +84,7 @@
     }
     .csv-modal-actions { display: flex; gap: 8px; }
 
-    /* Chat area */
+    /* Chat */
     .chat-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .chat-wrap.hidden { display: none; }
     .chat-area {
@@ -146,8 +138,7 @@
     .suggestion-chip {
       white-space: nowrap; padding: 6px 13px; border-radius: 20px;
       border: 1px solid var(--border); background: var(--bg-card);
-      font-size: 12px; color: var(--text-muted); cursor: pointer;
-      transition: all .15s; flex-shrink: 0; font-weight: 500;
+      font-size: 12px; color: var(--text-muted); cursor: pointer; transition: all .15s; flex-shrink: 0; font-weight: 500;
     }
     .suggestion-chip:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-pale); }
 
@@ -186,7 +177,7 @@
       <div class="ai-avatar">🤖</div>
       <div class="ai-header-info">
         <h1>AI Assistant</h1>
-        <p id="headerSub">Starting up…</p>
+        <p id="headerSub">Loading…</p>
       </div>
     </div>
     <div class="ai-header-actions">
@@ -195,31 +186,29 @@
     </div>
   </div>
 
-  <!-- Loading screen -->
+  <!-- Loading -->
   <div class="loading-screen" id="loadingScreen">
     <div class="spinner"></div>
     <p id="loadingMsg">Reading your tracker data…</p>
   </div>
 
-  <!-- Data loaded banner -->
+  <!-- Banner -->
   <div class="data-banner" id="dataBanner">
-    <strong>✓ Data ready</strong>
+    <strong>✓ CSV ready</strong>
     <span class="data-pill" id="pillTrackers">—</span>
     <span class="data-pill" id="pillDays">—</span>
     <span class="data-pill" id="pillEntries">—</span>
-    <div class="banner-right">
-      <button class="csv-link" onclick="showCSV()">view CSV sent to AI</button>
-    </div>
+    <button class="csv-link" onclick="showCSV()">view CSV ↗</button>
   </div>
 
-  <!-- CSV preview modal -->
+  <!-- CSV modal -->
   <div class="csv-modal" id="csvModal" onclick="hideCSV(event)">
     <div class="csv-modal-inner">
-      <div class="csv-modal-title">📄 CSV sent to AI on every message</div>
-      <div class="csv-modal-sub">This is the exact data the AI reads. If your data appears here, the AI can access it.</div>
-      <div class="csv-box" id="csvPreviewBox"></div>
+      <div class="csv-modal-title">📄 CSV being sent to AI</div>
+      <div class="csv-modal-sub">If your data appears here, the AI can read it.</div>
+      <div class="csv-box" id="csvBox"></div>
       <div class="csv-modal-actions">
-        <button class="btn btn-primary btn-small" onclick="downloadCSV()">⬇ Download CSV</button>
+        <button class="btn btn-primary btn-small" onclick="downloadCSV()">⬇ Download</button>
         <button class="btn btn-small" style="background:var(--bg-subtle);border:1px solid var(--border)" onclick="hideCSV()">Close</button>
       </div>
     </div>
@@ -257,9 +246,7 @@
   </div>
 
 <script>
-// ══════════════════════════════════════════════════════════
-//  THEME  (same as your other pages)
-// ══════════════════════════════════════════════════════════
+// ── Theme ────────────────────────────────────────────────────────
 (function () {
   const saved = localStorage.getItem('theme');
   const sys   = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -274,9 +261,7 @@ document.body.addEventListener('click', e => {
   document.querySelectorAll('.theme-toggle').forEach(b => b.textContent = next==='dark'?'☀️':'🌙');
 });
 
-// ══════════════════════════════════════════════════════════
-//  DB — copied exactly from export.html
-// ══════════════════════════════════════════════════════════
+// ── DB — exact copy from export.html ────────────────────────────
 let db;
 const DB_NAME    = 'TrackerDB';
 const STORE_NAME = 'trackers';
@@ -299,23 +284,18 @@ function initDB() {
 
 function getAllTrackers() {
   return new Promise((res, rej) => {
-    const req = db.transaction([STORE_NAME], 'readonly')
-                  .objectStore(STORE_NAME).getAll();
+    const req = db.transaction([STORE_NAME], 'readonly').objectStore(STORE_NAME).getAll();
     req.onsuccess = () => res(req.result);
     req.onerror   = () => rej(req.error);
   });
 }
 
-// ══════════════════════════════════════════════════════════
-//  HELPERS — copied exactly from export.html
-// ══════════════════════════════════════════════════════════
+// ── Helpers — exact copy from export.html ───────────────────────
 function resolveValue(tracker, rawValue) {
   const type = tracker.type || 'dropdown';
   if (type === 'dropdown') {
     const idx = parseInt(rawValue);
-    return (tracker.options && tracker.options[idx])
-      ? tracker.options[idx].title
-      : rawValue;
+    return (tracker.options && tracker.options[idx]) ? tracker.options[idx].title : rawValue;
   }
   if (type === 'yesno')   return rawValue === 'yes' ? 'Yes' : 'No';
   if (type === 'numeric') {
@@ -329,15 +309,11 @@ function resolveValue(tracker, rawValue) {
 function escapeCSV(val) {
   if (val === null || val === undefined) return '';
   const s = String(val);
-  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
-    return '"' + s.replace(/"/g, '""') + '"';
-  }
+  if (s.includes(',') || s.includes('"') || s.includes('\n')) return '"' + s.replace(/"/g, '""') + '"';
   return s;
 }
 
-// ══════════════════════════════════════════════════════════
-//  BUILD PIVOT — copied exactly from export.html
-// ══════════════════════════════════════════════════════════
+// ── buildPivot — exact copy from export.html ────────────────────
 async function buildPivot() {
   const trackers        = await getAllTrackers();
   const dailySelections = JSON.parse(localStorage.getItem('dailySelections') || '{}');
@@ -363,13 +339,11 @@ async function buildPivot() {
     return { date: dateKey, values };
   });
 
-  return { orderedTrackers, rows, trackers, dailySelections };
+  return { orderedTrackers, rows, trackers };
 }
 
-// ══════════════════════════════════════════════════════════
-//  BUILD CSV STRING  (same logic as export.html exportCSV)
-// ══════════════════════════════════════════════════════════
-function buildCSVString(orderedTrackers, rows) {
+// ── Build CSV string — same as export.html exportCSV() ──────────
+function buildCSV(orderedTrackers, rows) {
   const header   = ['Date', ...orderedTrackers.map(t => t.title)].map(escapeCSV).join(',');
   const dataRows = rows.map(row => {
     const cells = [row.date, ...orderedTrackers.map(t => row.values[t.id] ?? '')];
@@ -378,78 +352,59 @@ function buildCSVString(orderedTrackers, rows) {
   return [header, ...dataRows].join('\r\n');
 }
 
-// ══════════════════════════════════════════════════════════
-//  STATE
-// ══════════════════════════════════════════════════════════
-let csvString        = '';   // the CSV text fed to the AI
-let pivotData        = null; // { orderedTrackers, rows, trackers }
-const chatHistory    = [];
+// ── State ────────────────────────────────────────────────────────
+let csvString  = '';
+let trackerRef = [];
+const chatHistory = [];
 
-// ══════════════════════════════════════════════════════════
-//  INIT — build CSV on page load, then show chat
-// ══════════════════════════════════════════════════════════
+// ── Init ─────────────────────────────────────────────────────────
 async function init() {
-  setLoading('Reading IndexedDB…');
   try {
     await initDB();
-    setLoading('Building CSV from your data…');
+    document.getElementById('loadingMsg').textContent = 'Building CSV…';
 
-    pivotData = await buildPivot();
-    const { orderedTrackers, rows, trackers } = pivotData;
+    const { orderedTrackers, rows, trackers } = await buildPivot();
+    trackerRef = trackers;
 
-    // Count total filled entries
     let totalEntries = 0;
     rows.forEach(r => { totalEntries += Object.keys(r.values).length; });
 
-    // Build the CSV string exactly as export.html does
-    if (rows.length > 0) {
-      csvString = buildCSVString(orderedTrackers, rows);
-    } else {
-      csvString = 'No entries logged yet.';
-    }
+    csvString = rows.length > 0 ? buildCSV(orderedTrackers, rows) : '';
 
-    // Show preview box
-    document.getElementById('csvPreviewBox').textContent = csvString;
+    // Update UI
+    document.getElementById('pillTrackers').textContent = `${trackers.length} tracker${trackers.length !== 1 ? 's' : ''}`;
+    document.getElementById('pillDays').textContent     = `${rows.length} day${rows.length !== 1 ? 's' : ''}`;
+    document.getElementById('pillEntries').textContent  = `${totalEntries} entries`;
+    document.getElementById('headerSub').textContent    = `${trackers.length} trackers · ${rows.length} days`;
+    document.getElementById('csvBox').textContent       = csvString || '(no entries yet)';
 
-    // Update banner pills
-    document.getElementById('pillTrackers').textContent  = `${trackers.length} tracker${trackers.length !== 1 ? 's' : ''}`;
-    document.getElementById('pillDays').textContent      = `${rows.length} day${rows.length !== 1 ? 's' : ''}`;
-    document.getElementById('pillEntries').textContent   = `${totalEntries} entries`;
-    document.getElementById('headerSub').textContent     = `${trackers.length} trackers · ${rows.length} days loaded`;
-
-    // Switch to chat view
     document.getElementById('loadingScreen').classList.add('hidden');
     document.getElementById('dataBanner').classList.add('show');
     document.getElementById('chatWrap').classList.remove('hidden');
 
-    // Greet user — list actual tracker names so they can confirm
-    const trackerNames = trackers.map(t => `**${t.title}**`).join(', ') || 'none yet';
+    // Greeting — list real tracker names so user can verify
+    const names = trackers.map(t => t.title).join(', ') || 'none yet';
     appendMessage('ai',
-      `Hi! I've loaded your tracker data as a CSV.\n\n` +
-      `Your trackers: ${trackerNames}\n\n` +
-      `I have **${rows.length}** day${rows.length !== 1 ? 's' : ''} of entries to work with. ` +
-      `What would you like to know?`
+      `Hi! I've loaded your data as a CSV.\n\n` +
+      `**Trackers found:** ${names}\n` +
+      `**Days logged:** ${rows.length}\n` +
+      `**Total entries:** ${totalEntries}\n\n` +
+      (rows.length === 0
+        ? `No entries saved yet — go to My Day, fill in your trackers, and hit Save.`
+        : `What would you like to know about your data?`)
     );
 
   } catch (err) {
     console.error('[AI] init error:', err);
-    setLoading(`❌ Error: ${err}. Check console for details.`);
+    document.getElementById('loadingMsg').textContent = `Error: ${err}`;
     document.querySelector('.spinner').style.display = 'none';
   }
 }
 
-function setLoading(msg) {
-  document.getElementById('loadingMsg').textContent = msg;
-}
-
-// ══════════════════════════════════════════════════════════
-//  CSV MODAL
-// ══════════════════════════════════════════════════════════
-function showCSV() {
-  document.getElementById('csvModal').classList.add('show');
-}
+// ── CSV modal ────────────────────────────────────────────────────
+function showCSV() { document.getElementById('csvModal').classList.add('show'); }
 function hideCSV(e) {
-  if (!e || e.target === document.getElementById('csvModal') || !e.target.closest) {
+  if (!e || e.target === document.getElementById('csvModal')) {
     document.getElementById('csvModal').classList.remove('show');
   }
 }
@@ -457,17 +412,14 @@ function downloadCSV() {
   const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
-  a.href     = url;
-  a.download = `tracker-data-${new Date().toISOString().split('T')[0]}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  a.href = url; a.download = `tracker-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 
-// ══════════════════════════════════════════════════════════
-//  SEND MESSAGE — embeds CSV in every system prompt
-// ══════════════════════════════════════════════════════════
+// ── Send message ─────────────────────────────────────────────────
+// KEY FIX: data goes IN the message string, not in a `system` option.
+// This matches exactly how comparev2.html calls puter.ai.chat().
 async function sendMessage(text) {
   const input = document.getElementById('userInput');
   const msg   = (text || input.value).trim();
@@ -477,7 +429,6 @@ async function sendMessage(text) {
   document.getElementById('suggestions').style.display = 'none';
 
   appendMessage('user', msg);
-  chatHistory.push({ role: 'user', content: msg });
 
   const typingEl = showTyping();
   setSendDisabled(true);
@@ -485,48 +436,48 @@ async function sendMessage(text) {
   try {
     const today = new Date().toISOString().slice(0, 10);
 
-    // The CSV is embedded directly in the system prompt.
-    // The AI receives the full spreadsheet as plain text on every turn.
-    const systemPrompt =
-`You are a personal AI assistant inside a habit and mood tracker app called "My Day".
-The user's tracker data has been exported as a CSV and is pasted below.
-Today's date is: ${today}
+    // Build the full prompt the same way comparev2.html does:
+    // everything in ONE string passed as the first argument.
+    // Previous conversation is prepended so the AI has context.
+    const conversationSoFar = chatHistory
+      .map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
+      .join('\n');
 
-HOW TO READ THE CSV:
-- First row = header: Date, then one column per tracker
-- Each subsequent row = one day of entries
-- Empty cell = that tracker was not filled in that day
-- Values are already resolved (e.g. "Happy" not "2", "Yes" not "yes")
+    const fullPrompt =
+`You are a personal AI assistant for a habit tracker app called "My Day".
+Today's date is ${today}.
+The user's complete tracker data is provided below as a CSV.
+Use ONLY this data to answer. Reference real tracker names and actual logged values.
+Never make up data. If something wasn't logged, say so clearly.
 
-Use ONLY this CSV to answer questions. Reference actual tracker names and real values.
-Never invent data. If a date or tracker has no entry, say so.
+--- TRACKER DATA (CSV) ---
+${csvString || 'No entries have been saved yet.'}
+--- END OF CSV ---
 
---- CSV DATA START ---
-${csvString}
---- CSV DATA END ---`;
+${conversationSoFar ? `Previous conversation:\n${conversationSoFar}\n` : ''}
+User: ${msg}`;
 
-    const response = await puter.ai.chat(
-      chatHistory.map(m => ({ role: m.role, content: m.content })),
-      { model: 'gpt-4o-mini', system: systemPrompt }
-    );
+    // ← Same call signature as comparev2.html line 550
+    const response = await puter.ai.chat(fullPrompt, { model: 'gpt-4o-mini' });
+
+    // ← Same response parsing as comparev2.html lines 553-555
+    const reply = typeof response === 'string'
+      ? response
+      : (response?.message?.content ?? response?.content ?? JSON.stringify(response));
 
     typingEl.remove();
-
-    const reply =
-      response?.message?.content ||
-      response?.text ||
-      (typeof response === 'string' ? response : null) ||
-      'I received an empty response — please try again.';
-
     appendMessage('ai', reply);
+
+    // Save to history for follow-up questions
+    chatHistory.push({ role: 'user',      content: msg   });
     chatHistory.push({ role: 'assistant', content: reply });
 
   } catch (err) {
     typingEl.remove();
-    console.error('[AI] chat error:', err);
+    console.error('[AI] error:', err);
     appendMessage('ai',
-      `Error: **${err.message || err}**\n\n` +
-      `If this is your first time using AI here, Puter will show a sign-in popup — allow it and try again.`
+      `**Error:** ${err.message || err}\n\n` +
+      `If this is your first time, Puter will show a sign-in popup — please allow it and try again.`
     );
   }
 
@@ -536,12 +487,10 @@ ${csvString}
 
 function sendSuggestion(el) { sendMessage(el.textContent.trim()); }
 
-// ══════════════════════════════════════════════════════════
-//  DOM HELPERS
-// ══════════════════════════════════════════════════════════
+// ── DOM helpers ───────────────────────────────────────────────────
 function appendMessage(role, text) {
-  const area    = document.getElementById('chatArea');
-  const div     = document.createElement('div');
+  const area = document.getElementById('chatArea');
+  const div  = document.createElement('div');
   div.className = `msg ${role}`;
   div.innerHTML =
     `<div class="msg-avatar">${role === 'ai' ? '🤖' : '🧑'}</div>` +
@@ -551,13 +500,12 @@ function appendMessage(role, text) {
 }
 
 function showTyping() {
-  const area    = document.getElementById('chatArea');
-  const div     = document.createElement('div');
+  const area = document.getElementById('chatArea');
+  const div  = document.createElement('div');
   div.className = 'msg ai';
   div.innerHTML =
     `<div class="msg-avatar">🤖</div>` +
-    `<div class="msg-bubble"><div class="typing-dots">` +
-    `<span></span><span></span><span></span></div></div>`;
+    `<div class="msg-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
   area.appendChild(div);
   area.scrollTop = area.scrollHeight;
   return div;
@@ -569,11 +517,8 @@ function clearChat() {
   chatHistory.length = 0;
   document.getElementById('chatArea').innerHTML = '';
   document.getElementById('suggestions').style.display = 'flex';
-  // Re-greet
-  const names = (pivotData?.trackers || []).map(t => `**${t.title}**`).join(', ') || 'none';
-  appendMessage('ai',
-    `Chat cleared! I still have your CSV data loaded.\n\nYour trackers: ${names}\n\nWhat would you like to know?`
-  );
+  const names = trackerRef.map(t => t.title).join(', ') || 'none';
+  appendMessage('ai', `Chat cleared! CSV still loaded.\n\n**Trackers:** ${names}\n\nWhat would you like to know?`);
 }
 
 function handleKey(e) {
@@ -605,7 +550,6 @@ function escapeHtml(t) {
   return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// Boot
 init();
 </script>
 </body>
