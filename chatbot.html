@@ -458,8 +458,8 @@ ${conversationSoFar ? `Previous conversation:\n${conversationSoFar}\n` : ''}
 User: ${msg}`;
 
     // ← Same call signature as comparev2.html line 550
-    // const response = await puter.ai.chat(fullPrompt, { model: 'gpt-4o-mini' });
-    const response = await puter.ai.chat(fullPrompt, { model: 'lumo' });
+    const response = await puter.ai.chat(fullPrompt, { model: 'gpt-4o-mini' });
+    // const response = await puter.ai.chat(fullPrompt, { model: 'lumo' });
 
     // ← Same response parsing as comparev2.html lines 553-555
     const reply = typeof response === 'string'
