@@ -72,6 +72,141 @@
       margin-top: 2px;
     }
 
+    /* ═══ USER PILL ═══ */
+    .user-pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 4px 10px 4px 6px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+      cursor: default;
+      transition: all 0.2s;
+    }
+
+    .user-pill:hover { background: var(--bg-hover); }
+
+    .user-pill-avatar {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #90caf9, #42a5f5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #fff;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .user-pill-name {
+      max-width: 90px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ═══ AUTH OVERLAY ═══ */
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    .auth-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 20px;
+      padding: 36px 32px;
+      text-align: center;
+      max-width: 320px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      animation: cardUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes cardUp {
+      from { opacity: 0; transform: translateY(30px) scale(0.95); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .auth-icon {
+      font-size: 52px;
+      margin-bottom: 16px;
+      animation: float 4s ease-in-out infinite;
+    }
+
+    .auth-title {
+      font-family: 'Lora', serif;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-strong);
+      margin-bottom: 8px;
+    }
+
+    .auth-sub {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .auth-btn {
+      width: 100%;
+      padding: 13px 20px;
+      background: linear-gradient(135deg, #5aa78c, #7bbfa0);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 16px rgba(90,167,140,0.35);
+    }
+
+    .auth-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(90,167,140,0.45); }
+    .auth-btn:active { transform: translateY(0); }
+
+    .auth-note {
+      font-size: 11px;
+      color: var(--text-faint);
+      margin-top: 12px;
+      line-height: 1.5;
+    }
+
+    .auth-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
     .status-dot {
       width: 7px;
       height: 7px;
@@ -520,10 +655,25 @@
     </div>
   </div>
   <div class="chat-header-actions">
+    <div class="user-pill" id="userPill" style="display:none">
+      <div class="user-pill-avatar" id="userInitial">?</div>
+      <span class="user-pill-name" id="userName">…</span>
+    </div>
     <button class="theme-toggle header-btn" aria-label="Toggle theme">🌙</button>
     <button class="header-btn" onclick="clearChat()" title="Clear conversation">🗑️</button>
   </div>
 </header>
+
+<!-- AUTH OVERLAY -->
+<div class="auth-overlay" id="authOverlay" style="display:none">
+  <div class="auth-card">
+    <div class="auth-icon">🌿</div>
+    <div class="auth-title">Welcome to Sage</div>
+    <div class="auth-sub">Sage is your personal wellness companion. A quick free sign-in lets her access AI — it only takes a moment.</div>
+    <button class="auth-btn" id="authBtn" onclick="doSignIn()">✨ Continue with Puter</button>
+    <div class="auth-note">Free forever · No credit card · Your data stays on your device</div>
+  </div>
+</div>
 
 <!-- DATA LOADED BANNER -->
 <div class="data-banner" id="dataBanner">
@@ -941,11 +1091,50 @@ function clearChat() {
 })();
 
 /* ═══════════════════════════════════════════════
+   AUTH
+═══════════════════════════════════════════════ */
+async function doSignIn() {
+  const btn = document.getElementById('authBtn');
+  btn.innerHTML = '<span class="auth-spinner"></span> Signing in…';
+  btn.disabled = true;
+  try {
+    await puter.auth.signIn();
+    await onSignedIn();
+  } catch (e) {
+    btn.innerHTML = '✨ Continue with Puter';
+    btn.disabled = false;
+  }
+}
+
+async function onSignedIn() {
+  const overlay = document.getElementById('authOverlay');
+  if (overlay) overlay.style.display = 'none';
+  try {
+    const user = await puter.auth.getUser();
+    const name = user?.username || user?.email || 'You';
+    document.getElementById('userName').textContent = name;
+    document.getElementById('userInitial').textContent = name[0].toUpperCase();
+    document.getElementById('userPill').style.display = 'flex';
+  } catch (_) {}
+}
+
+/* ═══════════════════════════════════════════════
    BOOT
 ═══════════════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   autoLoadData();
   document.getElementById('msgInput').focus();
+
+  try {
+    const signedIn = await puter.auth.isSignedIn();
+    if (signedIn) {
+      await onSignedIn();
+    } else {
+      document.getElementById('authOverlay').style.display = 'flex';
+    }
+  } catch (e) {
+    document.getElementById('authOverlay').style.display = 'flex';
+  }
 });
 </script>
 
