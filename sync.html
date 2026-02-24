@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backup & Restore</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#fef5eb">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <style>
+        /* ── Google Drive section ─────────────────────────── */
+        .drive-section {
+            background: var(--card-bg, #fff);
+            border: 1.5px solid var(--border, #e0e0e0);
+            border-radius: 14px;
+            padding: 22px 20px;
+            margin-bottom: 24px;
+        }
+        .drive-section h2 { margin: 0 0 6px; font-size: 17px; }
+        .drive-section p  { margin: 0 0 14px; font-size: 14px; color: #666; }
+
+        .drive-btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+        #driveStatus {
+            margin-top: 12px;
+            font-size: 13px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: none;
+        }
+        #driveStatus.info    { background: #e8f4fd; color: #1565c0; display: block; }
+        #driveStatus.success { background: #e8f5e9; color: #2e7d32; display: block; }
+        #driveStatus.error   { background: #fdecea; color: #c62828; display: block; }
+
+        .drive-connected-badge {
+            display: inline-block;
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-radius: 20px;
+            padding: 2px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" aria-label="Switch to dark mode">🌙</button>
+
+<div class="container">
+    <h1>Backup &amp; Restore</h1>
+
+    <!-- ═══ GOOGLE DRIVE SYNC ═══ -->
+    <div class="drive-section">
+        <h2>☁️ Google Drive Sync <span id="connectedBadge" class="drive-connected-badge" style="display:none;">Connected</span></h2>
+        <p>Connect your Google account to save your backup directly to Google Drive and restore it from any device.</p>
+
+        <div class="drive-btn-row">
+            <button class="btn btn-primary" id="driveConnectBtn" onclick="handleAuth()">🔗 Connect Google Drive</button>
+            <button class="btn btn-success"  id="driveUploadBtn"  onclick="uploadToDrive()" disabled>☁️ Save to Drive</button>
+            <button class="btn btn-success"  id="driveDownloadBtn" onclick="downloadFromDrive()" disabled>⬇️ Load from Drive</button>
+        </div>
+
+        <div id="driveStatus"></div>
+    </div>
+
+    <!-- ═══ EXPORT ═══ -->
+    <div class="section">
+        <h2 class="section-title">Export Backup</h2>
+        <p class="section-desc">
+            Downloads every tracker and all your daily entries as one JSON file.
+            Each date in the file includes the tracker name, type, and the actual saved value — fully readable without the app.
+        </p>
+
+        <button class="btn btn-primary" onclick="exportBackup()">📥 Download Backup</button>
+
+        <div class="box box-info">
+            <div class="box-title">What is saved in the file?</div>
+            ✓ All trackers with their full settings (options, prefix/suffix, etc.)<br>
+            ✓ Every tracked date with each entry resolved: tracker name + value<br>
+            ✓ Custom templates<br>
+            ✓ Export date &amp; version metadata
+        </div>
+
+        <div class="box box-success" id="exportSuccess">
+            <div class="box-title">✓ Success</div>
+            <span id="exportSuccessText"></span>
+        </div>
+    </div>
+
+    <!-- ═══ IMPORT ═══ -->
+    <div class="section">
+        <h2 class="section-title">Import Backup</h2>
+        <p class="section-desc">
+            Drop or choose a backup JSON file. A full preview of trackers and every date will appear before anything is written.
+        </p>
+
+        <!-- drop zone -->
+        <div class="drop-zone" id="dropZone">
+            <div class="icon">📁</div>
+            <div class="hint">Drag &amp; drop your backup file here</div>
+            <div class="hint dim">or</div>
+            <button class="btn btn-success" onclick="document.getElementById('fileInput').click()">Choose File</button>
+            <input type="file" id="fileInput" class="file-input" accept=".json" onchange="onFileChosen(event)">
+        </div>
+
+        <!-- mode -->
+        <div class="radio-group">
+            <label>
+                <input type="radio" name="importMode" value="merge" checked>
+                <div>
+                    <div class="radio-label">Merge</div>
+                    <div class="radio-desc">Keep current data and add everything from the backup on top.</div>
+                </div>
+            </label>
+            <label>
+                <input type="radio" name="importMode" value="replace">
+                <div>
+                    <div class="radio-label">Replace</div>
+                    <div class="radio-desc">Delete all current data first, then load the backup. Best for a fresh device.</div>
+                </div>
+            </label>
+        </div>
+
+        <!-- preview (hidden until file loaded) -->
+        <div class="preview-panel" id="previewPanel">
+            <div class="preview-trackers-title">Trackers in this backup</div>
+            <div id="previewTrackerList"></div>
+            <div id="previewDates" style="margin-top:18px;"></div>
+        </div>
+
+        <!-- import button -->
+        <div class="import-btn-row" id="importBtnRow">
+            <button class="btn btn-primary" onclick="runImport()">📥 Import</button>
+        </div>
+
+        <!-- messages -->
+        <div class="box box-warn">
+            <div class="box-title">⚠️ Important</div>
+            "Replace" permanently deletes everything currently on this device. Export a fresh backup first if you need to keep current data.
+        </div>
+
+        <div class="box box-success" id="importSuccess">
+            <div class="box-title">✓ Import successful</div>
+            <span id="importSuccessText"></span>
+        </div>
+
+        <div class="box box-error" id="importError">
+            <div class="box-title">✗ Import failed</div>
+            <span id="importErrorText"></span>
+        </div>
+    </div>
+</div>
+
+<div class="bottom-navigation">
+    <div><a href="trackers.html"><img src="folder-icon.svg"/>Tracker</a></div>
+    <div><a href="report.html"><img src="report-icon.svg"/>Report</a></div>
+    <div><a href="index.html"><img src="today-icon.svg"/>My Day</a></div>
+    <div><a href="settings.html"><img src="setting-icon.svg"/>Settings</a></div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   DB
+═════════════════════════════════════════════════════════════ */
+let db;
+const DB_NAME    = 'TrackerDB';
+const STORE_NAME = 'trackers';
+
+function initDB() {
+    const req = indexedDB.open(DB_NAME, 2);
+    req.onerror   = () => console.error('DB open failed');
+    req.onsuccess = () => { db = req.result; };
+    req.onupgradeneeded = (e) => {
+        const d = e.target.result;
+        if (!d.objectStoreNames.contains(STORE_NAME)) {
+            const s = d.createObjectStore(STORE_NAME, { keyPath:'id', autoIncrement:true });
+            s.createIndex('title','title');
+            s.createIndex('type','type');
+        }
+    };
+}
+
+function getAllTrackers() {
+    return new Promise((res, rej) => {
+        const req = db.transaction([STORE_NAME],'readonly').objectStore(STORE_NAME).getAll();
+        req.onsuccess = () => res(req.result);
+        req.onerror   = () => rej(req.error);
+    });
+}
+
+function addTracker(tracker) {
+    return new Promise((res, rej) => {
+        const req = db.transaction([STORE_NAME],'readwrite').objectStore(STORE_NAME).add(tracker);
+        req.onsuccess = () => res(req.result);
+        req.onerror   = () => rej(req.error);
+    });
+}
+
+function clearDB() {
+    return new Promise((res, rej) => {
+        const req = db.transaction([STORE_NAME],'readwrite').objectStore(STORE_NAME).clear();
+        req.onsuccess = res;
+        req.onerror   = () => rej(req.error);
+    });
+}
+
+/* ════════════════════════════════════════════════════════════
+   TINY HELPERS
+═════════════════════════════════════════════════════════════ */
+function getTypeLabel(t) {
+    return { dropdown:'Dropdown', yesno:'Yes / No', numeric:'Numeric', text:'Text' }[t] || 'Dropdown';
+}
+
+function formatDate(isoDate) {
+    const d = new Date(isoDate + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+}
+
+function resolveValue(tracker, rawValue) {
+    const type = tracker.type || 'dropdown';
+    if (type === 'dropdown') {
+        const idx = parseInt(rawValue);
+        return (tracker.options && tracker.options[idx]) ? tracker.options[idx].title : rawValue;
+    }
+    if (type === 'yesno')  return rawValue === 'yes' ? 'Yes' : 'No';
+    if (type === 'numeric') {
+        const p = tracker.numericPrefix || '';
+        const s = tracker.numericSuffix || '';
+        return `${p}${rawValue}${s ? ' ' + s : ''}`;
+    }
+    return rawValue;
+}
+
+/* ════════════════════════════════════════════════════════════
+   BUILD BACKUP JSON  (shared by local download + Drive upload)
+═════════════════════════════════════════════════════════════ */
+async function buildBackupJSON() {
+    const trackers        = await getAllTrackers();
+    const dailySelections = JSON.parse(localStorage.getItem('dailySelections') || '{}');
+    const customTemplates = JSON.parse(localStorage.getItem('customTemplates')  || '[]');
+
+    const trackerMap = {};
+    trackers.forEach(t => { trackerMap[t.id] = t; });
+
+    const sortedDates = Object.keys(dailySelections).sort().reverse();
+    const dates = sortedDates.map(dateKey => {
+        const dayEntries = dailySelections[dateKey];
+        const entries = Object.values(dayEntries).map(entry => {
+            const tracker = trackerMap[entry.trackerId];
+            return {
+                trackerId:   entry.trackerId,
+                trackerName: tracker ? tracker.title : 'Unknown Tracker',
+                trackerType: tracker ? (tracker.type || 'dropdown') : entry.type,
+                value:       tracker ? resolveValue(tracker, entry.value) : entry.value,
+                rawValue:    entry.value
+            };
+        });
+        return {
+            date:          dateKey,
+            dateFormatted: formatDate(dateKey),
+            entries:       entries
+        };
+    });
+
+    return {
+        version:    '2.0',
+        exportDate: new Date().toISOString(),
+        data: {
+            trackers:        trackers,
+            dates:           dates,
+            customTemplates: customTemplates
+        }
+    };
+}
+
+/* ════════════════════════════════════════════════════════════
+   EXPORT  (local file download)
+═════════════════════════════════════════════════════════════ */
+async function exportBackup() {
+    try {
+        const backup = await buildBackupJSON();
+
+        const blob = new Blob([JSON.stringify(backup, null, 2)], { type:'application/json' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = `tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showMsg('exportSuccess','exportSuccessText','Backup downloaded. The file contains all trackers and every tracked date.');
+    } catch (err) {
+        console.error('Export error', err);
+    }
+}
+
+/* ════════════════════════════════════════════════════════════
+   GOOGLE DRIVE SYNC
+═════════════════════════════════════════════════════════════ */
+// ⚠️  Replace with your own OAuth 2.0 Client ID from Google Cloud Console
+const CLIENT_ID = "373196065473-apnue2vd6dmlb8kvg4u2i73150g5rd04.apps.googleusercontent.com";
+const SCOPES    = "https://www.googleapis.com/auth/drive.appdata";
+
+let accessToken = null;
+let driveFileId = null;
+let tokenClient;
+
+window.addEventListener('load', () => {
+    // google.accounts is loaded async — wait for it
+    const waitForGIS = setInterval(() => {
+        if (window.google && google.accounts) {
+            clearInterval(waitForGIS);
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope:     SCOPES,
+                callback:  async (tokenResponse) => {
+                    if (tokenResponse.error) {
+                        setDriveStatus('error', '❌ Google sign-in failed: ' + tokenResponse.error);
+                        return;
+                    }
+                    accessToken = tokenResponse.access_token;
+                    setDriveStatus('info', '🔍 Finding your backup file on Drive…');
+                    await findOrCreateDriveFile();
+                    setDriveStatus('success', '✅ Connected to Google Drive! You can now save or load your backup.');
+                    document.getElementById('connectedBadge').style.display  = 'inline-block';
+                    document.getElementById('driveConnectBtn').disabled      = true;
+                    document.getElementById('driveConnectBtn').textContent   = '✅ Connected';
+                    document.getElementById('driveUploadBtn').disabled       = false;
+                    document.getElementById('driveDownloadBtn').disabled     = false;
+                }
+            });
+        }
+    }, 100);
+});
+
+function handleAuth() {
+    if (!tokenClient) {
+        setDriveStatus('error', '⏳ Google Identity Services not loaded yet. Please wait a moment and try again.');
+        return;
+    }
+    if (CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID_HERE') {
+        setDriveStatus('error', '⚠️ Please set your Google OAuth Client ID in the source code (CLIENT_ID variable).');
+        return;
+    }
+    tokenClient.requestAccessToken();
+}
+
+async function findOrCreateDriveFile() {
+    const res  = await fetch(
+        'https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&fields=files(id,name)&q=name%3D%22tracker-backup.json%22',
+        { headers: { Authorization: 'Bearer ' + accessToken } }
+    );
+    const data = await res.json();
+
+    if (data.files && data.files.length > 0) {
+        driveFileId = data.files[0].id;
+        console.log('Drive: found existing file', driveFileId);
+    } else {
+        await createDriveFile();
+    }
+}
+
+async function createDriveFile() {
+    const metadata = {
+        name:     'tracker-backup.json',
+        parents:  ['appDataFolder'],
+        mimeType: 'application/json'
+    };
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    form.append('file',     new Blob([JSON.stringify({ entries: [] })], { type: 'application/json' }));
+
+    const res  = await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+        { method: 'POST', headers: { Authorization: 'Bearer ' + accessToken }, body: form }
+    );
+    const data = await res.json();
+    driveFileId = data.id;
+    console.log('Drive: created new file', driveFileId);
+}
+
+/* ── Save backup to Drive ── */
+async function uploadToDrive() {
+    if (!driveFileId) { setDriveStatus('error', '❌ Not connected. Please connect first.'); return; }
+    try {
+        setDriveStatus('info', '⏫ Building backup and uploading to Google Drive…');
+        const backup = await buildBackupJSON();
+
+        await fetch(
+            `https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,
+            {
+                method:  'PATCH',
+                headers: {
+                    Authorization:  'Bearer ' + accessToken,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(backup, null, 2)
+            }
+        );
+
+        const ts = new Date().toLocaleString();
+        setDriveStatus('success', `✅ Backup saved to Google Drive on ${ts}.`);
+    } catch (err) {
+        console.error('Drive upload error', err);
+        setDriveStatus('error', '❌ Upload failed. Check the console for details.');
+    }
+}
+
+/* ── Load backup from Drive and trigger the normal import preview ── */
+async function downloadFromDrive() {
+    if (!driveFileId) { setDriveStatus('error', '❌ Not connected. Please connect first.'); return; }
+    try {
+        setDriveStatus('info', '⬇️ Downloading backup from Google Drive…');
+
+        const res = await fetch(
+            `https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`,
+            { headers: { Authorization: 'Bearer ' + accessToken } }
+        );
+
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const backup = await res.json();
+
+        // Validate and feed into the normal import preview flow
+        if (!backup.version || !backup.data || !backup.data.trackers) {
+            throw new Error('File on Drive is not a valid tracker backup yet.');
+        }
+
+        pendingBackup = backup;
+        renderPreview(backup);
+        document.getElementById('previewPanel').classList.add('show');
+        document.getElementById('importBtnRow').classList.add('show');
+
+        setDriveStatus('success', '✅ Backup loaded from Google Drive. Review the preview below and click Import.');
+
+        // Scroll to import section
+        document.getElementById('previewPanel').scrollIntoView({ behavior: 'smooth' });
+
+    } catch (err) {
+        console.error('Drive download error', err);
+        setDriveStatus('error', '❌ ' + err.message);
+    }
+}
+
+function setDriveStatus(type, msg) {
+    const el = document.getElementById('driveStatus');
+    el.className = type;
+    el.textContent = msg;
+}
+
+/* ════════════════════════════════════════════════════════════
+   IMPORT – read local file
+═════════════════════════════════════════════════════════════ */
+let pendingBackup = null;
+
+function onFileChosen(e) {
+    const file = e.target.files[0];
+    if (file) readFile(file);
+}
+
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover',  (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', ()  => { dropZone.classList.remove('dragover'); });
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) readFile(file);
+    else      showMsg('importError','importErrorText','Please drop a valid JSON backup file.');
+});
+
+async function readFile(file) {
+    hideAll();
+    try {
+        const text   = await file.text();
+        const backup = JSON.parse(text);
+
+        if (!backup.version || !backup.data || !backup.data.trackers) {
+            throw new Error('Not a valid tracker backup');
+        }
+
+        pendingBackup = backup;
+        renderPreview(backup);
+        document.getElementById('previewPanel').classList.add('show');
+        document.getElementById('importBtnRow').classList.add('show');
+
+    } catch (err) {
+        console.error('Read error', err);
+        showMsg('importError','importErrorText','Invalid file — make sure it is a Tracker backup JSON.');
+        pendingBackup = null;
+        document.getElementById('previewPanel').classList.remove('show');
+        document.getElementById('importBtnRow').classList.remove('show');
+    }
+}
+
+/* ════════════════════════════════════════════════════════════
+   PREVIEW
+═════════════════════════════════════════════════════════════ */
+function renderPreview(backup) {
+    const { trackers, dates } = backup.data;
+
+    document.getElementById('previewTrackerList').innerHTML = trackers.map(t => {
+        const type = t.type || 'dropdown';
+        let detail = '';
+        if (type === 'dropdown' && t.options) {
+            detail = t.options.map(o => `<span class="pill" style="background:${o.color}">${o.title}</span>`).join('');
+        } else if (type === 'yesno') {
+            detail = '<span style="color:#666;font-size:13px;">Yes or No</span>';
+        } else if (type === 'numeric') {
+            const p = t.numericPrefix || '';
+            const s = t.numericSuffix || '';
+            detail = `<span style="color:#666;font-size:13px;">${p}[number]${s ? ' '+s : ''}</span>`;
+        } else {
+            detail = '<span style="color:#666;font-size:13px;">Free text</span>';
+        }
+        return `<div class="preview-tracker-row">
+                    <span class="type-badge">${getTypeLabel(type)}</span>
+                    <span style="font-weight:600;">${t.title}</span>
+                    <span style="flex:1;">${detail}</span>
+                </div>`;
+    }).join('');
+
+    let dateBlocks = [];
+    if (dates && dates.length) {
+        dateBlocks = dates;
+    } else if (backup.data.dailySelections) {
+        const tMap = {};
+        trackers.forEach(t => { tMap[t.id] = t; });
+        dateBlocks = Object.keys(backup.data.dailySelections).sort().reverse().map(dateKey => {
+            const entries = Object.values(backup.data.dailySelections[dateKey]).map(entry => {
+                const tracker = tMap[entry.trackerId];
+                return {
+                    trackerId:   entry.trackerId,
+                    trackerName: tracker ? tracker.title : 'Unknown',
+                    trackerType: tracker ? (tracker.type || 'dropdown') : (entry.type || 'dropdown'),
+                    value:       tracker ? resolveValue(tracker, entry.value) : entry.value,
+                    rawValue:    entry.value
+                };
+            });
+            return { date: dateKey, dateFormatted: formatDate(dateKey), entries };
+        });
+    }
+
+    document.getElementById('previewDates').innerHTML = dateBlocks.length
+        ? dateBlocks.map(block => `
+            <div class="date-block">
+                <div class="date-block-header">${block.dateFormatted} <span style="font-weight:400;color:#666;font-size:13px;">(${block.date})</span></div>
+                <div class="date-block-body">
+                    ${block.entries.map(e => `
+                        <div class="entry-row">
+                            <span class="entry-name">${e.trackerName}</span>
+                            <span class="type-badge">${getTypeLabel(e.trackerType)}</span>
+                            <span class="entry-value">${e.value}</span>
+                        </div>`).join('')}
+                </div>
+            </div>`).join('')
+        : '<p style="color:#999;font-size:14px;margin-top:10px;">No tracked dates in this backup.</p>';
+}
+
+/* ════════════════════════════════════════════════════════════
+   IMPORT – execute
+═════════════════════════════════════════════════════════════ */
+async function runImport() {
+    if (!pendingBackup) return;
+    hideAll();
+
+    const mode = document.querySelector('input[name="importMode"]:checked').value;
+    if (mode === 'replace') {
+        if (!confirm('Replace will permanently delete all data on this device. Continue?')) return;
+        await clearDB();
+        localStorage.removeItem('dailySelections');
+        localStorage.removeItem('customTemplates');
+    }
+
+    try {
+        const { trackers, dates, customTemplates } = pendingBackup.data;
+        const legacySelections = pendingBackup.data.dailySelections;
+
+        const idMap = {};
+        if (trackers && trackers.length) {
+            for (const t of trackers) {
+                const oldId = t.id;
+                const copy  = { ...t };
+                delete copy.id;
+                const newId = await addTracker(copy);
+                idMap[String(oldId)] = newId;
+            }
+        }
+
+        let rebuilt = {};
+        if (dates && dates.length) {
+            dates.forEach(block => {
+                rebuilt[block.date] = {};
+                block.entries.forEach(e => {
+                    const newId = idMap[String(e.trackerId)] || e.trackerId;
+                    rebuilt[block.date][String(newId)] = {
+                        trackerId: newId,
+                        value:     e.rawValue,
+                        type:      e.trackerType,
+                        date:      block.date,
+                        timestamp: new Date().toISOString()
+                    };
+                });
+            });
+        } else if (legacySelections) {
+            for (const [date, entries] of Object.entries(legacySelections)) {
+                rebuilt[date] = {};
+                for (const [oldTid, entry] of Object.entries(entries)) {
+                    const newId = idMap[String(oldTid)] || oldTid;
+                    rebuilt[date][String(newId)] = { ...entry, trackerId: newId };
+                }
+            }
+        }
+
+        if (mode === 'replace') {
+            localStorage.setItem('dailySelections', JSON.stringify(rebuilt));
+        } else {
+            const existing = JSON.parse(localStorage.getItem('dailySelections') || '{}');
+            for (const [date, entries] of Object.entries(rebuilt)) {
+                existing[date] = { ...(existing[date] || {}), ...entries };
+            }
+            localStorage.setItem('dailySelections', JSON.stringify(existing));
+        }
+
+        if (customTemplates) {
+            if (mode === 'replace') {
+                localStorage.setItem('customTemplates', JSON.stringify(customTemplates));
+            } else {
+                const existing = JSON.parse(localStorage.getItem('customTemplates') || '[]');
+                localStorage.setItem('customTemplates', JSON.stringify([...existing, ...customTemplates]));
+            }
+        }
+
+        showMsg('importSuccess','importSuccessText','All trackers and every date have been restored. Open My Day to see your data.');
+        pendingBackup = null;
+        document.getElementById('fileInput').value = '';
+        document.getElementById('previewPanel').classList.remove('show');
+        document.getElementById('importBtnRow').classList.remove('show');
+
+    } catch (err) {
+        console.error('Import error', err);
+        showMsg('importError','importErrorText','Something went wrong. Check the browser console for details.');
+    }
+}
+
+/* ════════════════════════════════════════════════════════════
+   MESSAGE HELPERS
+═════════════════════════════════════════════════════════════ */
+function hideAll() {
+    ['exportSuccess','importSuccess','importError'].forEach(id => {
+        document.getElementById(id).classList.remove('show');
+    });
+}
+function showMsg(boxId, textId, msg) {
+    hideAll();
+    document.getElementById(textId).textContent = msg;
+    document.getElementById(boxId).classList.add('show');
+}
+
+/* ════════════════════════════════════════════════════════════
+   BOOT
+═════════════════════════════════════════════════════════════ */
+initDB();
+</script>
+
+<!-- Theme toggle -->
+<script>
+(function () {
+  const STORAGE_KEY = 'theme';
+  const LIGHT = 'light';
+  const DARK  = 'dark';
+
+  function getSystemTheme() { return window.matchMedia('(prefers-color-scheme: dark)').matches ? DARK : LIGHT; }
+  function getSavedTheme()   { return localStorage.getItem(STORAGE_KEY); }
+  function resolveTheme()    { return getSavedTheme() || getSystemTheme(); }
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.querySelectorAll('.theme-toggle').forEach(btn => {
+      btn.textContent = theme === DARK ? '☀️' : '🌙';
+      btn.setAttribute('aria-label', theme === DARK ? 'Switch to light mode' : 'Switch to dark mode');
+    });
+  }
+
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || resolveTheme();
+    const next    = current === DARK ? LIGHT : DARK;
+    localStorage.setItem(STORAGE_KEY, next);
+    applyTheme(next);
+  }
+
+  function attachToggle() {
+    document.body.addEventListener('click', function (e) {
+      if (e.target.closest('.theme-toggle')) toggleTheme();
+    });
+  }
+
+  function watchSystemTheme() {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
+      if (!getSavedTheme()) applyTheme(e.matches ? DARK : LIGHT);
+    });
+  }
+
+  applyTheme(resolveTheme());
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attachToggle);
+  } else {
+    attachToggle();
+  }
+
+  watchSystemTheme();
+})();
+</script>
+
+<!-- Service Worker -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(() => console.log("Service Worker Registered"))
+        .catch(err => console.log("SW failed:", err));
+    });
+  }
+</script>
+</body>
+</html>
