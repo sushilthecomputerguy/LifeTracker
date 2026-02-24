@@ -1,603 +1,953 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Assistant – My Day</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Wellness Chat</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <script src="https://js.puter.com/v2/"></script>
+
   <style>
-    html, body { height: 100%; }
-    body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+    /* ═══ PAGE SHELL ═══ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    .ai-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 16px 12px;
-      background: var(--bg-card); border-bottom: 1px solid var(--border); flex-shrink: 0;
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg-page);
+      background-size: cover;
+      background-attachment: fixed;
+      color: var(--text-body);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
-    .ai-header-left { display: flex; align-items: center; gap: 10px; }
-    .ai-avatar {
-      width: 38px; height: 38px; background: var(--blue); border-radius: 50%;
-      display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
+
+    /* ═══ HEADER ═══ */
+    .chat-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 20px 14px;
+      background: var(--nav-bg);
+      border-bottom: 1px solid var(--nav-border);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
-    .ai-header-info h1 { font-size: 16px; font-weight: 700; color: var(--text-strong); margin-bottom: 0; }
-    .ai-header-info p  { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
-    .ai-header-actions { display: flex; gap: 8px; }
-    .icon-btn {
-      width: 36px; height: 36px; background: var(--bg-subtle); border: 1px solid var(--border);
-      border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
-      font-size: 15px; transition: background .15s;
+
+    .chat-header-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #a8d8b9 0%, #7bbfa0 50%, #5aa78c 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
-    .icon-btn:hover { background: var(--bg-hover); }
 
-    /* ── Data preview panel (shown before chat) ── */
-    .data-preview {
-      flex: 1; overflow-y: auto; padding: 16px;
-      display: flex; flex-direction: column; gap: 12px;
+    .chat-header-info { flex: 1; min-width: 0; }
+
+    .chat-header-name {
+      font-family: 'Lora', serif;
+      font-weight: 600;
+      font-size: 16px;
+      color: var(--text-strong);
+      line-height: 1.2;
     }
-    .data-preview.hidden { display: none; }
 
-    .preview-card {
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: 8px; padding: 16px; box-shadow: var(--shadow);
+    .chat-header-status {
+      font-size: 12px;
+      color: var(--green);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 2px;
     }
-    .preview-card h3 { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
 
-    .preview-row { display: flex; align-items: baseline; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--border-faint); font-size: 13px; }
-    .preview-row:last-child { border-bottom: none; }
-    .preview-name { font-weight: 600; color: var(--text-strong); min-width: 120px; }
-    .preview-val  { color: var(--text-muted); }
-    .preview-badge { background: var(--bg-badge); color: var(--text-badge); font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
-
-    .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-    .stat-box { background: var(--bg-subtle); border-radius: 6px; padding: 12px; text-align: center; }
-    .stat-num  { font-size: 24px; font-weight: 700; color: var(--blue); }
-    .stat-lbl  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-
-    .start-btn {
-      display: block; width: 100%;
-      padding: 14px; font-size: 16px; font-weight: 700;
-      background: var(--blue); color: #fff; border: none;
-      border-radius: 8px; cursor: pointer; transition: background .15s;
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2.5s ease-in-out infinite;
     }
-    .start-btn:hover { background: var(--blue-dark); }
-    .start-btn:disabled { background: var(--border); cursor: not-allowed; }
 
-    .raw-toggle { font-size: 12px; color: var(--blue); cursor: pointer; text-decoration: underline; margin-top: 8px; display: inline-block; }
-    .raw-box { display: none; margin-top: 10px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 11px; color: var(--text-body); white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow-y: auto; }
-    .raw-box.show { display: block; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(0.85); }
+    }
 
-    .warn-box { background: var(--bg-warn); border-left: 4px solid var(--orange); padding: 12px 14px; border-radius: 4px; font-size: 13px; color: var(--text-warn); }
-    .error-box { background: var(--bg-error); border-left: 4px solid var(--red); padding: 12px 14px; border-radius: 4px; font-size: 13px; color: var(--text-error); }
+    .chat-header-actions {
+      display: flex;
+      gap: 8px;
+    }
 
-    /* ── Chat area ── */
-    .chat-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-    .chat-wrap.hidden { display: none; }
+    .header-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 6px;
+      font-size: 18px;
+      color: var(--text-muted);
+      transition: background 0.2s;
+      line-height: 1;
+    }
 
-    .chat-topbar {
-      padding: 8px 16px;
+    .header-btn:hover { background: var(--bg-hover); }
+
+    /* ═══ DATA BANNER ═══ */
+    .data-banner {
+      margin: 12px 16px 0;
+      padding: 10px 14px;
       background: var(--bg-success);
-      border-bottom: 1px solid var(--border-light);
-      font-size: 11px; color: var(--text-success);
-      display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+      border-left: 4px solid var(--green);
+      border-radius: 6px;
+      font-size: 13px;
+      color: var(--text-success);
+      display: none;
+      animation: slideDown 0.3s ease;
     }
-    .chat-area {
-      flex: 1; overflow-y: auto; padding: 16px;
-      display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth;
+
+    .data-banner.show { display: flex; align-items: center; gap: 8px; }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
-    .chat-area::-webkit-scrollbar { width: 4px; }
-    .chat-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
-    .msg { display: flex; gap: 8px; max-width: 100%; animation: msgIn .18s ease; }
-    @keyframes msgIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
-    .msg.user { flex-direction: row-reverse; }
-    .msg-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; margin-top: 2px; }
-    .msg.ai   .msg-avatar { background: var(--blue); }
-    .msg.user .msg-avatar { background: var(--bg-badge); }
-    .msg-bubble { max-width: calc(100% - 80px); padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.55; word-break: break-word; }
-    .msg.ai .msg-bubble { background: var(--bg-card); border: 1px solid var(--border); border-bottom-left-radius: 4px; color: var(--text-body); box-shadow: var(--shadow); }
-    .msg.user .msg-bubble { background: var(--blue); color: #fff; border-bottom-right-radius: 4px; }
-    .msg.ai .msg-bubble strong { font-weight: 700; color: var(--text-strong); }
-    .msg.ai .msg-bubble em     { font-style: italic; }
-    .msg.ai .msg-bubble code   { background: var(--bg-subtle); border: 1px solid var(--border-faint); padding: 1px 5px; border-radius: 3px; font-size: 12px; font-family: monospace; }
-    .msg.ai .msg-bubble ul, .msg.ai .msg-bubble ol { margin: 6px 0 6px 18px; }
-    .msg.ai .msg-bubble li { margin: 3px 0; }
-    .msg.ai .msg-bubble p  { margin-bottom: 6px; }
-    .msg.ai .msg-bubble p:last-child { margin-bottom: 0; }
+    /* ═══ MESSAGES AREA ═══ */
+    .chat-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 16px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding-bottom: 160px;
+      scroll-behavior: smooth;
+    }
 
-    .typing-dots { display: flex; gap: 5px; align-items: center; padding: 4px 0; }
-    .typing-dots span { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); animation: bounce 1.2s infinite; }
-    .typing-dots span:nth-child(2) { animation-delay: .2s; }
-    .typing-dots span:nth-child(3) { animation-delay: .4s; }
-    @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+    /* Date divider */
+    .date-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 4px 0;
+    }
 
-    .suggestions-wrap { padding: 0 16px 8px; display: flex; gap: 7px; overflow-x: auto; flex-shrink: 0; }
-    .suggestions-wrap::-webkit-scrollbar { display: none; }
-    .suggestion-chip { white-space: nowrap; padding: 6px 13px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg-card); font-size: 12px; color: var(--text-muted); cursor: pointer; transition: all .15s; flex-shrink: 0; font-weight: 500; }
-    .suggestion-chip:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-pale); }
+    .date-divider::before,
+    .date-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-faint);
+    }
 
-    .input-area { padding: 8px 12px 10px; background: var(--bg-card); border-top: 1px solid var(--border); flex-shrink: 0; }
-    .input-row { display: flex; gap: 8px; align-items: flex-end; background: var(--bg-input); border: 1.5px solid var(--border); border-radius: 20px; padding: 6px 6px 6px 14px; transition: border-color .2s; }
-    .input-row:focus-within { border-color: var(--blue); }
-    #userInput { flex: 1; border: none; background: transparent; resize: none; font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--text-body); max-height: 110px; outline: none; }
-    #userInput::placeholder { color: var(--text-faint); }
-    .send-btn { width: 34px; height: 34px; border-radius: 50%; background: var(--blue); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background .15s, transform .1s; }
-    .send-btn:hover { background: var(--blue-dark); }
-    .send-btn:active { transform: scale(.92); }
-    .send-btn:disabled { background: var(--border); cursor: not-allowed; }
-    .send-btn svg { width: 15px; height: 15px; fill: #fff; }
+    .date-divider span {
+      font-size: 11px;
+      color: var(--text-faint);
+      white-space: nowrap;
+      font-weight: 500;
+    }
 
-    .bottom-navigation { grid-template-columns: 1fr 1fr 1fr 1fr 1fr !important; }
+    /* Message row */
+    .msg-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      animation: msgIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(14px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .msg-row.user { flex-direction: row-reverse; }
+
+    .msg-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+    }
+
+    .msg-avatar.ai {
+      background: linear-gradient(135deg, #a8d8b9 0%, #5aa78c 100%);
+      box-shadow: 0 2px 6px rgba(90,167,140,0.3);
+    }
+
+    .msg-avatar.user {
+      background: linear-gradient(135deg, #90caf9 0%, #42a5f5 100%);
+      box-shadow: 0 2px 6px rgba(66,165,245,0.3);
+    }
+
+    .msg-bubble {
+      max-width: min(72%, 560px);
+      padding: 12px 16px;
+      border-radius: 18px;
+      line-height: 1.6;
+      font-size: 14.5px;
+      position: relative;
+    }
+
+    .msg-row.ai .msg-bubble {
+      background: var(--bg-card);
+      border: 1px solid var(--border-faint);
+      border-bottom-left-radius: 6px;
+      color: var(--text-body);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    .msg-row.user .msg-bubble {
+      background: var(--blue);
+      color: #fff;
+      border-bottom-right-radius: 6px;
+    }
+
+    .msg-bubble strong {
+      font-family: 'Lora', serif;
+      font-weight: 600;
+    }
+
+    .msg-time {
+      font-size: 11px;
+      color: var(--text-faint);
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    .msg-row.ai .msg-time { text-align: left; }
+
+    .msg-meta { display: flex; flex-direction: column; min-width: 0; }
+
+    /* Typing indicator */
+    .typing-bubble {
+      background: var(--bg-card);
+      border: 1px solid var(--border-faint);
+      border-radius: 18px;
+      border-bottom-left-radius: 6px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    .typing-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--text-faint);
+      animation: typingBounce 1.2s ease-in-out infinite;
+    }
+
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30%            { transform: translateY(-6px); opacity: 1; }
+    }
+
+    /* Quick suggestions */
+    .suggestions-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 4px 0;
+    }
+
+    .suggestion-chip {
+      padding: 7px 14px;
+      background: var(--bg-card);
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      font-size: 13px;
+      color: var(--text-body);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'DM Sans', sans-serif;
+      white-space: nowrap;
+    }
+
+    .suggestion-chip:hover {
+      background: var(--blue-pale);
+      border-color: var(--blue);
+      color: var(--blue-dark);
+    }
+
+    /* ═══ INPUT BAR ═══ */
+    .chat-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 12px 16px 16px;
+      background: var(--nav-bg);
+      border-top: 1px solid var(--nav-border);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 100;
+    }
+
+    /* when bottom nav exists push footer up */
+    .chat-footer { bottom: 60px; }
+
+    .csv-attach-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .csv-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .csv-label.loaded { color: var(--text-success); }
+
+    .attach-btn {
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .attach-btn:hover { background: var(--bg-hover); border-color: var(--blue); color: var(--blue); }
+
+    .input-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+    }
+
+    .msg-input-wrap {
+      flex: 1;
+      background: var(--bg-input);
+      border: 1.5px solid var(--border);
+      border-radius: 24px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      transition: border-color 0.2s;
+    }
+
+    .msg-input-wrap:focus-within {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(33,150,243,0.1);
+    }
+
+    #msgInput {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14.5px;
+      color: var(--text-body);
+      resize: none;
+      max-height: 120px;
+      min-height: 24px;
+      line-height: 1.5;
+    }
+
+    #msgInput::placeholder { color: var(--text-faint); }
+
+    .send-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--blue);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(33,150,243,0.35);
+    }
+
+    .send-btn:hover { background: var(--blue-dark); transform: scale(1.05); }
+    .send-btn:active { transform: scale(0.96); }
+    .send-btn:disabled { background: var(--border); box-shadow: none; cursor: not-allowed; transform: none; }
+
+    .send-btn svg { width: 18px; height: 18px; fill: #fff; }
+
+    /* ═══ EMPTY STATE ═══ */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 20px;
+      flex: 1;
+    }
+
+    .empty-icon {
+      font-size: 54px;
+      margin-bottom: 16px;
+      animation: float 4s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-10px); }
+    }
+
+    .empty-title {
+      font-family: 'Lora', serif;
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text-strong);
+      margin-bottom: 8px;
+    }
+
+    .empty-sub {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-width: 300px;
+      margin-bottom: 24px;
+    }
+
+    /* ═══ BOTTOM NAV (keep consistent with app) ═══ */
+    .bottom-navigation {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: var(--nav-bg);
+      border-top: 1px solid var(--nav-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      z-index: 200;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .bottom-navigation div { text-align: center; }
+
+    .bottom-navigation a {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      text-decoration: none;
+      font-size: 11px;
+      color: var(--nav-icon-color);
+      font-weight: 500;
+    }
+
+    .bottom-navigation img {
+      width: 22px;
+      height: 22px;
+      filter: var(--nav-icon-filter);
+    }
+
+    .bottom-navigation a.active { color: var(--nav-icon-active); }
+    .bottom-navigation a.active img { filter: var(--nav-icon-filter-active); }
+
+    /* Theme toggle */
+    .theme-toggle {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      padding: 4px 6px;
+      border-radius: 6px;
+      line-height: 1;
+    }
+
+    /* Markdown-like rendering in AI bubbles */
+    .msg-bubble p { margin-bottom: 8px; }
+    .msg-bubble p:last-child { margin-bottom: 0; }
+    .msg-bubble ul { margin: 6px 0 6px 18px; }
+    .msg-bubble li { margin-bottom: 4px; }
+    .msg-bubble em { font-style: italic; color: var(--text-muted); }
+    .msg-row.ai .msg-bubble em { color: var(--text-muted); }
+    .msg-row.user .msg-bubble em { color: rgba(255,255,255,0.85); }
+
+    /* scrollbar */
+    .chat-body::-webkit-scrollbar { width: 5px; }
+    .chat-body::-webkit-scrollbar-track { background: transparent; }
+    .chat-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+    @media (max-width: 480px) {
+      .msg-bubble { max-width: 85%; font-size: 14px; }
+    }
   </style>
 </head>
 <body>
 
-  <!-- Header -->
-  <div class="ai-header">
-    <div class="ai-header-left">
-      <div class="ai-avatar">🤖</div>
-      <div class="ai-header-info">
-        <h1>AI Assistant</h1>
-        <p id="headerSub">Loading your data…</p>
-      </div>
-    </div>
-    <div class="ai-header-actions">
-      <button class="icon-btn theme-toggle" title="Toggle theme">🌙</button>
-      <button class="icon-btn" title="Back to data view" onclick="showDataView()" id="backBtn" style="display:none">📊</button>
-      <button class="icon-btn" title="Clear chat" onclick="clearChat()" id="clearBtn" style="display:none">🗑️</button>
+<!-- HEADER -->
+<header class="chat-header">
+  <div class="chat-header-avatar">🌿</div>
+  <div class="chat-header-info">
+    <div class="chat-header-name">Sage · Your Wellness Companion</div>
+    <div class="chat-header-status">
+      <span class="status-dot"></span>
+      Here for you
     </div>
   </div>
+  <div class="chat-header-actions">
+    <button class="theme-toggle header-btn" aria-label="Toggle theme">🌙</button>
+    <button class="header-btn" onclick="clearChat()" title="Clear conversation">🗑️</button>
+  </div>
+</header>
 
-  <!-- DATA PREVIEW PANEL -->
-  <div class="data-preview" id="dataView">
-    <div class="preview-card" id="statsCard">
-      <h3>📦 Data loaded from your device</h3>
-      <div class="stat-grid">
-        <div class="stat-box"><div class="stat-num" id="statTrackers">…</div><div class="stat-lbl">Trackers</div></div>
-        <div class="stat-box"><div class="stat-num" id="statDays">…</div><div class="stat-lbl">Days logged</div></div>
-        <div class="stat-box"><div class="stat-num" id="statEntries">…</div><div class="stat-lbl">Total entries</div></div>
-      </div>
+<!-- DATA LOADED BANNER -->
+<div class="data-banner" id="dataBanner">
+  📊 <span id="dataBannerText">Your tracker data is loaded — Sage knows your patterns!</span>
+</div>
+
+<!-- MESSAGES -->
+<main class="chat-body" id="chatBody">
+  <!-- Empty state shown until first message -->
+  <div class="empty-state" id="emptyState">
+    <div class="empty-icon">🌿</div>
+    <div class="empty-title">Hi there, I'm Sage</div>
+    <div class="empty-sub">Think of me as a thoughtful friend who also happens to know your data. Share what's on your mind, and I'll offer perspective and gentle insights.</div>
+    <div class="suggestions-wrap" id="initSuggestions">
+      <button class="suggestion-chip" onclick="sendSuggestion(this)">How am I doing overall?</button>
+      <button class="suggestion-chip" onclick="sendSuggestion(this)">What patterns do you notice?</button>
+      <button class="suggestion-chip" onclick="sendSuggestion(this)">What should I focus on this week?</button>
+      <button class="suggestion-chip" onclick="sendSuggestion(this)">I'm feeling overwhelmed</button>
     </div>
+  </div>
+</main>
 
-    <div class="preview-card" id="trackersCard">
-      <h3>🗂 Your trackers</h3>
-      <div id="trackersList"><em style="color:var(--text-faint)">Loading…</em></div>
+<!-- INPUT FOOTER -->
+<footer class="chat-footer">
+  <div class="csv-attach-row">
+    <span class="csv-label" id="csvLabel">📎 No CSV attached — upload your tracker export</span>
+    <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="loadCSV(event)">
+    <button class="attach-btn" onclick="document.getElementById('csvFileInput').click()">Attach CSV</button>
+  </div>
+  <div class="input-row">
+    <div class="msg-input-wrap">
+      <textarea id="msgInput" rows="1" placeholder="Talk to Sage…" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
     </div>
-
-    <div class="preview-card" id="recentCard">
-      <h3>📅 Recent log entries</h3>
-      <div id="recentList"><em style="color:var(--text-faint)">Loading…</em></div>
-    </div>
-
-    <div class="preview-card">
-      <h3>🔍 Raw data sent to AI</h3>
-      <p style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">This is the exact text the AI will receive. Verify your data is here before chatting.</p>
-      <span class="raw-toggle" onclick="toggleRaw()">▶ Show raw context</span>
-      <div class="raw-box" id="rawBox"></div>
-    </div>
-
-    <button class="start-btn" id="startBtn" onclick="startChat()" disabled>
-      Start chatting with AI →
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+      </svg>
     </button>
   </div>
+</footer>
 
-  <!-- CHAT PANEL -->
-  <div class="chat-wrap hidden" id="chatView">
-    <div class="chat-topbar" id="chatTopbar">
-      ✓ AI has your data · <span id="topbarSummary"></span>
-    </div>
-    <div class="chat-area" id="chatArea"></div>
-    <div class="suggestions-wrap" id="suggestions">
-      <div class="suggestion-chip" onclick="sendSuggestion(this)">How am I doing this week?</div>
-      <div class="suggestion-chip" onclick="sendSuggestion(this)">What did I log today?</div>
-      <div class="suggestion-chip" onclick="sendSuggestion(this)">Any patterns in my data?</div>
-      <div class="suggestion-chip" onclick="sendSuggestion(this)">What was my best day?</div>
-      <div class="suggestion-chip" onclick="sendSuggestion(this)">Give me a weekly summary</div>
-    </div>
-    <div class="input-area">
-      <div class="input-row">
-        <textarea id="userInput" rows="1" placeholder="Ask about your trackers…" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-        <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="Send">
-          <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Bottom nav -->
-  <div class="bottom-navigation">
-    <div><a href="trackers.html"><img src="folder-icon.svg" alt=""/>Tracker</a></div>
-    <div><a href="report.html"><img src="report-icon.svg" alt=""/>Report</a></div>
-    <div><a href="index.html"><img src="today-icon.svg" alt=""/>My Day</a></div>
-    <div><a href="ai.html" class="active" aria-current="page"><img src="setting-icon.svg" alt=""/>AI Chat</a></div>
-    <div><a href="settings.html"><img src="setting-icon.svg" alt=""/>Settings</a></div>
-  </div>
+<!-- BOTTOM NAV -->
+<nav class="bottom-navigation">
+  <div><a href="trackers.html"><img src="folder-icon.svg"/>Tracker</a></div>
+  <div><a href="report.html"><img src="report-icon.svg"/>Report</a></div>
+  <div><a href="index.html"><img src="today-icon.svg"/>My Day</a></div>
+  <div><a href="chat.html" class="active">🌿 Chat</a></div>
+  <div><a href="settings.html"><img src="setting-icon.svg"/>Settings</a></div>
+</nav>
 
 <script>
-// ══════════════════════════════════════════════════════════════════
-//  THEME
-// ══════════════════════════════════════════════════════════════════
-(function () {
-  const saved = localStorage.getItem('theme');
-  const sys   = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  document.documentElement.setAttribute('data-theme', saved || sys);
-  document.querySelectorAll('.theme-toggle').forEach(b => b.textContent = (saved||sys)==='dark'?'☀️':'🌙');
-})();
-document.body.addEventListener('click', e => {
-  if (!e.target.closest('.theme-toggle')) return;
-  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('theme', next);
-  document.querySelectorAll('.theme-toggle').forEach(b => b.textContent = next==='dark'?'☀️':'🌙');
-});
+/* ═══════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════ */
+let csvData = '';
+let csvSummary = '';
+let conversationHistory = [];
+let isLoading = false;
 
-// ══════════════════════════════════════════════════════════════════
-//  DATABASE — exact same pattern as comparev2.html
-// ══════════════════════════════════════════════════════════════════
-let db;
-const DB_NAME    = 'TrackerDB';
-const STORE_NAME = 'trackers';
+const SYSTEM_PROMPT = `You are Sage, a warm and insightful wellness companion who combines the empathy of a therapist with the candor of a close friend. You have access to the user's personal habit and mood tracker data (provided in CSV format at the start of each conversation).
 
-function initDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 2);
+Your personality:
+- Warm, gentle, and non-judgmental — create a safe space
+- Perceptive — notice patterns and trends in the data that the user might miss
+- Honest but kind — share observations gently, never critically
+- Curious — ask thoughtful follow-up questions
+- Celebratory of small wins and progress
+- Hopeful and solution-focused, not dwelling on negatives
+- Use "I notice..." and "It seems like..." rather than definitive statements
+- Occasionally use gentle metaphors and reflective language
 
-    req.onerror = () => {
-      console.error('[AI] DB open failed:', req.error);
-      reject(req.error);
-    };
+When analyzing tracker data:
+- Look for streaks, gaps, correlations between trackers
+- Notice when the user seems to be struggling vs. thriving
+- Relate data to what the user shares emotionally
+- Offer specific, actionable (but gentle) suggestions based on the data
+- Celebrate consistency and improvements
 
-    req.onupgradeneeded = (e) => {
-      const d = e.target.result;
-      if (!d.objectStoreNames.contains(STORE_NAME)) {
-        const s = d.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
-        s.createIndex('title', 'title');
-        s.createIndex('type',  'type');
-      }
-    };
+Keep responses conversational and warm, not clinical. Use paragraph breaks. Avoid bullet-point lists unless the user specifically asks for them. Respond in 2-4 short paragraphs for most messages. Be present and human.`;
 
-    req.onsuccess = () => {
-      db = req.result;
-      console.log('[AI] DB ready, stores:', Array.from(db.objectStoreNames));
-      resolve(db);
-    };
-  });
+/* ═══════════════════════════════════════════════
+   CSV LOADING
+═══════════════════════════════════════════════ */
+function loadCSV(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    csvData = e.target.result;
+    csvSummary = buildCSVSummary(csvData);
+    document.getElementById('csvLabel').textContent = `✅ ${file.name} loaded`;
+    document.getElementById('csvLabel').classList.add('loaded');
+    const banner = document.getElementById('dataBanner');
+    const rows = csvData.trim().split('\n').length - 1;
+    document.getElementById('dataBannerText').textContent = `📊 ${file.name} loaded — ${rows} days of data. Sage knows your patterns!`;
+    banner.classList.add('show');
+    setTimeout(() => banner.classList.remove('show'), 5000);
+    // Reset conversation so CSV is included in next message
+    conversationHistory = [];
+  };
+  reader.readAsText(file);
 }
 
-function getAllTrackers() {
-  return new Promise((resolve, reject) => {
-    const req = db.transaction([STORE_NAME], 'readonly')
-                  .objectStore(STORE_NAME)
-                  .getAll();
-    req.onsuccess = () => resolve(req.result || []);
-    req.onerror   = () => reject(req.error);
-  });
+function buildCSVSummary(csv) {
+  const lines = csv.trim().split('\n');
+  if (lines.length < 2) return csv;
+  const headers = lines[0];
+  const dataLines = lines.slice(1);
+  const recent = dataLines.slice(0, 14).join('\n');
+  return `CSV Headers: ${headers}\nTotal rows (days): ${dataLines.length}\nMost recent 14 days of data:\n${recent}\n\nFull CSV data:\n${csv}`;
 }
 
-// ══════════════════════════════════════════════════════════════════
-//  DATA SNAPSHOT
-// ══════════════════════════════════════════════════════════════════
-let snapshot = null;      // raw data
-let aiContext = '';       // plain-text sent to AI
-
-async function buildSnapshot() {
-  const trackers = await getAllTrackers();
-
-  let dailySelections = {};
+/* ═══════════════════════════════════════════════
+   AUTO-LOAD FROM INDEXEDDB + LOCALSTORAGE
+═══════════════════════════════════════════════ */
+async function autoLoadData() {
   try {
-    dailySelections = JSON.parse(localStorage.getItem('dailySelections') || '{}');
-  } catch(e) {
-    console.warn('[AI] Could not parse dailySelections', e);
-  }
+    // Load from IndexedDB (trackers) + localStorage (dailySelections) just like export.html
+    const DB_NAME = 'TrackerDB';
+    const STORE_NAME = 'trackers';
 
-  const dates = Object.keys(dailySelections);
-  let totalEntries = 0;
-  dates.forEach(d => { totalEntries += Object.keys(dailySelections[d]).length; });
-
-  snapshot = { trackers, dailySelections, dates, totalEntries };
-  return snapshot;
-}
-
-// ══════════════════════════════════════════════════════════════════
-//  BUILD PLAIN-TEXT CONTEXT FOR AI
-// ══════════════════════════════════════════════════════════════════
-function buildContext({ trackers, dailySelections, dates }) {
-  const today = new Date().toISOString().slice(0, 10);
-  const lines = [];
-
-  lines.push('=== MY DAY APP — FULL DATA EXPORT ===');
-  lines.push(`Today: ${today}`);
-  lines.push(`Trackers: ${trackers.length}`);
-  lines.push(`Days with logs: ${dates.length}`);
-  lines.push('');
-
-  // Tracker definitions
-  lines.push('--- TRACKER DEFINITIONS ---');
-  if (trackers.length === 0) {
-    lines.push('(no trackers found)');
-  } else {
-    trackers.forEach(t => {
-      lines.push(`ID=${t.id} | Name="${t.title}" | Type=${t.type || 'dropdown'}`);
-      if (t.options && t.options.length > 0) {
-        const opts = t.options.map((o, i) => {
-          if (typeof o === 'string') return `${i}:${o}`;
-          return `${i}:${o.title || o.label || JSON.stringify(o)}`;
-        }).join(', ');
-        lines.push(`  Options: ${opts}`);
-      }
-      if (t.unit) lines.push(`  Unit: ${t.unit}`);
-      if (t.min !== undefined) lines.push(`  Range: ${t.min} to ${t.max}`);
+    const db = await new Promise((res, rej) => {
+      const req = indexedDB.open(DB_NAME, 2);
+      req.onerror = () => rej('no db');
+      req.onsuccess = () => res(req.result);
+      req.onupgradeneeded = e => {
+        const d = e.target.result;
+        if (!d.objectStoreNames.contains(STORE_NAME)) {
+          const s = d.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+          s.createIndex('title', 'title');
+        }
+      };
     });
-  }
-  lines.push('');
 
-  // Daily logs — most recent first
-  lines.push('--- DAILY LOG ENTRIES ---');
-  const sortedDates = [...dates].sort().reverse();
-  if (sortedDates.length === 0) {
-    lines.push('(no entries saved yet)');
-  } else {
-    sortedDates.forEach(date => {
-      lines.push(`[${date}]`);
-      const entries = Object.values(dailySelections[date]);
-      entries.forEach(entry => {
-        const t = trackers.find(tr => String(tr.id) === String(entry.trackerId));
-        const name = t ? t.title : `Tracker#${entry.trackerId}`;
-        lines.push(`  ${name}: ${entry.value}`);
+    const trackers = await new Promise((res, rej) => {
+      const req = db.transaction([STORE_NAME], 'readonly').objectStore(STORE_NAME).getAll();
+      req.onsuccess = () => res(req.result);
+      req.onerror = () => rej(req.error);
+    });
+
+    const dailySelections = JSON.parse(localStorage.getItem('dailySelections') || '{}');
+    const trackerMap = {};
+    trackers.forEach(t => { trackerMap[t.id] = t; });
+
+    const sortedDates = Object.keys(dailySelections).sort().reverse();
+    if (!sortedDates.length || !trackers.length) return;
+
+    const usedIds = new Set();
+    Object.values(dailySelections).forEach(day => Object.keys(day).forEach(k => usedIds.add(Number(k))));
+    const orderedTrackers = trackers.filter(t => usedIds.has(t.id));
+
+    function resolveValue(tracker, rawValue) {
+      const type = tracker.type || 'dropdown';
+      if (type === 'dropdown') {
+        const idx = parseInt(rawValue);
+        return (tracker.options && tracker.options[idx]) ? tracker.options[idx].title : rawValue;
+      }
+      if (type === 'yesno') return rawValue === 'yes' ? 'Yes' : 'No';
+      if (type === 'numeric') return `${tracker.numericPrefix||''}${rawValue}${tracker.numericSuffix ? ' '+tracker.numericSuffix : ''}`.trim();
+      return rawValue;
+    }
+
+    function escapeCSV(v) {
+      if (v === null || v === undefined) return '';
+      const s = String(v);
+      return (s.includes(',') || s.includes('"') || s.includes('\n')) ? '"' + s.replace(/"/g,'""') + '"' : s;
+    }
+
+    const header = ['Date', ...orderedTrackers.map(t => t.title)].map(escapeCSV).join(',');
+    const rows = sortedDates.map(dateKey => {
+      const dayEntries = dailySelections[dateKey];
+      const values = {};
+      Object.values(dayEntries).forEach(entry => {
+        const tracker = trackerMap[entry.trackerId];
+        if (tracker) values[tracker.id] = resolveValue(tracker, entry.value);
       });
+      const cells = [dateKey, ...orderedTrackers.map(t => values[t.id] ?? '')];
+      return cells.map(escapeCSV).join(',');
     });
-  }
 
-  lines.push('');
-  lines.push('=== END OF DATA ===');
+    csvData = [header, ...rows].join('\r\n');
+    csvSummary = buildCSVSummary(csvData);
 
-  return lines.join('\n');
-}
+    const banner = document.getElementById('dataBanner');
+    document.getElementById('dataBannerText').textContent = `📊 Tracker data auto-loaded — ${rows.length} days across ${orderedTrackers.length} trackers. Sage knows your patterns!`;
+    document.getElementById('csvLabel').textContent = `✅ Tracker data auto-loaded (${rows.length} days)`;
+    document.getElementById('csvLabel').classList.add('loaded');
+    banner.classList.add('show');
+    setTimeout(() => banner.classList.remove('show'), 5000);
 
-// ══════════════════════════════════════════════════════════════════
-//  RENDER DATA PREVIEW (so user can SEE what AI will receive)
-// ══════════════════════════════════════════════════════════════════
-function renderPreview() {
-  const { trackers, dailySelections, dates, totalEntries } = snapshot;
-
-  // Stats
-  document.getElementById('statTrackers').textContent = trackers.length;
-  document.getElementById('statDays').textContent     = dates.length;
-  document.getElementById('statEntries').textContent  = totalEntries;
-
-  // Trackers list
-  const tList = document.getElementById('trackersList');
-  if (trackers.length === 0) {
-    tList.innerHTML = `<div class="warn-box">No trackers found in IndexedDB. Go to Trackers and create some first.</div>`;
-  } else {
-    tList.innerHTML = trackers.map(t => `
-      <div class="preview-row">
-        <span class="preview-name">${t.title}</span>
-        <span class="preview-badge">${t.type || 'dropdown'}</span>
-        <span class="preview-val">${t.options ? t.options.map(o => typeof o === 'object' ? (o.title||o.label) : o).join(', ') : ''}</span>
-      </div>`).join('');
-  }
-
-  // Recent entries (last 5 days)
-  const rList = document.getElementById('recentList');
-  const sortedDates = [...dates].sort().reverse();
-  if (sortedDates.length === 0) {
-    rList.innerHTML = `<div class="warn-box">No daily entries found in localStorage. Save some entries from "My Day" first.</div>`;
-  } else {
-    const recentDates = sortedDates.slice(0, 5);
-    rList.innerHTML = recentDates.map(date => {
-      const entries = Object.values(dailySelections[date]);
-      return `<div style="margin-bottom:10px">
-        <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:4px">${date}</div>
-        ${entries.map(e => {
-          const t = trackers.find(tr => String(tr.id) === String(e.trackerId));
-          return `<div class="preview-row">
-            <span class="preview-name">${t ? t.title : 'Unknown'}</span>
-            <span class="preview-val">${e.value}</span>
-          </div>`;
-        }).join('')}
-      </div>`;
-    }).join('');
-  }
-
-  // Raw context box
-  document.getElementById('rawBox').textContent = aiContext;
-
-  // Enable start button only if there's actual data
-  const hasData = trackers.length > 0 || dates.length > 0;
-  const btn = document.getElementById('startBtn');
-  btn.disabled = false;
-  btn.textContent = hasData
-    ? `Start chatting → (${trackers.length} trackers, ${dates.length} days)`
-    : 'Start chatting → (no data yet — AI will tell you what to do)';
-}
-
-function toggleRaw() {
-  const box = document.getElementById('rawBox');
-  const tog = document.querySelector('.raw-toggle');
-  box.classList.toggle('show');
-  tog.textContent = box.classList.contains('show') ? '▼ Hide raw context' : '▶ Show raw context';
-}
-
-// ══════════════════════════════════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════════════════════════════════
-async function init() {
-  document.getElementById('headerSub').textContent = 'Reading IndexedDB…';
-  try {
-    await initDB();
-    await buildSnapshot();
-    aiContext = buildContext(snapshot);
-
-    document.getElementById('headerSub').textContent =
-      `${snapshot.trackers.length} trackers · ${snapshot.dates.length} days loaded`;
-
-    renderPreview();
-
-  } catch(err) {
-    console.error('[AI] init error:', err);
-    document.getElementById('trackersList').innerHTML =
-      `<div class="error-box"><strong>Error reading IndexedDB:</strong> ${err.message}<br><br>
-       Make sure you have created trackers in the app first.</div>`;
-    document.getElementById('startBtn').disabled = false;
-    document.getElementById('startBtn').textContent = 'Start anyway (no data)';
-    aiContext = 'No tracker data available.';
+  } catch (err) {
+    console.log('Auto-load skipped:', err);
   }
 }
 
-// ══════════════════════════════════════════════════════════════════
-//  VIEW SWITCHING
-// ══════════════════════════════════════════════════════════════════
-function startChat() {
-  document.getElementById('dataView').classList.add('hidden');
-  document.getElementById('chatView').classList.remove('hidden');
-  document.getElementById('backBtn').style.display  = 'flex';
-  document.getElementById('clearBtn').style.display = 'flex';
-
-  const s = snapshot;
-  document.getElementById('topbarSummary').textContent =
-    `${s.trackers.length} trackers · ${s.dates.length} days · ${s.totalEntries} entries`;
-
-  // Greet user with a first message from AI
-  appendMessage('ai',
-    `Hi! I've loaded your tracker data:\n\n` +
-    `- **${s.trackers.length}** tracker${s.trackers.length !== 1 ? 's' : ''}: ${s.trackers.map(t => t.title).join(', ') || 'none'}\n` +
-    `- **${s.dates.length}** day${s.dates.length !== 1 ? 's' : ''} of entries\n` +
-    `- **${s.totalEntries}** total log entries\n\n` +
-    `What would you like to know about your data?`
-  );
-
-  document.getElementById('userInput').focus();
+/* ═══════════════════════════════════════════════
+   CHAT UI HELPERS
+═══════════════════════════════════════════════ */
+function now() {
+  return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-function showDataView() {
-  document.getElementById('dataView').classList.remove('hidden');
-  document.getElementById('chatView').classList.add('hidden');
-  document.getElementById('backBtn').style.display  = 'none';
-  document.getElementById('clearBtn').style.display = 'none';
+function scrollBottom() {
+  const body = document.getElementById('chatBody');
+  body.scrollTop = body.scrollHeight;
 }
 
-// ══════════════════════════════════════════════════════════════════
-//  CONVERSATION
-// ══════════════════════════════════════════════════════════════════
-const history = [];
-
-async function sendMessage(text) {
-  const input = document.getElementById('userInput');
-  const msg   = (text || input.value).trim();
-  if (!msg) return;
-
-  if (!text) { input.value = ''; autoResize(input); }
-  document.getElementById('suggestions').style.display = 'none';
-
-  appendMessage('user', msg);
-  history.push({ role: 'user', content: msg });
-
-  const typingEl = showTyping();
-  setSendDisabled(true);
-
-  try {
-    const systemPrompt =
-`You are a personal AI assistant inside a habit/mood tracker app called "My Day".
-The user's complete tracker data has been exported from their device and is pasted below.
-Use ONLY this data to answer questions. Be specific — reference actual tracker names and real logged values.
-Never invent data. If something wasn't logged, say so.
-
-${aiContext}`;
-
-    const response = await puter.ai.chat(
-      history.map(m => ({ role: m.role, content: m.content })),
-      { model: 'gpt-4o-mini', system: systemPrompt }
-    );
-
-    typingEl.remove();
-    const reply =
-      response?.message?.content ||
-      response?.text ||
-      (typeof response === 'string' ? response : null) ||
-      'Empty response received.';
-
-    appendMessage('ai', reply);
-    history.push({ role: 'assistant', content: reply });
-
-  } catch(err) {
-    typingEl.remove();
-    console.error('[AI] chat error:', err);
-    appendMessage('ai', `Error: **${err.message}**\n\nIf this is your first use, sign in to Puter when prompted and try again.`);
-  }
-
-  setSendDisabled(false);
-  document.getElementById('userInput').focus();
+function hideEmpty() {
+  const el = document.getElementById('emptyState');
+  if (el) el.style.display = 'none';
 }
 
-function sendSuggestion(el) { sendMessage(el.textContent.trim()); }
+function addDateDivider() {
+  const today = new Date().toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+  const div = document.createElement('div');
+  div.className = 'date-divider';
+  div.innerHTML = `<span>${today}</span>`;
+  document.getElementById('chatBody').appendChild(div);
+}
 
-// ══════════════════════════════════════════════════════════════════
-//  DOM HELPERS
-// ══════════════════════════════════════════════════════════════════
 function appendMessage(role, text) {
-  const area    = document.getElementById('chatArea');
-  const div     = document.createElement('div');
-  div.className = `msg ${role}`;
-  div.innerHTML =
-    `<div class="msg-avatar">${role === 'ai' ? '🤖' : '🧑'}</div>` +
-    `<div class="msg-bubble">${role === 'ai' ? renderMarkdown(text) : escapeHtml(text)}</div>`;
-  area.appendChild(div);
-  area.scrollTop = area.scrollHeight;
-}
+  hideEmpty();
+  const body = document.getElementById('chatBody');
 
-function showTyping() {
-  const area    = document.getElementById('chatArea');
-  const div     = document.createElement('div');
-  div.className = 'msg ai';
-  div.innerHTML =
-    `<div class="msg-avatar">🤖</div>` +
-    `<div class="msg-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
-  area.appendChild(div);
-  area.scrollTop = area.scrollHeight;
-  return div;
-}
+  const row = document.createElement('div');
+  row.className = `msg-row ${role}`;
 
-function setSendDisabled(v) { document.getElementById('sendBtn').disabled = v; }
+  const avatar = document.createElement('div');
+  avatar.className = `msg-avatar ${role}`;
+  avatar.textContent = role === 'ai' ? '🌿' : '🙂';
 
-function clearChat() {
-  history.length = 0;
-  document.getElementById('chatArea').innerHTML = '';
-  document.getElementById('suggestions').style.display = 'flex';
-  startChat(); // re-show greeting
-}
+  const meta = document.createElement('div');
+  meta.className = 'msg-meta';
 
-function handleKey(e) {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-}
-function autoResize(el) {
-  el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 110) + 'px';
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  bubble.innerHTML = renderMarkdown(text);
+
+  const time = document.createElement('div');
+  time.className = 'msg-time';
+  time.textContent = now();
+
+  meta.appendChild(bubble);
+  meta.appendChild(time);
+  row.appendChild(avatar);
+  row.appendChild(meta);
+  body.appendChild(row);
+  scrollBottom();
+  return bubble;
 }
 
 function renderMarkdown(text) {
-  let html = text
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g,'<em>$1</em>')
-    .replace(/`(.+?)`/g,'<code>$1</code>')
-    .replace(/^#{1,3} (.+)$/gm,'<strong>$1</strong>')
-    .replace(/^[-*] (.+)$/gm,'<li>$1</li>');
-  html = html.replace(/(<li>[\s\S]*?<\/li>\n?)+/g, m => `<ul>${m}</ul>`);
-  html = html.split(/\n\n+/).map(block => {
-    block = block.trim();
-    if (!block) return '';
-    if (/^<(ul|li|strong|em|code)/.test(block)) return block;
-    return `<p>${block.replace(/\n/g,'<br>')}</p>`;
-  }).join('');
-  return html;
-}
-function escapeHtml(t) {
-  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>')
+    .replace(/^(.*)$/, '<p>$1</p>');
 }
 
-// Boot
-init();
+function showTyping() {
+  hideEmpty();
+  const body = document.getElementById('chatBody');
+  const row = document.createElement('div');
+  row.className = 'msg-row ai';
+  row.id = 'typingRow';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-avatar ai';
+  avatar.textContent = '🌿';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'typing-bubble';
+  bubble.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+
+  row.appendChild(avatar);
+  row.appendChild(bubble);
+  body.appendChild(row);
+  scrollBottom();
+}
+
+function hideTyping() {
+  const el = document.getElementById('typingRow');
+  if (el) el.remove();
+}
+
+function addSuggestions(chips) {
+  const body = document.getElementById('chatBody');
+  const wrap = document.createElement('div');
+  wrap.className = 'suggestions-wrap';
+  wrap.style.paddingLeft = '42px';
+  chips.forEach(text => {
+    const btn = document.createElement('button');
+    btn.className = 'suggestion-chip';
+    btn.textContent = text;
+    btn.onclick = () => sendSuggestion(btn);
+    wrap.appendChild(btn);
+  });
+  body.appendChild(wrap);
+  scrollBottom();
+}
+
+/* ═══════════════════════════════════════════════
+   SEND LOGIC
+═══════════════════════════════════════════════ */
+async function sendMessage() {
+  if (isLoading) return;
+  const input = document.getElementById('msgInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  autoResize(input);
+  isLoading = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  // If first message in session and we have CSV data, prepend to history
+  if (conversationHistory.length === 0 && csvData) {
+    conversationHistory.push({
+      role: 'user',
+      content: `Here is my tracker data in CSV format. Please keep this in mind for our entire conversation:\n\n${csvData}\n\n---\n\n${text}`
+    });
+  } else {
+    conversationHistory.push({ role: 'user', content: text });
+  }
+
+  appendMessage('user', text);
+
+  // Remove suggestion chips
+  document.querySelectorAll('.suggestions-wrap').forEach(el => el.remove());
+
+  showTyping();
+
+  try {
+    const response = await puter.ai.chat(
+      conversationHistory.map(m => ({ role: m.role === 'ai' ? 'assistant' : m.role, content: m.content })),
+      { model: 'gpt-4o', system: SYSTEM_PROMPT }
+    );
+
+    hideTyping();
+
+    const reply = response?.message?.content || response?.text || (typeof response === 'string' ? response : 'Something went wrong. Please try again.');
+    conversationHistory.push({ role: 'ai', content: reply });
+    appendMessage('ai', reply);
+
+    // Suggest follow-ups occasionally
+    if (conversationHistory.length <= 4) {
+      addSuggestions(['Tell me more', 'What else do you notice?', 'How can I improve?']);
+    }
+
+  } catch (err) {
+    hideTyping();
+    console.error(err);
+    appendMessage('ai', "I'm sorry, I had trouble connecting right now. Please make sure you're signed into Puter and try again. 💚");
+  }
+
+  isLoading = false;
+  document.getElementById('sendBtn').disabled = false;
+}
+
+function sendSuggestion(btn) {
+  document.getElementById('msgInput').value = btn.textContent;
+  sendMessage();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function clearChat() {
+  conversationHistory = [];
+  const body = document.getElementById('chatBody');
+  body.innerHTML = `
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">🌿</div>
+      <div class="empty-title">Fresh start</div>
+      <div class="empty-sub">A new conversation — I'm still here for you, whenever you're ready to share.</div>
+      <div class="suggestions-wrap" id="initSuggestions">
+        <button class="suggestion-chip" onclick="sendSuggestion(this)">How am I doing overall?</button>
+        <button class="suggestion-chip" onclick="sendSuggestion(this)">What patterns do you notice?</button>
+        <button class="suggestion-chip" onclick="sendSuggestion(this)">What should I focus on this week?</button>
+        <button class="suggestion-chip" onclick="sendSuggestion(this)">I'm feeling overwhelmed</button>
+      </div>
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════════
+   THEME
+═══════════════════════════════════════════════ */
+(function () {
+  const DARK = 'dark', LIGHT = 'light';
+  function resolveTheme() { return localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? DARK : LIGHT); }
+  function applyTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    document.querySelectorAll('.theme-toggle').forEach(b => { b.textContent = t === DARK ? '☀️' : '🌙'; });
+  }
+  function toggleTheme() {
+    const next = document.documentElement.getAttribute('data-theme') === DARK ? LIGHT : DARK;
+    localStorage.setItem('theme', next);
+    applyTheme(next);
+  }
+  applyTheme(resolveTheme());
+  document.addEventListener('DOMContentLoaded', () => {
+    document.body.addEventListener('click', e => { if (e.target.closest('.theme-toggle')) toggleTheme(); });
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => { if (!localStorage.getItem('theme')) applyTheme(e.matches ? DARK : LIGHT); });
+  });
+})();
+
+/* ═══════════════════════════════════════════════
+   BOOT
+═══════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  autoLoadData();
+  document.getElementById('msgInput').focus();
+});
 </script>
+
 </body>
 </html>
