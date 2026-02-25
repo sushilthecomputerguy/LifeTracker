@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Correlations</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#fef5eb">
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <style>
+    /* ── Page-specific styles ─────────────────────────────────── */
+    .page-bottom-pad { height: 90px; }
+
+    /* ── Tracker selector pills ── */
+    .tracker-selector-wrap {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;
+    }
+    .tracker-pill {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;
+      border: 2px solid var(--border); background: var(--bg-card); color: var(--text-body);
+      cursor: pointer; transition: all .18s; user-select: none;
+    }
+    .tracker-pill:hover { border-color: var(--blue); color: var(--blue); }
+    .tracker-pill.selected {
+      background: var(--blue); border-color: var(--blue); color: #fff;
+    }
+    .tracker-pill.disabled-pill {
+      opacity: .4; cursor: not-allowed;
+    }
+    .pill-badge {
+      font-size: 10px; background: rgba(255,255,255,.3);
+      padding: 1px 6px; border-radius: 8px;
+    }
+    .pill-badge-dark {
+      font-size: 10px; background: var(--bg-badge);
+      color: var(--text-badge); padding: 1px 6px; border-radius: 8px;
+    }
+
+    /* ── Date range buttons ── */
+    .range-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .range-btn {
+      padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;
+      border: 2px solid var(--border); background: var(--bg-card);
+      color: var(--text-muted); cursor: pointer; transition: all .15s;
+    }
+    .range-btn:hover { border-color: var(--blue); color: var(--blue); }
+    .range-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+    /* ── Result card ── */
+    .result-card {
+      border-radius: 12px; padding: 22px 24px; margin-bottom: 16px;
+      border: 2px solid var(--border-card); background: var(--bg-card);
+      box-shadow: var(--shadow);
+    }
+    .result-pair {
+      font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px;
+    }
+    .result-r {
+      font-size: 42px; font-weight: 800; line-height: 1; margin-bottom: 6px;
+    }
+    .result-label {
+      font-size: 17px; font-weight: 700; margin-bottom: 6px;
+    }
+    .result-desc {
+      font-size: 14px; color: var(--text-muted); line-height: 1.5; margin-bottom: 10px;
+    }
+    .result-meta {
+      font-size: 12px; color: var(--text-faint);
+    }
+
+    /* colour band under r value */
+    .band-strong-pos  { color: #2e7d32; }
+    .band-mod-pos     { color: #558b2f; }
+    .band-weak        { color: var(--text-muted); }
+    .band-mod-neg     { color: #e65100; }
+    .band-strong-neg  { color: #c62828; }
+
+    /* ── Correlation bar ── */
+    .corr-bar-wrap {
+      height: 10px; border-radius: 5px; background: var(--border-faint);
+      margin: 10px 0; overflow: hidden; position: relative;
+    }
+    .corr-bar-fill {
+      height: 100%; border-radius: 5px; transition: width .4s ease;
+    }
+    .corr-scale {
+      display: flex; justify-content: space-between;
+      font-size: 10px; color: var(--text-faint); margin-top: 2px;
+    }
+
+    /* ── Scatter plot ── */
+    .scatter-wrap {
+      background: var(--bg-card); border-radius: 8px; padding: 16px;
+      border: 1px solid var(--border-faint); margin-top: 12px;
+    }
+    .scatter-title { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; }
+    canvas.scatter-canvas { width: 100%; border-radius: 4px; display: block; }
+
+    /* ── Matrix ── */
+    .matrix-wrap { overflow-x: auto; margin-top: 8px; }
+    .matrix-table {
+      border-collapse: collapse; min-width: 320px;
+    }
+    .matrix-table th, .matrix-table td {
+      padding: 10px 14px; font-size: 13px; text-align: center;
+      border: 1px solid var(--border-faint);
+    }
+    .matrix-table th {
+      background: var(--bg-subtle); font-weight: 700; color: var(--text-muted);
+      font-size: 12px;
+    }
+    .matrix-cell {
+      font-weight: 700; font-size: 14px; min-width: 80px;
+    }
+    .matrix-cell.self { color: var(--text-faint); font-weight: 400; font-size: 12px; }
+
+    /* ── Timeline chart ── */
+    .timeline-wrap {
+      background: var(--bg-card); border-radius: 8px; padding: 16px;
+      border: 1px solid var(--border-faint); margin-top: 12px;
+    }
+    .timeline-title { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; }
+    canvas.timeline-canvas { width: 100%; border-radius: 4px; display: block; }
+
+    /* ── Error / info boxes ── */
+    .info-box {
+      padding: 14px 16px; border-radius: 8px; font-size: 14px; line-height: 1.5;
+      margin-bottom: 12px;
+    }
+    .info-box.warn { background: var(--bg-warn); border-left: 4px solid var(--orange); color: var(--text-warn); }
+    .info-box.info { background: var(--bg-info); border-left: 4px solid var(--blue); color: var(--text-info); }
+    .info-box.error{ background: var(--bg-error);border-left: 4px solid var(--red);  color: var(--text-error);}
+
+    /* ── Shared data count chips ── */
+    .shared-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--bg-badge); border-radius: 12px;
+      padding: 3px 10px; font-size: 12px; color: var(--text-badge); font-weight: 600;
+    }
+
+    /* ── Section headers inside result area ── */
+    .section-hdr {
+      font-size: 13px; font-weight: 700; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: .5px;
+      margin: 20px 0 8px; padding-top: 16px;
+      border-top: 1px solid var(--border-faint);
+    }
+
+    /* ── Empty state ── */
+    .empty-state-big {
+      text-align: center; padding: 60px 20px; color: var(--text-faint);
+    }
+    .empty-state-big .big-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-state-big p { font-size: 15px; max-width: 300px; margin: 0 auto; line-height: 1.5; }
+
+    /* Loading spinner */
+    .spinner {
+      display: inline-block; width: 18px; height: 18px;
+      border: 2px solid var(--border); border-top-color: var(--blue);
+      border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<button class="theme-toggle" aria-label="Toggle theme">🌙</button>
+
+<div class="container">
+  <h1>🔗 Correlations</h1>
+  <p class="subtitle">Discover hidden links between your trackers</p>
+
+  <!-- ── Controls panel ── -->
+  <div class="controls">
+
+    <!-- Tracker selection -->
+    <div class="controls-section">
+      <span class="section-label">Select trackers to compare (2 or more)</span>
+      <div class="tracker-selector-wrap" id="trackerPills">
+        <span style="color:var(--text-faint);font-size:14px;"><span class="spinner"></span> Loading trackers…</span>
+      </div>
+    </div>
+
+    <!-- Date range -->
+    <div class="controls-section">
+      <span class="section-label">Date range</span>
+      <div class="range-btns">
+        <button class="range-btn" onclick="setRange(7)"   data-days="7">7 days</button>
+        <button class="range-btn active" onclick="setRange(30)"  data-days="30">30 days</button>
+        <button class="range-btn" onclick="setRange(90)"  data-days="90">90 days</button>
+        <button class="range-btn" onclick="setRange(180)" data-days="180">6 months</button>
+        <button class="range-btn" onclick="setRange(0)"   data-days="0">All time</button>
+      </div>
+    </div>
+
+    <!-- Action row -->
+    <div class="action-row" style="margin-top:4px;">
+      <button class="btn btn-primary" onclick="runCorrelation()" id="calcBtn" disabled>
+        Calculate Correlation
+      </button>
+      <span id="selectionHint" style="font-size:13px;color:var(--text-faint);">
+        Select at least 2 trackers
+      </span>
+    </div>
+  </div>
+
+  <!-- ── Results area ── -->
+  <div id="resultsArea">
+    <div class="empty-state-big">
+      <div class="big-icon">📊</div>
+      <p>Select two or more trackers above and tap <strong>Calculate</strong> to see how they relate.</p>
+    </div>
+  </div>
+
+  <div class="page-bottom-pad"></div>
+</div>
+
+<div class="bottom-navigation">
+  <div><a href="trackers.html"><img src="folder-icon.svg">Tracker</a></div>
+  <div><a href="report.html"><img src="report-icon.svg">Report</a></div>
+  <div><a href="index.html"><img src="today-icon.svg">My Day</a></div>
+  <div><a href="correlate.html" class="active"><img src="setting-icon.svg">Correlate</a></div>
+</div>
+
+<!-- Shared DB layer -->
+<script src="db.js"></script>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let allTrackers   = [];
+let selectedIds   = new Set();
+let rangeDays     = 30;   // 0 = all time
+const MIN_POINTS  = 5;    // minimum shared days required
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init() {
+  await migrateFromLocalStorage();
+  allTrackers = await getAllTrackers();
+  // exclude text trackers (not correlatable)
+  const correlatable = allTrackers.filter(t => t.type !== 'text');
+  renderPills(correlatable);
+}
+
+// ── Tracker pills ─────────────────────────────────────────────────────────────
+function renderPills(trackers) {
+  const wrap = document.getElementById('trackerPills');
+  if (trackers.length === 0) {
+    wrap.innerHTML = `<span style="color:var(--text-faint);font-size:14px;">No correlatable trackers found. Create some first.</span>`;
+    return;
+  }
+  wrap.innerHTML = trackers.map(t => {
+    const typeBadge = { dropdown:'Drop', yesno:'Y/N', numeric:'Num' }[t.type] || t.type;
+    return `
+      <div class="tracker-pill" id="pill-${t.id}" onclick="togglePill(${t.id})">
+        ${t.title}
+        <span class="pill-badge-dark">${typeBadge}</span>
+      </div>`;
+  }).join('');
+}
+
+function togglePill(id) {
+  const pill = document.getElementById(`pill-${id}`);
+  if (selectedIds.has(id)) {
+    selectedIds.delete(id);
+    pill.classList.remove('selected');
+  } else {
+    selectedIds.add(id);
+    pill.classList.add('selected');
+  }
+  updateCalcBtn();
+}
+
+function updateCalcBtn() {
+  const btn  = document.getElementById('calcBtn');
+  const hint = document.getElementById('selectionHint');
+  const n    = selectedIds.size;
+  btn.disabled = n < 2;
+  hint.textContent = n < 2
+    ? 'Select at least 2 trackers'
+    : `${n} tracker${n>1?'s':''} selected`;
+}
+
+// ── Date range ────────────────────────────────────────────────────────────────
+function setRange(days) {
+  rangeDays = days;
+  document.querySelectorAll('.range-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.days) === days);
+  });
+}
+
+function getDateRange() {
+  const today = getLocalDateString();
+  if (rangeDays === 0) return { from: '0000-00-00', to: today };
+  const fromDate = new Date();
+  fromDate.setDate(fromDate.getDate() - rangeDays);
+  return { from: getLocalDateString(fromDate), to: today };
+}
+
+// ── Core: build score series for a tracker over a date range ─────────────────
+async function buildScoreSeries(tracker, from, to) {
+  const entries = await loadEntriesForTracker(tracker.id);
+  const series  = {}; // { date: score }
+
+  for (const entry of entries) {
+    if (entry.date < from || entry.date > to) continue;
+    const score = resolveScore(entry.rawValue, tracker);
+    if (score !== null) series[entry.date] = score;
+  }
+  return series;
+}
+
+// ── Pearson r ─────────────────────────────────────────────────────────────────
+function pearson(X, Y) {
+  const n = X.length;
+  if (n < MIN_POINTS) return { r: null, n, error: `Need at least ${MIN_POINTS} shared days (found ${n})` };
+
+  const meanX = X.reduce((s,v)=>s+v,0) / n;
+  const meanY = Y.reduce((s,v)=>s+v,0) / n;
+
+  let num = 0, dX = 0, dY = 0;
+  for (let i = 0; i < n; i++) {
+    const dx = X[i] - meanX;
+    const dy = Y[i] - meanY;
+    num += dx * dy;
+    dX  += dx * dx;
+    dY  += dy * dy;
+  }
+
+  if (dX === 0 || dY === 0) {
+    return { r: null, n, error: 'No variation in one of the trackers — all values are identical.' };
+  }
+
+  const r = num / Math.sqrt(dX * dY);
+  return { r: Math.max(-1, Math.min(1, r)), n };
+}
+
+// ── Interpretation ────────────────────────────────────────────────────────────
+function interpretR(r, nameA, nameB) {
+  const abs = Math.abs(r);
+  let cssClass, label, desc;
+
+  if (abs >= 0.70) {
+    cssClass = r > 0 ? 'band-strong-pos' : 'band-strong-neg';
+    label    = r > 0 ? '🟢 Strong Positive' : '🔴 Strong Negative';
+    desc     = r > 0
+      ? `On days when <strong>${nameA}</strong> is higher, <strong>${nameB}</strong> tends to be noticeably higher too.`
+      : `On days when <strong>${nameA}</strong> is higher, <strong>${nameB}</strong> tends to be noticeably lower.`;
+  } else if (abs >= 0.40) {
+    cssClass = r > 0 ? 'band-mod-pos' : 'band-mod-neg';
+    label    = r > 0 ? '🟡 Moderate Positive' : '🟠 Moderate Negative';
+    desc     = r > 0
+      ? `There's a mild tendency for <strong>${nameA}</strong> and <strong>${nameB}</strong> to move together.`
+      : `There's a mild tendency for <strong>${nameA}</strong> and <strong>${nameB}</strong> to move in opposite directions.`;
+  } else {
+    cssClass = 'band-weak';
+    label    = '⚪ Weak / No Relationship';
+    desc     = `No clear link found between <strong>${nameA}</strong> and <strong>${nameB}</strong> over this period.`;
+  }
+
+  return { cssClass, label, desc };
+}
+
+// ── Bar fill colour ───────────────────────────────────────────────────────────
+function barColor(r) {
+  const abs = Math.abs(r);
+  if (r >= 0) {
+    if (abs >= 0.70) return '#2e7d32';
+    if (abs >= 0.40) return '#8bc34a';
+    return '#bdbdbd';
+  } else {
+    if (abs >= 0.70) return '#c62828';
+    if (abs >= 0.40) return '#ff7043';
+    return '#bdbdbd';
+  }
+}
+
+// ── Main calculation ──────────────────────────────────────────────────────────
+async function runCorrelation() {
+  const btn = document.getElementById('calcBtn');
+  btn.innerHTML = '<span class="spinner"></span> Calculating…';
+  btn.disabled  = true;
+
+  const { from, to } = getDateRange();
+  const ids = [...selectedIds];
+
+  // Fetch tracker definitions and score series for each
+  const trackerDefs = ids.map(id => allTrackers.find(t => t.id === id)).filter(Boolean);
+  const seriesArr   = await Promise.all(trackerDefs.map(t => buildScoreSeries(t, from, to)));
+
+  // Build map: id → series
+  const seriesMap = {};
+  trackerDefs.forEach((t, i) => { seriesMap[t.id] = seriesArr[i]; });
+
+  const resultsArea = document.getElementById('resultsArea');
+
+  // ── Generate all pairwise results ──
+  const pairs = [];
+  for (let i = 0; i < trackerDefs.length; i++) {
+    for (let j = i + 1; j < trackerDefs.length; j++) {
+      const tA = trackerDefs[i];
+      const tB = trackerDefs[j];
+      const sA = seriesMap[tA.id];
+      const sB = seriesMap[tB.id];
+
+      // Find shared dates
+      const sharedDates = Object.keys(sA).filter(d => sB[d] !== undefined).sort();
+      const X = sharedDates.map(d => sA[d]);
+      const Y = sharedDates.map(d => sB[d]);
+
+      const result = pearson(X, Y);
+      pairs.push({ tA, tB, X, Y, sharedDates, result });
+    }
+  }
+
+  // ── Render ──
+  let html = '';
+
+  // Info if date range label
+  const rangeLabel = rangeDays === 0 ? 'All time' : `Last ${rangeDays} days`;
+  html += `<div class="info-box info" style="margin-bottom:16px;">
+    📅 Showing data for: <strong>${rangeLabel}</strong>
+    &nbsp;·&nbsp; Minimum ${MIN_POINTS} shared days required per pair
+  </div>`;
+
+  // If more than one pair → show matrix first
+  if (pairs.length > 1) {
+    html += renderMatrix(trackerDefs, pairs);
+  }
+
+  // Individual pair cards
+  for (const pair of pairs) {
+    html += renderPairCard(pair);
+  }
+
+  resultsArea.innerHTML = html;
+
+  // Draw canvases after DOM is ready
+  for (let p = 0; p < pairs.length; p++) {
+    const pair = pairs[p];
+    if (pair.result.r !== null) {
+      drawScatter(pair, `scatter-${p}`);
+      drawTimeline(pair, `timeline-${p}`);
+    }
+  }
+
+  btn.innerHTML = 'Calculate Correlation';
+  btn.disabled  = false;
+}
+
+// ── Render one pair result card ───────────────────────────────────────────────
+function renderPairCard(pair, idx = 0) {
+  const { tA, tB, X, Y, sharedDates, result } = pair;
+  const pairId = `${tA.id}-${tB.id}`;
+
+  let cardHTML = `<div class="result-card">`;
+  cardHTML += `<div class="result-pair">${tA.title} &nbsp;↔&nbsp; ${tB.title}</div>`;
+
+  if (result.error) {
+    cardHTML += `<div class="info-box warn" style="margin-top:8px;">⚠️ ${result.error}</div>`;
+    if (result.n !== undefined) {
+      cardHTML += `<div class="result-meta">Found <strong>${result.n}</strong> shared day${result.n !== 1 ? 's' : ''}</div>`;
+    }
+    cardHTML += `</div>`;
+    return cardHTML;
+  }
+
+  const r    = result.r;
+  const rStr = r.toFixed(2);
+  const interp = interpretR(r, tA.title, tB.title);
+
+  // Bar: map r from [-1,1] to [0,100]%
+  const barPct   = Math.round(((r + 1) / 2) * 100);
+  const barFill  = barColor(r);
+  const pairIdx  = `${tA.id}_${tB.id}`;
+
+  cardHTML += `
+    <div class="result-r ${interp.cssClass}">${rStr}</div>
+    <div class="result-label ${interp.cssClass}">${interp.label}</div>
+    <div class="result-desc">${interp.desc}</div>
+
+    <div class="corr-bar-wrap">
+      <div class="corr-bar-fill" style="width:${barPct}%;background:${barFill};"></div>
+    </div>
+    <div class="corr-scale"><span>-1.0</span><span>0</span><span>+1.0</span></div>
+
+    <div class="result-meta" style="margin-top:8px;">
+      Based on <span class="shared-chip">📅 ${result.n} shared days</span>
+    </div>
+
+    <div class="section-hdr">Scatter Plot</div>
+    <div class="scatter-wrap">
+      <div class="scatter-title">${tA.title} (x) vs ${tB.title} (y)</div>
+      <canvas class="scatter-canvas" id="scatter-${pairIdx}"
+              width="600" height="300"></canvas>
+    </div>
+
+    <div class="section-hdr">Timeline</div>
+    <div class="timeline-wrap">
+      <div class="timeline-title">Scores over time</div>
+      <canvas class="timeline-canvas" id="timeline-${pairIdx}"
+              width="600" height="200"></canvas>
+    </div>
+  `;
+
+  cardHTML += `</div>`;
+
+  // Store for canvas drawing (keyed by pairIdx)
+  window.__pairs = window.__pairs || {};
+  window.__pairs[pairIdx] = pair;
+
+  return cardHTML;
+}
+
+// ── Correlation matrix ────────────────────────────────────────────────────────
+function renderMatrix(trackers, pairs) {
+  // Build lookup: "idA_idB" → r
+  const lookup = {};
+  pairs.forEach(p => {
+    if (p.result.r !== null) {
+      lookup[`${p.tA.id}_${p.tB.id}`] = p.result.r;
+      lookup[`${p.tB.id}_${p.tA.id}`] = p.result.r;
+    }
+  });
+
+  let html = `<div class="result-card">
+    <div style="font-weight:700;font-size:16px;color:var(--text-strong);margin-bottom:4px;">Correlation Matrix</div>
+    <div style="font-size:12px;color:var(--text-faint);margin-bottom:12px;">All pairwise correlations at a glance</div>
+    <div class="matrix-wrap"><table class="matrix-table"><thead><tr><th></th>`;
+
+  trackers.forEach(t => {
+    html += `<th title="${t.title}">${t.title.length > 14 ? t.title.slice(0,13)+'…' : t.title}</th>`;
+  });
+  html += `</tr></thead><tbody>`;
+
+  trackers.forEach(tRow => {
+    html += `<tr><th style="text-align:left">${tRow.title.length > 14 ? tRow.title.slice(0,13)+'…' : tRow.title}</th>`;
+    trackers.forEach(tCol => {
+      if (tRow.id === tCol.id) {
+        html += `<td class="matrix-cell self">—</td>`;
+      } else {
+        const key = `${tRow.id}_${tCol.id}`;
+        const r   = lookup[key];
+        if (r === undefined) {
+          html += `<td class="matrix-cell" style="color:var(--text-faint);">n/a</td>`;
+        } else {
+          const abs     = Math.abs(r);
+          const bg      = r >= 0
+            ? `rgba(46,125,50,${abs * 0.55})`
+            : `rgba(198,40,40,${abs * 0.55})`;
+          const textClr = abs > 0.5 ? '#fff' : 'var(--text-strong)';
+          html += `<td class="matrix-cell" style="background:${bg};color:${textClr};">${r.toFixed(2)}</td>`;
+        }
+      }
+    });
+    html += `</tr>`;
+  });
+
+  html += `</tbody></table></div></div>`;
+  return html;
+}
+
+// ── Canvas: scatter plot ──────────────────────────────────────────────────────
+function drawScatter(pair, canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+
+  const dpr  = window.devicePixelRatio || 1;
+  const W    = canvas.offsetWidth  || 600;
+  const H    = canvas.offsetHeight || 300;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  const ctx  = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const PAD  = { top: 20, right: 20, bottom: 40, left: 45 };
+  const gW   = W - PAD.left - PAD.right;
+  const gH   = H - PAD.top  - PAD.bottom;
+
+  // Background
+  ctx.fillStyle = getComputedStyle(document.documentElement)
+                    .getPropertyValue('--bg-subtle').trim() || '#f8f9fa';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid lines
+  ctx.strokeStyle = getComputedStyle(document.documentElement)
+                      .getPropertyValue('--border-faint').trim() || '#eee';
+  ctx.lineWidth = 1;
+  [0, 25, 50, 75, 100].forEach(v => {
+    const y = PAD.top + gH - (v / 100) * gH;
+    const x = PAD.left + (v / 100) * gW;
+    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + gW, y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, PAD.top); ctx.lineTo(x, PAD.top + gH); ctx.stroke();
+  });
+
+  // Trend line (linear regression)
+  if (pair.X.length >= 2) {
+    const n    = pair.X.length;
+    const mX   = pair.X.reduce((a,b)=>a+b,0)/n;
+    const mY   = pair.Y.reduce((a,b)=>a+b,0)/n;
+    let num=0, den=0;
+    pair.X.forEach((x,i) => { num += (x-mX)*(pair.Y[i]-mY); den += (x-mX)**2; });
+    const slope = den !== 0 ? num/den : 0;
+    const intercept = mY - slope * mX;
+
+    ctx.strokeStyle = 'rgba(33,150,243,0.45)';
+    ctx.lineWidth   = 2;
+    ctx.setLineDash([5,4]);
+    ctx.beginPath();
+    ctx.moveTo(PAD.left, PAD.top + gH - (intercept/100)*gH);
+    ctx.lineTo(PAD.left + gW, PAD.top + gH - ((slope*100+intercept)/100)*gH);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Dots
+  const textColor = getComputedStyle(document.documentElement)
+                      .getPropertyValue('--text-muted').trim() || '#666';
+  pair.X.forEach((x, i) => {
+    const cx = PAD.left + (x / 100) * gW;
+    const cy = PAD.top  + gH - (pair.Y[i] / 100) * gH;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(33,150,243,0.7)';
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth   = 1.5;
+    ctx.stroke();
+  });
+
+  // Axis labels
+  ctx.fillStyle  = textColor;
+  ctx.font       = '11px -apple-system, sans-serif';
+  ctx.textAlign  = 'center';
+  // X axis ticks
+  [0, 25, 50, 75, 100].forEach(v => {
+    const x = PAD.left + (v / 100) * gW;
+    ctx.fillText(v, x, H - 8);
+  });
+  // Y axis ticks
+  ctx.textAlign = 'right';
+  [0, 25, 50, 75, 100].forEach(v => {
+    const y = PAD.top + gH - (v / 100) * gH + 4;
+    ctx.fillText(v, PAD.left - 6, y);
+  });
+
+  // Axis titles
+  ctx.textAlign  = 'center';
+  ctx.fillStyle  = textColor;
+  ctx.font       = '11px -apple-system, sans-serif';
+  ctx.fillText(pair.tA.title, PAD.left + gW / 2, H - 2);
+  ctx.save();
+  ctx.translate(12, PAD.top + gH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText(pair.tB.title, 0, 0);
+  ctx.restore();
+}
+
+// ── Canvas: timeline ──────────────────────────────────────────────────────────
+function drawTimeline(pair, canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  if (pair.sharedDates.length < 2) return;
+
+  const dpr = window.devicePixelRatio || 1;
+  const W   = canvas.offsetWidth  || 600;
+  const H   = canvas.offsetHeight || 200;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const PAD  = { top: 16, right: 16, bottom: 28, left: 45 };
+  const gW   = W - PAD.left - PAD.right;
+  const gH   = H - PAD.top  - PAD.bottom;
+  const n    = pair.sharedDates.length;
+
+  // Background
+  ctx.fillStyle = getComputedStyle(document.documentElement)
+                    .getPropertyValue('--bg-subtle').trim() || '#f8f9fa';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = getComputedStyle(document.documentElement)
+                      .getPropertyValue('--border-faint').trim() || '#eee';
+  ctx.lineWidth = 1;
+  [0, 25, 50, 75, 100].forEach(v => {
+    const y = PAD.top + gH - (v / 100) * gH;
+    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + gW, y); ctx.stroke();
+  });
+
+  const colors = ['rgba(33,150,243,0.85)', 'rgba(76,175,80,0.85)'];
+  const names  = [pair.tA.title, pair.tB.title];
+  [pair.X, pair.Y].forEach((series, si) => {
+    ctx.strokeStyle = colors[si];
+    ctx.lineWidth   = 2.5;
+    ctx.beginPath();
+    series.forEach((v, i) => {
+      const x = PAD.left + (i / (n - 1)) * gW;
+      const y = PAD.top  + gH - (v / 100) * gH;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // Dots
+    series.forEach((v, i) => {
+      const x = PAD.left + (i / (n - 1)) * gW;
+      const y = PAD.top  + gH - (v / 100) * gH;
+      ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = colors[si]; ctx.fill();
+    });
+  });
+
+  // Date labels (max 6)
+  const textColor = getComputedStyle(document.documentElement)
+                      .getPropertyValue('--text-faint').trim() || '#999';
+  ctx.fillStyle  = textColor;
+  ctx.font       = '10px -apple-system, sans-serif';
+  ctx.textAlign  = 'center';
+  const step = Math.max(1, Math.floor(n / 5));
+  for (let i = 0; i < n; i += step) {
+    const d = pair.sharedDates[i];
+    const x = PAD.left + (i / (n - 1)) * gW;
+    ctx.fillText(d.slice(5), x, H - 6); // show MM-DD
+  }
+
+  // Y axis
+  ctx.textAlign = 'right';
+  [0, 50, 100].forEach(v => {
+    const y = PAD.top + gH - (v / 100) * gH + 4;
+    ctx.fillText(v, PAD.left - 4, y);
+  });
+
+  // Legend
+  colors.forEach((c, i) => {
+    ctx.fillStyle = c;
+    ctx.fillRect(PAD.left + gW - 120 + i * 60, PAD.top + 4, 10, 10);
+    ctx.fillStyle  = textColor;
+    ctx.font       = '10px -apple-system, sans-serif';
+    ctx.textAlign  = 'left';
+    ctx.fillText(names[i].slice(0, 8), PAD.left + gW - 108 + i * 60, PAD.top + 13);
+  });
+}
+
+// ── Re-draw canvases after results are in DOM ─────────────────────────────────
+// We draw immediately after setting innerHTML, using requestAnimationFrame
+// to ensure layout is computed.
+const _origRun = window.runCorrelation;
+
+// ── Start ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', init);
+
+// ── Helper (re-export from db.js scope) ──────────────────────────────────────
+function getLocalDateString(date = new Date()) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+</script>
+
+<!-- Override runCorrelation to use pairIdx-keyed canvases -->
+<script>
+// Patch: after innerHTML is set, draw canvases via stored __pairs
+const _baseRun = runCorrelation;
+window.runCorrelation = async function() {
+  window.__pairs = {};
+  await _baseRun();
+  requestAnimationFrame(() => {
+    if (!window.__pairs) return;
+    for (const [pairIdx, pair] of Object.entries(window.__pairs)) {
+      if (pair.result && pair.result.r !== null) {
+        drawScatter(pair, `scatter-${pairIdx}`);
+        drawTimeline(pair, `timeline-${pairIdx}`);
+      }
+    }
+  });
+};
+
+// Fix renderPairCard to use the right id format
+const _basePairCard = renderPairCard;
+window.renderPairCard = function(pair) {
+  // id already set in base fn using tA.id_tB.id format — no change needed
+  return _basePairCard(pair);
+};
+</script>
+
+<!-- Theme toggle -->
+<script>
+(function () {
+  const KEY = 'theme', L = 'light', D = 'dark';
+  const sys  = () => window.matchMedia('(prefers-color-scheme: dark)').matches ? D : L;
+  const saved= () => localStorage.getItem(KEY);
+  const apply= (t) => {
+    document.documentElement.setAttribute('data-theme', t);
+    document.querySelectorAll('.theme-toggle').forEach(b => {
+      b.textContent = t === D ? '☀️' : '🌙';
+      b.setAttribute('aria-label', t === D ? 'Switch to light mode' : 'Switch to dark mode');
+    });
+  };
+  apply(saved() || sys());
+  const toggle = () => {
+    const next = (document.documentElement.getAttribute('data-theme') || sys()) === D ? L : D;
+    localStorage.setItem(KEY, next); apply(next);
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => document.body.addEventListener('click', e => { if (e.target.closest('.theme-toggle')) toggle(); }));
+  } else {
+    document.body.addEventListener('click', e => { if (e.target.closest('.theme-toggle')) toggle(); });
+  }
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => { if (!saved()) apply(e.matches ? D : L); });
+})();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(() => console.log('SW Registered'))
+      .catch(err => console.log('SW failed:', err));
+  });
+}
+</script>
+</body>
+</html>

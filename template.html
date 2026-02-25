@@ -1,300 +1,249 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quick Start Templates</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#fef5eb">
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quick Start Templates</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#fef5eb">
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <style>
+    /* ── Search bar ── */
+    .template-search { position: relative; margin-bottom: 18px; }
+    .template-search input {
+      width: 100%; padding: 10px 14px 10px 38px;
+      border: 1px solid var(--border); border-radius: 4px; font-size: 14px;
+      background: var(--bg-input); color: var(--text-body); box-sizing: border-box;
+      outline: none; transition: border-color 0.15s;
+    }
+    .template-search input:focus { border-color: var(--blue); }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 15px; opacity: 0.45; pointer-events: none; }
 
-    <!-- Only new CSS that has NO equivalent in styles.css -->
-    <style>
-        /* Search bar wrapper */
-        .template-search { position: relative; margin-bottom: 18px; }
-        .template-search input {
-            width: 100%;
-            padding: 10px 14px 10px 38px;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            font-size: 14px;
-            background: var(--bg-input);
-            color: var(--text-body);
-            box-sizing: border-box;
-            outline: none;
-            transition: border-color 0.15s;
-        }
-        .template-search input:focus { border-color: var(--blue); }
-        .search-icon {
-            position: absolute; left: 12px; top: 50%;
-            transform: translateY(-50%);
-            font-size: 15px; opacity: 0.45; pointer-events: none;
-        }
+    /* ── Accordion ── */
+    .accordion { display: flex; flex-direction: column; gap: 10px; }
+    .accordion-item { border: 2px solid var(--border-card); border-radius: 8px; overflow: hidden; background: var(--bg-card); }
+    .accordion-item.open { box-shadow: var(--shadow); }
+    .accordion-item.hidden { display: none; }
+    .accordion-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; cursor: pointer; user-select: none; gap: 10px; }
+    .accordion-header:hover { background: var(--bg-hover); }
+    .accordion-meta { display: flex; align-items: center; gap: 8px; }
+    .accordion-chevron { font-size: 13px; color: var(--text-faint); transition: transform 0.2s; }
+    .accordion-item.open .accordion-chevron { transform: rotate(180deg); }
+    .accordion-body { display: none; padding: 0 12px 14px; }
+    .accordion-item.open .accordion-body { display: block; }
 
-        /* Accordion */
-        .accordion { display: flex; flex-direction: column; gap: 10px; }
-        .accordion-item {
-            border: 2px solid var(--border-card);
-            border-radius: 8px;
-            overflow: hidden;
-            background: var(--bg-card);
-        }
-        .accordion-item.open { box-shadow: var(--shadow); }
-        .accordion-item.hidden { display: none; }
-        .accordion-header {
-            display: flex; align-items: center;
-            justify-content: space-between;
-            padding: 14px 16px; cursor: pointer; user-select: none; gap: 10px;
-        }
-        .accordion-header:hover { background: var(--bg-hover); }
-        .accordion-meta { display: flex; align-items: center; gap: 8px; }
-        .accordion-chevron {
-            font-size: 13px; color: var(--text-faint); transition: transform 0.2s;
-        }
-        .accordion-item.open .accordion-chevron { transform: rotate(180deg); }
-        .accordion-body { display: none; padding: 0 12px 14px; }
-        .accordion-item.open .accordion-body { display: block; }
+    /* ── Type dot ── */
+    .template-type-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+    .dot-dropdown { background: #9C27B0; }
+    .dot-yesno    { background: var(--green); }
+    .dot-numeric  { background: var(--blue); }
+    .dot-text     { background: var(--orange); }
 
-        /* Type dot indicator */
-        .template-type-dot {
-            display: inline-block; width: 6px; height: 6px;
-            border-radius: 50%; margin-right: 4px; vertical-align: middle;
-        }
-        .dot-dropdown { background: #9C27B0; }
-        .dot-yesno    { background: var(--green); }
-        .dot-numeric  { background: var(--blue); }
-        .dot-text     { background: var(--orange); }
+    /* ── No results ── */
+    .no-results { text-align: center; padding: 40px 20px; color: var(--text-faint); font-size: 14px; }
+    .no-results span { font-size: 32px; display: block; margin-bottom: 10px; }
 
-        /* No results state */
-        .no-results {
-            text-align: center; padding: 40px 20px;
-            color: var(--text-faint); font-size: 14px;
-        }
-        .no-results span { font-size: 32px; display: block; margin-bottom: 10px; }
-    </style>
+    /* ── Value badge on template buttons ── */
+    .template-value-info { font-size: 10px; color: var(--text-faint); margin-top: 3px; font-style: italic; }
+
+    .page-bottom-pad { height: 80px; }
+  </style>
 </head>
 <body>
 
+<button class="theme-toggle" aria-label="Toggle theme">🌙</button>
+
 <div class="container">
+  <h1>Quick Start Templates</h1>
+  <p class="subtitle">Choose a template to quickly add a tracker to your day</p>
 
-    <!-- h1 + .subtitle from styles.css -->
-    <h1>Quick Start Templates</h1>
-    <p class="subtitle">Choose a template to quickly add a tracker to your day</p>
+  <div class="template-search">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="templateSearch" placeholder="Search templates…"
+           oninput="filterTemplates(this.value)" autocomplete="off">
+  </div>
 
-    <!-- Search bar -->
-    <div class="template-search">
-        <span class="search-icon">&#x1F50D;</span>
-        <input type="text" id="templateSearch" placeholder="Search templates…" oninput="filterTemplates(this.value)" autocomplete="off">
-    </div>
+  <div class="accordion" id="accordion"></div>
 
-    <!-- Accordion -->
-    <div class="accordion" id="accordion"></div>
+  <div class="no-results hidden" id="noResults">
+    <span>🔍</span>
+    No templates match "<span id="noResultsQuery"></span>"
+  </div>
 
-    <!-- No results — .hidden from styles.css -->
-    <div class="no-results hidden" id="noResults">
-        <span>&#x1F50E;</span>
-        No templates match &ldquo;<span id="noResultsQuery"></span>&rdquo;
-    </div>
-
+  <div class="page-bottom-pad"></div>
 </div>
 
-<!-- .bottom-navigation from styles.css -->
 <div class="bottom-navigation">
-    <div><a href="trackers.html"><img src="folder-icon.svg"/>Tracker</a></div>
-    <div><a href="report.html"><img src="report-icon.svg"/>Report</a></div>
-    <div><a href="index.html"><img src="today-icon.svg"/>My Day</a></div>
-    <div><a href="settings.html"><img src="setting-icon.svg"/>Settings</a></div>
+  <div><a href="trackers.html"><img src="folder-icon.svg">Tracker</a></div>
+  <div><a href="report.html"><img src="report-icon.svg">Report</a></div>
+  <div><a href="index.html"><img src="today-icon.svg">My Day</a></div>
+  <div><a href="correlate.html"><img src="setting-icon.svg">Correlate</a></div>
 </div>
+
+<!-- Shared DB layer -->
+<script src="db.js"></script>
 
 <script>
-/* ===================================================================
-   template.html
-   CSS used from styles.css:
-     - h1, .subtitle, .hidden, .bottom-navigation  (base/layout)
-     - .templates-grid, .template-btn, .template-type  (template grid)
-     - .tracker-title  (accordion heading)
-     - .selection-count  (category badge)
-     - var(--border-card), var(--bg-card), var(--bg-hover),
-       var(--border), var(--shadow), var(--text-faint),
-       var(--blue), var(--green), var(--orange)  (tokens)
-   New CSS only for: search bar, accordion, type dot, no-results.
-   =================================================================== */
-
 let ALL_CATEGORIES = [];
 
-function typeLabel(t) {
-    return { dropdown: 'Dropdown', yesno: 'Yes / No', numeric: 'Numeric', text: 'Text' }[t] || 'Dropdown';
+function typeLabel(type) {
+  return { dropdown:'Dropdown', yesno:'Yes/No', numeric:'Numeric', text:'Text' }[type] || type;
 }
-function typeDotClass(t) {
-    return { dropdown: 'dot-dropdown', yesno: 'dot-yesno', numeric: 'dot-numeric', text: 'dot-text' }[t] || 'dot-dropdown';
+function typeDot(type) {
+  return `<span class="template-type-dot dot-${type}"></span>`;
 }
 
-function buildAccordion(categories) {
-    const accordion = document.getElementById('accordion');
-    accordion.innerHTML = categories.map((cat, catIdx) => `
-        <div class="accordion-item" id="cat-${cat.id}" data-cat-idx="${catIdx}">
-            <div class="accordion-header" onclick="toggleAccordion('${cat.id}')">
-                <span class="tracker-title">${cat.category}</span>
-                <div class="accordion-meta">
-                    <span class="selection-count">${cat.templates.length}</span>
-                    <span class="accordion-chevron">&#9660;</span>
-                </div>
-            </div>
-            <div class="accordion-body">
-                <div class="templates-grid" id="grid-${cat.id}">
-                    ${cat.templates.map((t, tIdx) => `
-                        <button class="template-btn"
-                                data-cat-id="${cat.id}"
-                                data-tpl-idx="${tIdx}"
-                                data-title="${t.title.toLowerCase()}"
-                                onclick="useTemplate('${cat.id}', ${tIdx}, this)">
-                            ${t.title}
-                            <div class="template-type">
-                                <span class="template-type-dot ${typeDotClass(t.type)}"></span>
-                                ${typeLabel(t.type)}
-                            </div>
-                        </button>
-                    `).join('')}
-                </div>
-            </div>
+/* Summarise option values for tooltip-style info */
+function optionValueSummary(template) {
+  if (template.type === 'dropdown' && template.options) {
+    const vals = template.options.map(o => `${o.title}: ${o.value}`).join(' · ');
+    return `<div class="template-value-info">Scores: ${vals}</div>`;
+  }
+  if (template.type === 'yesno' && template.valueMap) {
+    return `<div class="template-value-info">Yes: ${template.valueMap.yes} · No: ${template.valueMap.no}</div>`;
+  }
+  if (template.type === 'numeric' && template.valueMap) {
+    const vm = template.valueMap;
+    const opt = vm.optimalMin !== undefined ? ` · Optimal: ${vm.optimalMin}–${vm.optimalMax}` : '';
+    return `<div class="template-value-info">Range: ${vm.min}–${vm.max}${opt}</div>`;
+  }
+  return '';
+}
+
+function buildAccordion(cats) {
+  const acc = document.getElementById('accordion');
+  acc.innerHTML = cats.map(cat => `
+    <div class="accordion-item" id="cat-${cat.id}">
+      <div class="accordion-header" onclick="toggleAccordion('${cat.id}')">
+        <span style="font-weight:600;font-size:15px;color:var(--text-strong)">${cat.category}</span>
+        <div class="accordion-meta">
+          <span style="font-size:12px;color:var(--text-faint)">${cat.templates.length} templates</span>
+          <span class="accordion-chevron">▼</span>
         </div>
-    `).join('');
-
-    if (categories.length > 0) {
-        document.getElementById(`cat-${categories[0].id}`)?.classList.add('open');
-    }
+      </div>
+      <div class="accordion-body">
+        <div class="templates-grid">
+          ${cat.templates.map((tpl, idx) => `
+            <button class="template-btn" onclick="useTemplate('${cat.id}',${idx},this)">
+              <div>${tpl.title}</div>
+              <div class="template-type">${typeDot(tpl.type)}${typeLabel(tpl.type)}</div>
+              ${optionValueSummary(tpl)}
+            </button>`).join('')}
+        </div>
+      </div>
+    </div>`).join('');
 }
 
-function toggleAccordion(catId) {
-    document.getElementById(`cat-${catId}`).classList.toggle('open');
+function toggleAccordion(id) {
+  document.getElementById(`cat-${id}`).classList.toggle('open');
 }
 
 function filterTemplates(query) {
-    query = query.trim().toLowerCase();
-    let anyVisible = false;
-
-    ALL_CATEGORIES.forEach(cat => {
-        const item = document.getElementById(`cat-${cat.id}`);
-        const grid = document.getElementById(`grid-${cat.id}`);
-        const btns = grid ? grid.querySelectorAll('.template-btn') : [];
-        let catHasMatch = false;
-
-        btns.forEach(btn => {
-            const match = !query || (btn.dataset.title || '').includes(query);
-            btn.style.display = match ? '' : 'none';
-            if (match) catHasMatch = true;
-        });
-
-        if (catHasMatch) {
-            item.classList.remove('hidden');
-            if (query) item.classList.add('open');
-            anyVisible = true;
-        } else {
-            item.classList.add('hidden');
-        }
-    });
-
-    document.getElementById('noResults').classList.toggle('hidden', anyVisible);
-    document.getElementById('noResultsQuery').textContent = query;
+  const q = query.trim().toLowerCase();
+  let anyVisible = false;
+  ALL_CATEGORIES.forEach(cat => {
+    const item = document.getElementById(`cat-${cat.id}`);
+    if (!q) {
+      item.classList.remove('hidden');
+      anyVisible = true;
+      return;
+    }
+    const catMatch = cat.category.toLowerCase().includes(q);
+    const tplMatch = cat.templates.some(t => t.title.toLowerCase().includes(q));
+    if (catMatch || tplMatch) {
+      item.classList.remove('hidden');
+      anyVisible = true;
+    } else {
+      item.classList.add('hidden');
+    }
+  });
+  const noRes = document.getElementById('noResults');
+  noRes.classList.toggle('hidden', anyVisible);
+  if (!anyVisible) document.getElementById('noResultsQuery').textContent = query;
 }
 
-/* IndexedDB */
-const DB_NAME = 'TrackerDB', STORE_NAME = 'trackers';
-
-function openDB() {
-    return new Promise((resolve, reject) => {
-        const req = indexedDB.open(DB_NAME, 2);
-        req.onupgradeneeded = e => {
-            const d = e.target.result;
-            if (!d.objectStoreNames.contains(STORE_NAME))
-                d.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
-        };
-        req.onsuccess = e => resolve(e.target.result);
-        req.onerror   = () => reject(req.error);
-    });
-}
-
-function addTracker(db, tracker) {
-    return new Promise((resolve, reject) => {
-        const req = db.transaction([STORE_NAME], 'readwrite').objectStore(STORE_NAME).add(tracker);
-        req.onsuccess = () => resolve(req.result);
-        req.onerror   = () => reject(req.error);
-    });
+/* Add tracker to IndexedDB using db.js openDB() */
+async function addTrackerToDB(tracker) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const req = db.transaction('trackers', 'readwrite')
+                  .objectStore('trackers').add(tracker);
+    req.onsuccess = () => { db.close(); resolve(req.result); };
+    req.onerror   = () => { db.close(); reject(req.error);   };
+  });
 }
 
 async function useTemplate(catId, tplIdx, btn) {
-    const cat = ALL_CATEGORIES.find(c => c.id === catId);
-    if (!cat) return;
-    const template = cat.templates[tplIdx];
-    if (!template) return;
+  const cat      = ALL_CATEGORIES.find(c => c.id === catId);
+  if (!cat) return;
+  const template = cat.templates[tplIdx];
+  if (!template) return;
 
-    const originalHTML = btn.innerHTML;
-    btn.disabled  = true;
-    btn.innerHTML = `<span>&#x23F3; Creating…</span><div class="template-type">${typeLabel(template.type)}</div>`;
+  const originalHTML = btn.innerHTML;
+  btn.disabled  = true;
+  btn.innerHTML = `<span>⏳ Creating…</span><div class="template-type">${typeLabel(template.type)}</div>`;
 
-    try {
-        const db = await openDB();
-        const tracker = {
-            title: template.title, type: template.type,
-            category: cat.id, createdAt: new Date().toISOString()
-        };
-        if (template.options) {
-            tracker.options      = template.options;
-            tracker.displayStyle = template.displayStyle || 'radio';
-        }
-        if (template.numericPrefix !== undefined) tracker.numericPrefix = template.numericPrefix;
-        if (template.numericSuffix !== undefined) tracker.numericSuffix = template.numericSuffix;
-        if (template.valueMap) tracker.valueMap = template.valueMap;
+  try {
+    const tracker = {
+      title:     template.title,
+      type:      template.type,
+      category:  catId,
+      createdAt: new Date().toISOString()
+    };
 
-        await addTracker(db, tracker);
-        db.close();
-        window.location.href = 'trackers.html';
-    } catch (err) {
-        console.error('Failed to save tracker:', err);
-        btn.disabled  = false;
-        btn.innerHTML = originalHTML;
-        alert(`Could not save "${template.title}".
+    /* Preserve option structure exactly — scores stay in tracker definition,
+       NOT in daily entries. resolveScore() in db.js reads them at query time. */
+    if (template.options)           tracker.options      = template.options;
+    if (template.displayStyle)      tracker.displayStyle = template.displayStyle;
+    if (template.numericPrefix !== undefined) tracker.numericPrefix = template.numericPrefix;
+    if (template.numericSuffix !== undefined) tracker.numericSuffix = template.numericSuffix;
+    if (template.valueMap)          tracker.valueMap     = template.valueMap;
 
-Error: ${err.message || err}`);
-    }
+    await addTrackerToDB(tracker);
+    window.location.href = 'trackers.html';
+  } catch (err) {
+    console.error('Failed to save tracker:', err);
+    btn.disabled  = false;
+    btn.innerHTML = originalHTML;
+    alert(`Could not save "${template.title}".\n\nError: ${err.message || err}`);
+  }
 }
 
-/* Embedded data — no fetch() needed, works with file:// */
-const ALL_CATEGORIES_DATA = [{"category": "😊 Mood & Emotions", "id": "mood", "templates": [{"title": "Daily Mood", "type": "dropdown", "displayStyle": "radio", "options": [{"title": "Very Happy", "color": "#4CAF50", "value": 100}, {"title": "Happy", "color": "#8BC34A", "value": 75}, {"title": "Neutral", "color": "#FFC107", "value": 50}, {"title": "Sad", "color": "#FF9800", "value": 25}, {"title": "Very Sad", "color": "#F44336", "value": 5}]}, {"title": "Anxiety Level", "type": "dropdown", "displayStyle": "slider", "options": [{"title": "No Anxiety", "color": "#4CAF50", "value": 100}, {"title": "Semi Anxious", "color": "#CDDC39", "value": 65}, {"title": "Severe Anxiety", "color": "#FF9800", "value": 30}, {"title": "Hardcore Anxious", "color": "#F44336", "value": 5}]}, {"title": "Stress Level", "type": "dropdown", "displayStyle": "slider", "options": [{"title": "No Stress", "color": "#4CAF50", "value": 100}, {"title": "Low Stress", "color": "#8BC34A", "value": 75}, {"title": "Moderate", "color": "#FFC107", "value": 50}, {"title": "High Stress", "color": "#FF9800", "value": 25}, {"title": "Overwhelmed", "color": "#F44336", "value": 5}]}, {"title": "Energy Level", "type": "dropdown", "displayStyle": "slider", "options": [{"title": "Supercharged", "color": "#4CAF50", "value": 100}, {"title": "Good", "color": "#8BC34A", "value": 75}, {"title": "Okay", "color": "#FFC107", "value": 50}, {"title": "Low", "color": "#FF9800", "value": 25}, {"title": "Drained", "color": "#F44336", "value": 5}]}, {"title": "Daily Journal", "type": "text"}, {"title": "Gratitude", "type": "text"}]}, {"category": "😴 Sleep", "id": "sleep", "templates": [{"title": "Sleep Quality", "type": "dropdown", "displayStyle": "radio", "options": [{"title": "Excellent", "color": "#4CAF50", "value": 100}, {"title": "Good", "color": "#8BC34A", "value": 75}, {"title": "Fair", "color": "#FFC107", "value": 50}, {"title": "Poor", "color": "#FF9800", "value": 25}, {"title": "Terrible", "color": "#F44336", "value": 5}]}, {"title": "Sleep Duration", "type": "numeric", "numericPrefix": "", "numericSuffix": "hrs", "valueMap": {"min": 0, "max": 12, "optimalMin": 7, "optimalMax": 9, "value": 80}}, {"title": "Nap Today", "type": "yesno", "valueMap": {"yes": 60, "no": 50}}, {"title": "Bedtime Routine", "type": "yesno", "valueMap": {"yes": 85, "no": 20}}]}, {"category": "🏃 Physical Health", "id": "physical", "templates": [{"title": "Exercise", "type": "dropdown", "displayStyle": "radio", "options": [{"title": "Intense Workout", "color": "#E91E63", "value": 100}, {"title": "Moderate Exercise", "color": "#9C27B0", "value": 80}, {"title": "Light Activity", "color": "#673AB7", "value": 55}, {"title": "Stretching", "color": "#3F51B5", "value": 35}, {"title": "No Exercise", "color": "#9E9E9E", "value": 5}]}, {"title": "Water Intake", "type": "numeric", "numericPrefix": "", "numericSuffix": "glasses", "valueMap": {"min": 0, "max": 15, "optimalMin": 8, "optimalMax": 12, "value": 75}}, {"title": "Weight", "type": "numeric", "numericPrefix": "", "numericSuffix": "lbs", "valueMap": {"min": 0, "max": 500, "value": 50}}, {"title": "Steps", "type": "numeric", "numericPrefix": "", "numericSuffix": "steps", "valueMap": {"min": 0, "max": 30000, "optimalMin": 8000, "optimalMax": 15000, "value": 70}}, {"title": "Workout Duration", "type": "numeric", "numericPrefix": "", "numericSuffix": "min", "valueMap": {"min": 0, "max": 180, "optimalMin": 30, "optimalMax": 90, "value": 80}}, {"title": "Headache", "type": "yesno", "valueMap": {"yes": 10, "no": 90}}, {"title": "Sick Today", "type": "yesno", "valueMap": {"yes": 5, "no": 95}}]}, {"category": "🥗 Nutrition", "id": "nutrition", "templates": [{"title": "Diet Quality", "type": "dropdown", "displayStyle": "radio", "options": [{"title": "Very Healthy", "color": "#4CAF50", "value": 100}, {"title": "Healthy", "color": "#8BC34A", "value": 75}, {"title": "Moderate", "color": "#FFC107", "value": 50}, {"title": "Unhealthy", "color": "#FF9800", "value": 25}, {"title": "Very Unhealthy", "color": "#F44336", "value": 5}]}, {"title": "Calories", "type": "numeric", "numericPrefix": "", "numericSuffix": "kcal", "valueMap": {"min": 0, "max": 5000, "optimalMin": 1500, "optimalMax": 2500, "value": 65}}, {"title": "Ate Vegetables", "type": "yesno", "valueMap": {"yes": 90, "no": 20}}, {"title": "Alcohol", "type": "yesno", "valueMap": {"yes": 15, "no": 85}}, {"title": "Caffeine Intake", "type": "dropdown", "displayStyle": "radio", "options": [{"title": "None", "color": "#4CAF50", "value": 90}, {"title": "Low", "color": "#8BC34A", "value": 75}, {"title": "Moderate", "color": "#FFC107", "value": 50}, {"title": "High", "color": "#FF9800", "value": 25}, {"title": "Very High", "color": "#F44336", "value": 5}]}]}, {"category": "🧘 Mental Wellness", "id": "mental", "templates": [{"title": "Meditation", "type": "yesno", "valueMap": {"yes": 90, "no": 30}}, {"title": "Mindfulness", "type": "yesno", "valueMap": {"yes": 85, "no": 30}}, {"title": "Focus Level", "type": "dropdown", "displayStyle": "slider", "options": [{"title": "Laser Focus", "color": "#4CAF50", "value": 100}, {"title": "Good Focus", "color": "#8BC34A", "value": 75}, {"title": "Distracted", "color": "#FFC107", "value": 45}, {"title": "Very Scattered", "color": "#F44336", "value": 10}]}, {"title": "Therapy / Counseling", "type": "yesno", "valueMap": {"yes": 95, "no": 50}}, {"title": "Screen Time", "type": "dropdown", "displayStyle": "radio", "options": [{"title": "< 1 hr", "color": "#4CAF50", "value": 100}, {"title": "1–3 hrs", "color": "#8BC34A", "value": 70}, {"title": "3–5 hrs", "color": "#FFC107", "value": 45}, {"title": "5–8 hrs", "color": "#FF9800", "value": 20}, {"title": "8+ hrs", "color": "#F44336", "value": 5}]}]}, {"category": "📚 Productivity", "id": "productivity", "templates": [{"title": "Productivity Level", "type": "dropdown", "displayStyle": "slider", "options": [{"title": "Crushing It", "color": "#4CAF50", "value": 100}, {"title": "Productive", "color": "#8BC34A", "value": 75}, {"title": "So-so", "color": "#FFC107", "value": 50}, {"title": "Low Output", "color": "#FF9800", "value": 25}, {"title": "Unproductive", "color": "#F44336", "value": 5}]}, {"title": "Reading", "type": "yesno", "valueMap": {"yes": 85, "no": 30}}, {"title": "Learning / Study", "type": "numeric", "numericPrefix": "", "numericSuffix": "min", "valueMap": {"min": 0, "max": 480, "optimalMin": 30, "optimalMax": 120, "value": 75}}, {"title": "Goal Progress", "type": "dropdown", "displayStyle": "radio", "options": [{"title": "Exceeded", "color": "#4CAF50", "value": 100}, {"title": "On Track", "color": "#8BC34A", "value": 75}, {"title": "Partial", "color": "#FFC107", "value": 45}, {"title": "Missed", "color": "#F44336", "value": 10}]}]}, {"category": "🤝 Social", "id": "social", "templates": [{"title": "Social Interaction", "type": "dropdown", "displayStyle": "radio", "options": [{"title": "Very Social", "color": "#4CAF50", "value": 90}, {"title": "Some Socializing", "color": "#8BC34A", "value": 70}, {"title": "Minimal", "color": "#FFC107", "value": 45}, {"title": "Isolated", "color": "#F44336", "value": 10}]}, {"title": "Quality Time w/ Family", "type": "yesno", "valueMap": {"yes": 90, "no": 30}}, {"title": "Arguments / Conflict", "type": "yesno", "valueMap": {"yes": 10, "no": 85}}, {"title": "Helped Someone", "type": "yesno", "valueMap": {"yes": 95, "no": 50}}]}, {"category": "💊 Health Symptoms", "id": "symptoms", "templates": [{"title": "Pain Level", "type": "dropdown", "displayStyle": "slider", "options": [{"title": "No Pain", "color": "#4CAF50", "value": 100}, {"title": "Mild Pain", "color": "#CDDC39", "value": 65}, {"title": "Moderate", "color": "#FF9800", "value": 35}, {"title": "Severe Pain", "color": "#F44336", "value": 5}]}, {"title": "Medication Taken", "type": "yesno", "valueMap": {"yes": 80, "no": 50}}, {"title": "Period / Cycle", "type": "yesno", "valueMap": {"yes": 50, "no": 50}}, {"title": "Symptoms Notes", "type": "text"}]}, {"category": "🌿 Habits", "id": "habits", "templates": [{"title": "Smoking", "type": "yesno", "valueMap": {"yes": 5, "no": 95}}, {"title": "Journaling", "type": "yesno", "valueMap": {"yes": 85, "no": 30}}, {"title": "Cold Shower", "type": "yesno", "valueMap": {"yes": 90, "no": 40}}, {"title": "Morning Routine", "type": "yesno", "valueMap": {"yes": 88, "no": 25}}, {"title": "Overall Day Rating", "type": "dropdown", "displayStyle": "slider", "options": [{"title": "Amazing", "color": "#4CAF50", "value": 100}, {"title": "Good", "color": "#8BC34A", "value": 75}, {"title": "Average", "color": "#FFC107", "value": 50}, {"title": "Bad", "color": "#FF9800", "value": 25}, {"title": "Terrible", "color": "#F44336", "value": 5}]}]}];
+/* ── Template data ── */
+const ALL_CATEGORIES_DATA = [{"category":"😊 Mood & Emotions","id":"mood","templates":[{"title":"Daily Mood","type":"dropdown","displayStyle":"radio","options":[{"title":"Very Happy","color":"#4CAF50","value":100},{"title":"Happy","color":"#8BC34A","value":75},{"title":"Neutral","color":"#FFC107","value":50},{"title":"Sad","color":"#FF9800","value":25},{"title":"Very Sad","color":"#F44336","value":5}]},{"title":"Anxiety Level","type":"dropdown","displayStyle":"slider","options":[{"title":"No Anxiety","color":"#4CAF50","value":100},{"title":"Semi Anxious","color":"#CDDC39","value":65},{"title":"Severe Anxiety","color":"#FF9800","value":30},{"title":"Hardcore Anxious","color":"#F44336","value":5}]},{"title":"Stress Level","type":"dropdown","displayStyle":"slider","options":[{"title":"No Stress","color":"#4CAF50","value":100},{"title":"Low Stress","color":"#8BC34A","value":75},{"title":"Moderate","color":"#FFC107","value":50},{"title":"High Stress","color":"#FF9800","value":25},{"title":"Overwhelmed","color":"#F44336","value":5}]},{"title":"Energy Level","type":"dropdown","displayStyle":"slider","options":[{"title":"Supercharged","color":"#4CAF50","value":100},{"title":"Good","color":"#8BC34A","value":75},{"title":"Okay","color":"#FFC107","value":50},{"title":"Low","color":"#FF9800","value":25},{"title":"Drained","color":"#F44336","value":5}]},{"title":"Daily Journal","type":"text"},{"title":"Gratitude","type":"text"}]},{"category":"😴 Sleep","id":"sleep","templates":[{"title":"Sleep Quality","type":"dropdown","displayStyle":"radio","options":[{"title":"Excellent","color":"#4CAF50","value":100},{"title":"Good","color":"#8BC34A","value":75},{"title":"Fair","color":"#FFC107","value":50},{"title":"Poor","color":"#FF9800","value":25},{"title":"Terrible","color":"#F44336","value":5}]},{"title":"Sleep Duration","type":"numeric","numericPrefix":"","numericSuffix":"hrs","valueMap":{"min":0,"max":12,"optimalMin":7,"optimalMax":9,"value":80}},{"title":"Nap Today","type":"yesno","valueMap":{"yes":60,"no":50}},{"title":"Bedtime Routine","type":"yesno","valueMap":{"yes":85,"no":20}}]},{"category":"🏃 Physical Health","id":"physical","templates":[{"title":"Exercise","type":"dropdown","displayStyle":"radio","options":[{"title":"Intense Workout","color":"#E91E63","value":100},{"title":"Moderate Exercise","color":"#9C27B0","value":80},{"title":"Light Activity","color":"#673AB7","value":55},{"title":"Stretching","color":"#3F51B5","value":35},{"title":"No Exercise","color":"#9E9E9E","value":5}]},{"title":"Water Intake","type":"numeric","numericPrefix":"","numericSuffix":"glasses","valueMap":{"min":0,"max":15,"optimalMin":8,"optimalMax":12,"value":75}},{"title":"Weight","type":"numeric","numericPrefix":"","numericSuffix":"lbs","valueMap":{"min":0,"max":500,"value":50}},{"title":"Steps","type":"numeric","numericPrefix":"","numericSuffix":"steps","valueMap":{"min":0,"max":30000,"optimalMin":8000,"optimalMax":15000,"value":70}},{"title":"Workout Duration","type":"numeric","numericPrefix":"","numericSuffix":"min","valueMap":{"min":0,"max":180,"optimalMin":30,"optimalMax":90,"value":80}},{"title":"Headache","type":"yesno","valueMap":{"yes":10,"no":90}},{"title":"Sick Today","type":"yesno","valueMap":{"yes":5,"no":95}}]},{"category":"🥗 Nutrition","id":"nutrition","templates":[{"title":"Diet Quality","type":"dropdown","displayStyle":"radio","options":[{"title":"Very Healthy","color":"#4CAF50","value":100},{"title":"Healthy","color":"#8BC34A","value":75},{"title":"Moderate","color":"#FFC107","value":50},{"title":"Unhealthy","color":"#FF9800","value":25},{"title":"Very Unhealthy","color":"#F44336","value":5}]},{"title":"Calories","type":"numeric","numericPrefix":"","numericSuffix":"kcal","valueMap":{"min":0,"max":5000,"optimalMin":1500,"optimalMax":2500,"value":65}},{"title":"Ate Vegetables","type":"yesno","valueMap":{"yes":90,"no":20}},{"title":"Alcohol","type":"yesno","valueMap":{"yes":15,"no":85}},{"title":"Caffeine Intake","type":"dropdown","displayStyle":"radio","options":[{"title":"None","color":"#4CAF50","value":90},{"title":"Low","color":"#8BC34A","value":75},{"title":"Moderate","color":"#FFC107","value":50},{"title":"High","color":"#FF9800","value":25},{"title":"Very High","color":"#F44336","value":5}]}]},{"category":"🧘 Mental Wellness","id":"mental","templates":[{"title":"Meditation","type":"yesno","valueMap":{"yes":90,"no":30}},{"title":"Mindfulness","type":"yesno","valueMap":{"yes":85,"no":30}},{"title":"Focus Level","type":"dropdown","displayStyle":"slider","options":[{"title":"Laser Focus","color":"#4CAF50","value":100},{"title":"Good Focus","color":"#8BC34A","value":75},{"title":"Distracted","color":"#FFC107","value":45},{"title":"Very Scattered","color":"#F44336","value":10}]},{"title":"Therapy / Counseling","type":"yesno","valueMap":{"yes":95,"no":50}},{"title":"Screen Time","type":"dropdown","displayStyle":"radio","options":[{"title":"< 1 hr","color":"#4CAF50","value":100},{"title":"1–3 hrs","color":"#8BC34A","value":70},{"title":"3–5 hrs","color":"#FFC107","value":45},{"title":"5–8 hrs","color":"#FF9800","value":20},{"title":"8+ hrs","color":"#F44336","value":5}]}]},{"category":"📚 Productivity","id":"productivity","templates":[{"title":"Productivity Level","type":"dropdown","displayStyle":"slider","options":[{"title":"Crushing It","color":"#4CAF50","value":100},{"title":"Productive","color":"#8BC34A","value":75},{"title":"So-so","color":"#FFC107","value":50},{"title":"Low Output","color":"#FF9800","value":25},{"title":"Unproductive","color":"#F44336","value":5}]},{"title":"Reading","type":"yesno","valueMap":{"yes":85,"no":30}},{"title":"Learning / Study","type":"numeric","numericPrefix":"","numericSuffix":"min","valueMap":{"min":0,"max":480,"optimalMin":30,"optimalMax":120,"value":75}},{"title":"Goal Progress","type":"dropdown","displayStyle":"radio","options":[{"title":"Exceeded","color":"#4CAF50","value":100},{"title":"On Track","color":"#8BC34A","value":75},{"title":"Partial","color":"#FFC107","value":45},{"title":"Missed","color":"#F44336","value":10}]}]},{"category":"🤝 Social","id":"social","templates":[{"title":"Social Interaction","type":"dropdown","displayStyle":"radio","options":[{"title":"Very Social","color":"#4CAF50","value":90},{"title":"Some Socializing","color":"#8BC34A","value":70},{"title":"Minimal","color":"#FFC107","value":45},{"title":"Isolated","color":"#F44336","value":10}]},{"title":"Quality Time w/ Family","type":"yesno","valueMap":{"yes":90,"no":30}},{"title":"Arguments / Conflict","type":"yesno","valueMap":{"yes":10,"no":85}},{"title":"Helped Someone","type":"yesno","valueMap":{"yes":95,"no":50}}]},{"category":"💊 Health Symptoms","id":"symptoms","templates":[{"title":"Pain Level","type":"dropdown","displayStyle":"slider","options":[{"title":"No Pain","color":"#4CAF50","value":100},{"title":"Mild Pain","color":"#CDDC39","value":65},{"title":"Moderate","color":"#FF9800","value":35},{"title":"Severe Pain","color":"#F44336","value":5}]},{"title":"Medication Taken","type":"yesno","valueMap":{"yes":80,"no":50}},{"title":"Period / Cycle","type":"yesno","valueMap":{"yes":50,"no":50}},{"title":"Symptoms Notes","type":"text"}]},{"category":"🌿 Habits","id":"habits","templates":[{"title":"Smoking","type":"yesno","valueMap":{"yes":5,"no":95}},{"title":"Journaling","type":"yesno","valueMap":{"yes":85,"no":30}},{"title":"Cold Shower","type":"yesno","valueMap":{"yes":90,"no":40}},{"title":"Morning Routine","type":"yesno","valueMap":{"yes":88,"no":25}},{"title":"Overall Day Rating","type":"dropdown","displayStyle":"slider","options":[{"title":"Amazing","color":"#4CAF50","value":100},{"title":"Good","color":"#8BC34A","value":75},{"title":"Average","color":"#FFC107","value":50},{"title":"Bad","color":"#FF9800","value":25},{"title":"Terrible","color":"#F44336","value":5}]}]}];
 
 function init() {
-    ALL_CATEGORIES = ALL_CATEGORIES_DATA;
-    buildAccordion(ALL_CATEGORIES);
+  ALL_CATEGORIES = ALL_CATEGORIES_DATA;
+  buildAccordion(ALL_CATEGORIES);
 }
 document.addEventListener('DOMContentLoaded', init);
 </script>
 
+<!-- Theme toggle -->
 <script>
 (function () {
-  const STORAGE_KEY = 'theme', LIGHT = 'light', DARK = 'dark';
-  function getSystemTheme() { return window.matchMedia('(prefers-color-scheme: dark)').matches ? DARK : LIGHT; }
-  function getSavedTheme()  { return localStorage.getItem(STORAGE_KEY); }
-  function resolveTheme()   { return getSavedTheme() || getSystemTheme(); }
-  function applyTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    document.querySelectorAll('.theme-toggle').forEach(btn => {
-      btn.textContent = theme === DARK ? '\u2600\uFE0F' : '\uD83C\uDF19';
-      btn.setAttribute('aria-label', theme === DARK ? 'Switch to light mode' : 'Switch to dark mode');
+  const KEY = 'theme', L = 'light', D = 'dark';
+  const sys  = () => window.matchMedia('(prefers-color-scheme: dark)').matches ? D : L;
+  const saved= () => localStorage.getItem(KEY);
+  const apply= (t) => {
+    document.documentElement.setAttribute('data-theme', t);
+    document.querySelectorAll('.theme-toggle').forEach(b => {
+      b.textContent = t === D ? '☀️' : '🌙';
+      b.setAttribute('aria-label', t === D ? 'Switch to light mode' : 'Switch to dark mode');
     });
-  }
-  function toggleTheme() {
-    const next = (document.documentElement.getAttribute('data-theme') || resolveTheme()) === DARK ? LIGHT : DARK;
-    localStorage.setItem(STORAGE_KEY, next);
-    applyTheme(next);
-  }
-  applyTheme(resolveTheme());
+  };
+  apply(saved() || sys());
+  const toggle = () => {
+    const next = (document.documentElement.getAttribute('data-theme') || sys()) === D ? L : D;
+    localStorage.setItem(KEY, next); apply(next);
+  };
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => document.body.addEventListener('click', e => { if (e.target.closest('.theme-toggle')) toggleTheme(); }));
+    document.addEventListener('DOMContentLoaded', () => document.body.addEventListener('click', e => { if (e.target.closest('.theme-toggle')) toggle(); }));
   } else {
-    document.body.addEventListener('click', e => { if (e.target.closest('.theme-toggle')) toggleTheme(); });
+    document.body.addEventListener('click', e => { if (e.target.closest('.theme-toggle')) toggle(); });
   }
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => { if (!getSavedTheme()) applyTheme(e.matches ? DARK : LIGHT); });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => { if (!saved()) apply(e.matches ? D : L); });
 })();
 </script>
 
@@ -307,6 +256,5 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
-
 </body>
 </html>

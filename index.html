@@ -1,1130 +1,531 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Day</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#fef5eb">
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Day</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#fef5eb">
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <style>
+    /* ── Custom Calendar Popup ── */
+    .date-wrapper { position: relative; display: inline-block; }
+    .calendar-icon { font-size: 24px; cursor: pointer; user-select: none; }
+    .custom-calendar {
+      display: none; position: absolute; top: 36px; right: 0; z-index: 200;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+      padding: 14px; min-width: 260px; animation: calPop .15s ease;
+    }
+    .custom-calendar.open { display: block; }
+    @keyframes calPop {
+      from { opacity: 0; transform: scale(.95) translateY(-4px); }
+      to   { opacity: 1; transform: scale(1)  translateY(0);    }
+    }
+    .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .cal-month-label { font-weight: 700; font-size: 14px; color: var(--text-primary, #333); }
+    .cal-nav { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-primary, #555); line-height: 1; padding: 0 6px; border-radius: 8px; }
+    .cal-nav:hover { background: var(--bg-hover); }
+    .cal-weekdays { display: grid; grid-template-columns: repeat(7,1fr); text-align: center; font-size: 11px; font-weight: 600; color: var(--text-secondary, #999); margin-bottom: 6px; }
+    .cal-days { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; text-align: center; }
+    .cal-day { padding: 6px 2px; border-radius: 8px; font-size: 13px; cursor: pointer; transition: background .12s; border: 1px solid var(--border); }
+    .cal-day:hover:not(.cal-empty):not(.cal-disabled) { background: var(--bg-hover); }
+    .cal-day.cal-empty   { cursor: default; border: none; }
+    .cal-day.cal-disabled{ color: var(--text-faint); cursor: default; pointer-events: none; }
+    .cal-day.cal-today   { font-weight: 700; color: var(--blue); }
+    .cal-day.cal-selected{ background: var(--blue); color: #fff !important; font-weight: 700; }
+
+    /* ── Slider unset / touched states ── */
+    .slider-status-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+    .slider-label { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: color 0.2s; }
+    .slider-label.slider-unset { color: var(--text-faint); font-weight: 400; font-style: italic; }
+    .slider-unset-icon { font-size: 13px; opacity: 0.6; }
+    .slider-set-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .slider-clear-btn { background: none; border: 1px solid var(--border); border-radius: 20px; padding: 3px 10px; font-size: 11px; cursor: pointer; color: var(--text-muted); display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s; white-space: nowrap; flex-shrink: 0; }
+    .slider-clear-btn:hover { border-color: var(--blue); color: var(--blue); }
+    .slider-wrapper-unset { opacity: 0.4; transition: opacity 0.2s; }
+    .slider-wrapper-unset:hover { opacity: 0.7; }
+    .slider-wrapper { transition: opacity 0.2s; }
+    .slider-input-unset::-webkit-slider-thumb { background: #ccc !important; box-shadow: none !important; }
+    .slider-input-unset::-moz-range-thumb    { background: #ccc !important; box-shadow: none !important; }
+
+    .save-button-container { padding: 10px 0 100px; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div style="display: grid;  grid-template-columns: 1fr 60px;align-items: center;"> 
-        <h1  id="currentDateDisplay"></h1>
 
-        <div class="date-wrapper">
-          <!-- Hidden native input used only for value binding -->
-          <input type="date" id="dateInput" onchange="changeDate()" style="display:none;" />
-          <span class="calendar-icon" onclick="toggleCustomCalendar()">📅</span>
+<button class="theme-toggle" aria-label="Toggle theme">🌙</button>
 
-          <!-- Custom Calendar Popup -->
-          <div class="custom-calendar" id="customCalendar">
-            <div class="cal-header">
-              <button class="cal-nav" onclick="calNavMonth(-1)">&#8249;</button>
-              <span class="cal-month-label" id="calMonthLabel"></span>
-              <button class="cal-nav" onclick="calNavMonth(1)">&#8250;</button>
-            </div>
-            <div class="cal-weekdays">
-              <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
-            </div>
-            <div class="cal-days" id="calDays"></div>
-          </div>
+<div class="container">
+  <!-- Header row: date + calendar icon -->
+  <div style="display:grid; grid-template-columns:1fr 60px; align-items:center;">
+    <h1 id="currentDateDisplay"></h1>
+    <div class="date-wrapper">
+      <input type="date" id="dateInput" onchange="changeDate()" style="display:none;">
+      <span class="calendar-icon" onclick="toggleCustomCalendar()">📅</span>
+      <div class="custom-calendar" id="customCalendar">
+        <div class="cal-header">
+          <button class="cal-nav" onclick="calNavMonth(-1)">&#8249;</button>
+          <span class="cal-month-label" id="calMonthLabel"></span>
+          <button class="cal-nav" onclick="calNavMonth(1)">&#8250;</button>
         </div>
-        </div>
-
-        <div class="date-selector" style="display: none;">
-            <div class="date-controls">
-                <button class="nav-btn" onclick="goToPreviousDay()">← Previous Day</button>
-                <button class="nav-btn" onclick="goToToday()" id="todayBtn">Today</button>
-                <label for="dateInput">Select Date:</label>
-                <input type="date" id="dateInput" onchange="changeDate()">
-            </div>
-            <div class="current-date-display" id="currentDateDisplay"></div>
-            
-            <div class="week-navigation">
-                <div class="week-dates" id="weekDates"></div>
-            </div>
-        </div>
-        
-        <div id="trackerList"></div>
-
-        <div class="save-button-container">
-            <button class="btn-save" onclick="saveAllTrackers()">💾 Save Today's Entries</button>
-            <div class="save-status" id="saveStatus"></div>
-        </div>
-
-        <!-- Toast Notification -->
-        <div class="toast" id="toastNotification">
-            <div class="toast-icon">
-                <svg viewBox="0 0 16 16"><polyline points="2 8 6 12 14 4"/></svg>
-            </div>
-            <span id="toastMessage">Saved successfully!</span>
-        </div>
-
-
-
+        <div class="cal-weekdays"><span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span></div>
+        <div class="cal-days" id="calDays"></div>
+      </div>
     </div>
-     <div class="bottom-navigation">
-    <div><a href="trackers.html"><img src="folder-icon.svg" alt=""/>Tracker</a></div>
-    <div><a href="report.html"><img src="report-icon.svg" alt=""/>Report</a></div>
-    <div><a href="index.html" class="active" aria-current="page"><img src="today-icon.svg" alt=""/>My Day</a></div>
-    <div><a href="chatbot.html" ><img src="ai_icon.png" alt=""/>AI Chat</a></div>
-    <div><a href="settings.html"><img src="setting-icon.svg" alt=""/>Settings</a></div>
   </div>
-<style>
-.date-wrapper {
-  position: relative;
-  display: inline-block;
+
+  <div id="trackerList"></div>
+
+  <div class="save-button-container">
+    <button class="btn-save" onclick="saveAllTrackers()">💾 Save Today's Entries</button>
+    <div class="save-status" id="saveStatus"></div>
+  </div>
+
+  <div class="toast" id="toastNotification">
+    <div class="toast-icon">
+      <svg viewBox="0 0 16 16"><polyline points="2 8 6 12 14 4"/></svg>
+    </div>
+    <span id="toastMessage">Saved successfully!</span>
+  </div>
+</div>
+
+<div class="bottom-navigation">
+  <div><a href="trackers.html"><img src="folder-icon.svg">Tracker</a></div>
+  <div><a href="report.html"><img src="report-icon.svg">Report</a></div>
+  <div><a href="index.html" class="active"><img src="today-icon.svg">My Day</a></div>
+  <div><a href="correlate.html"><img src="setting-icon.svg">Correlate</a></div>
+</div>
+
+<!-- Shared DB layer -->
+<script src="db.js"></script>
+
+<script>
+// ── helpers ──────────────────────────────────────────────────────────────────
+function getLocalDateString(date = new Date()) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
-.calendar-icon {
-  font-size: 22px;
-  cursor: pointer;
-  background: var(--bg-card);
-  padding: 8px;
-  border-radius: 50px;
-  display: inline-block;
-  user-select: none;
+let currentDate = getLocalDateString();
+
+// In-memory buffer: selections that have been touched but not yet saved
+// (only used for yes/no and slider which don't live in a native input)
+let tempSelections = {};
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+async function init() {
+  await migrateFromLocalStorage(); // move old localStorage data to IDB
+  initializeDatePicker();
+  await loadTrackers();
 }
 
-/* Custom Calendar Popup */
-.custom-calendar {
-  display: none;
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  z-index: 999;
-  background: var(--bg-card, #fff);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-  padding: 14px;
-  min-width: 260px;
-  animation: calPop .15s ease;
-}
-.custom-calendar.open { display: block; }
-
-@keyframes calPop {
-  from { opacity: 0; transform: scale(.95) translateY(-4px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
+function initializeDatePicker() {
+  const dateInput = document.getElementById('dateInput');
+  const today     = getLocalDateString();
+  dateInput.value = currentDate;
+  dateInput.max   = today;
+  updateDateDisplay();
 }
 
-.cal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-
-.cal-month-label {
-  font-weight: 700;
-  font-size: 14px;
-  color: var(--text-primary, #333);
-}
-
-.cal-nav {
-  background: none;
-  border: none;
-  font-size: 22px;
-  cursor: pointer;
-  color: var(--text-primary, #555);
-  line-height: 1;
-  padding: 0 6px;
-  border-radius: 8px;
-}
-.cal-nav:hover { background: var(--bg-hover, #f0f0f0); }
-
-.cal-weekdays {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  text-align: center;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-secondary, #999);
-  margin-bottom: 6px;
-}
-
-.cal-days {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
-  text-align: center;
-}
-
-.cal-day {
-  padding: 6px 2px;
-  border-radius: 8px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: background .12s;
-  border:1px solid var(--border);
-}
-.cal-day:hover:not(.cal-empty):not(.cal-disabled) { background: var(--bg-hover, #f0f0f0); }
-.cal-day.cal-empty { cursor: default; }
-.cal-day.cal-disabled { color: var(--text-primary, #333); cursor: default; pointer-events: none; }
-.cal-day.cal-today { font-weight: 700; color: var(--accent, #e07b39); }
-.cal-day.cal-selected {
-  background: var(--accent, #e07b39);
-  color: #fff !important;
-  font-weight: 700;
-}
-
-/* Slider unset / touched states */
-.slider-status-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-
-.slider-label {
-  font-size: 14px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: color 0.2s;
-}
-
-.slider-label.slider-unset {
-  color: var(--text-secondary, #aaa);
-  font-weight: 400;
-  font-style: italic;
-}
-
-.slider-unset-icon {
-  font-size: 13px;
-  opacity: 0.6;
-}
-
-.slider-set-dot {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.slider-clear-btn {
-  background: none;
-  border: 1px solid var(--border, #ddd);
-  border-radius: 20px;
-  padding: 3px 10px;
-  font-size: 11px;
-  cursor: pointer;
-  color: var(--text-secondary, #999);
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  transition: all 0.15s;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.slider-clear-btn:hover {
-  border-color: #e07b39;
-  color: #e07b39;
-}
-
-/* Dim the slider track when nothing is selected */
-.slider-wrapper-unset {
-  opacity: 0.4;
-  transition: opacity 0.2s;
-}
-.slider-wrapper-unset:hover {
-  opacity: 0.7;
-}
-.slider-wrapper {
-  transition: opacity 0.2s;
-}
-
-/* Greyed thumb when unset */
-.slider-input-unset::-webkit-slider-thumb {
-  background: #ccc !important;
-  box-shadow: none !important;
-}
-.slider-input-unset::-moz-range-thumb {
-  background: #ccc !important;
-  box-shadow: none !important;
-}
-</style>
-    <script>
-        // IndexedDB Setup
-        let db;
-        const DB_NAME = 'TrackerDB';
-        const STORE_NAME = 'trackers';
-        
-        // Helper function to get local date string in YYYY-MM-DD format
-        function getLocalDateString(date = new Date()) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-        
-        let currentDate = getLocalDateString(); // Current selected date
-        
-        // Temporary storage for current edits (before save)
-        let tempSelections = {};
-
-        // Initialize IndexedDB
-        function initDB() {
-            const request = indexedDB.open(DB_NAME, 2); // Match version from tracker-manager
-
-            request.onerror = () => {
-                console.error('Database failed to open');
-            };
-
-            request.onsuccess = () => {
-                db = request.result;
-                initializeDatePicker();
-                loadTrackers();
-            };
-
-            request.onupgradeneeded = (e) => {
-                db = e.target.result;
-                
-                if (!db.objectStoreNames.contains(STORE_NAME)) {
-                    const objectStore = db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
-                    objectStore.createIndex('title', 'title', { unique: false });
-                }
-            };
-        }
-
-        // Initialize date picker with current date and max date restriction
-        function initializeDatePicker() {
-            const dateInput = document.getElementById('dateInput');
-            const today = getLocalDateString();
-            
-            // Set default value to today
-            dateInput.value = currentDate;
-            
-            // Set max date to today (prevent future dates)
-            dateInput.max = today;
-            
-            // Update display
-            updateDateDisplay();
-            renderWeekNavigation();
-        }
-
-        // Render week navigation with past 7 days
-        function renderWeekNavigation() {
-            const weekDates = document.getElementById('weekDates');
-            const today = new Date();
-            const dates = [];
-            
-            // Generate last 7 days (including today)
-            for (let i = 6; i >= 0; i--) {
-                const date = new Date(today);
-                date.setDate(date.getDate() - i);
-                dates.push(date);
-            }
-            
-            weekDates.innerHTML = dates.map(date => {
-                const dateStr = getLocalDateString(date);
-                const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
-                const dayNumber = date.getDate();
-                const monthName = date.toLocaleDateString('en-US', { month: 'short' });
-                const todayStr = getLocalDateString();
-                
-                const isActive = dateStr === currentDate;
-                const isToday = dateStr === todayStr;
-                
-                let classes = 'date-item';
-                if (isActive) classes += ' active';
-                if (isToday) classes += ' today';
-                
-                return `
-                    <div class="${classes}" onclick="selectWeekDate('${dateStr}')">
-                        <div class="date-day">${dayName}</div>
-                        <div class="date-number">${dayNumber}</div>
-                        <div class="date-month">${monthName}</div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // Select date from week navigation
-        function selectWeekDate(dateStr) {
-            currentDate = dateStr;
-            document.getElementById('dateInput').value = currentDate;
-            updateDateDisplay();
-            renderWeekNavigation();
-            loadSelectionsForDate();
-        }
-
-        // Update the date display text
-        function updateDateDisplay() {
-            const dateObj = new Date(currentDate + 'T00:00:00');
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            const formattedDate = dateObj.toLocaleDateString('en-US', options);
-            
-            const today = getLocalDateString();
-            let displayText = formattedDate;
-            
-            if (currentDate === today) {
-                displayText += ' (Today)';
-            } else {
-                const diffTime = new Date(today) - new Date(currentDate);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                displayText += ` (${diffDays} day${diffDays !== 1 ? 's' : ''} ago)`;
-            }
-            
-            document.getElementById('currentDateDisplay').textContent = displayText;
-            
-            // Update Today button state
-            updateTodayButtonState();
-            
-            // Update week navigation highlight
-            renderWeekNavigation();
-        }
-
-        // Update Today button state (disable if already on today)
-        function updateTodayButtonState() {
-            const todayBtn = document.getElementById('todayBtn');
-            const today = getLocalDateString();
-            
-            if (currentDate === today) {
-                todayBtn.disabled = true;
-            } else {
-                todayBtn.disabled = false;
-            }
-        }
-
-        // Go to previous day
-        function goToPreviousDay() {
-            const dateObj = new Date(currentDate + 'T00:00:00');
-            dateObj.setDate(dateObj.getDate() - 1);
-            
-            const previousDate = getLocalDateString(dateObj);
-            currentDate = previousDate;
-            
-            // Update date input
-            document.getElementById('dateInput').value = currentDate;
-            
-            updateDateDisplay();
-            loadSelectionsForDate();
-        }
-
-        // Go to today
-        function goToToday() {
-            const today = getLocalDateString();
-            currentDate = today;
-            
-            // Update date input
-            document.getElementById('dateInput').value = currentDate;
-            
-            updateDateDisplay();
-            loadSelectionsForDate();
-        }
-
-        // Handle date change
-        function changeDate() {
-            const dateInput = document.getElementById('dateInput');
-            const selectedDate = dateInput.value;
-            
-            if (!selectedDate) return;
-            
-            // Validate that selected date is not in the future
-            const today = getLocalDateString();
-            if (selectedDate > today) {
-                alert('Cannot select future dates');
-                dateInput.value = currentDate;
-                return;
-            }
-            
-            currentDate = selectedDate;
-            updateDateDisplay();
-            loadSelectionsForDate();
-        }
-
-        // Get all trackers from DB
-        function getAllTrackers() {
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction([STORE_NAME], 'readonly');
-                const objectStore = transaction.objectStore(STORE_NAME);
-                const request = objectStore.getAll();
-
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = () => reject(request.error);
-            });
-        }
-
-        // Get type label
-        function getTypeLabel(type) {
-            const labels = {
-                'dropdown': 'Dropdown',
-                'yesno': 'Yes/No',
-                'numeric': 'Numeric',
-                'text': 'Text'
-            };
-            return labels[type] || 'Dropdown';
-        }
-
-        // Load and display trackers
-        async function loadTrackers() {
-            const trackers = await getAllTrackers();
-            const trackerList = document.getElementById('trackerList');
-
-            if (trackers.length === 0) {
-                trackerList.innerHTML = `
-                    <div class="empty-state">
-                        <p>No trackers available. Please create trackers first.</p>
-                    </div>
-                `;
-                return;
-            }
-
-            trackerList.innerHTML = trackers.map(tracker => {
-                const type = tracker.type || 'dropdown';
-                return `
-                    <div class="tracker-item">
-                        <div class="tracker-header">
-                            <div>
-                                <span class="tracker-title">${tracker.title}</span>
-                                <span class="tracker-type-badge">${getTypeLabel(type)}</span>
-                            </div>
-                        </div>
-                        ${renderTrackerInput(tracker)}
-                    </div>
-                `;
-            }).join('');
-
-            // Load selections for current date
-            loadSelectionsForDate();
-        }
-
-        // Render appropriate input based on tracker type
-        function renderTrackerInput(tracker) {
-            const type = tracker.type || 'dropdown';
-            
-            switch(type) {
-                case 'dropdown':
-                    const displayStyle = tracker.displayStyle || 'radio';
-                    
-                    if (displayStyle === 'radio') {
-                        // Radio buttons style
-                        return `
-                            <div class="radio-options" id="tracker-${tracker.id}-container">
-                                ${tracker.options.map((option, index) => `
-                                    <div class="radio-option" 
-                                         style="background-color: ${option.color}"
-                                         data-tracker-id="${tracker.id}"
-                                         data-value="${index}"
-                                         data-type="dropdown"
-                                         onclick="handleRadioSelection(${tracker.id}, ${index}, '${option.color}')">
-                                        ${option.title}
-                                    </div>
-                                `).join('')}
-                            </div>
-                        `;
-                    } else if (displayStyle === 'slider') {
-                        // Slider style
-                        return `
-                            <div class="slider-container">
-                                <div class="slider-status-row">
-                                    <div class="slider-label slider-unset" id="slider-label-${tracker.id}">
-                                        <span class="slider-unset-icon">○</span> Not recorded — slide to pick
-                                    </div>
-                                    <button class="slider-clear-btn" id="slider-clear-${tracker.id}" onclick="clearSlider(${tracker.id})" style="display:none;" title="Clear selection">✕ Clear</button>
-                                </div>
-                                <div class="slider-wrapper slider-wrapper-unset" id="slider-wrapper-${tracker.id}">
-                                    <input type="range" 
-                                           class="slider-input slider-input-unset" 
-                                           id="slider-${tracker.id}"
-                                           min="0" 
-                                           max="${tracker.options.length - 1}" 
-                                           value="0"
-                                           data-tracker-id="${tracker.id}"
-                                           data-type="dropdown"
-                                           data-touched="false"
-                                           oninput="handleSliderChange(${tracker.id}, this.value)"
-                                           onchange="handleSliderChange(${tracker.id}, this.value)"
-                                           style="background: linear-gradient(to right, ${tracker.options.map(o => o.color).join(', ')})">
-                                </div>
-                                <div class="slider-marks">
-                                    ${tracker.options.map((option, index) => {
-                                        if (index === 0 || index === tracker.options.length - 1) {
-                                            return `<div class="slider-mark">${option.title}</div>`;
-                                        } else if (tracker.options.length <= 5) {
-                                            return `<div class="slider-mark">${option.title}</div>`;
-                                        } else {
-                                            return `<div class="slider-mark"></div>`;
-                                        }
-                                    }).join('')}
-                                </div>
-                            </div>
-                        `;
-                    } else {
-                        // Dropdown style (default)
-                        return `
-                            <select id="tracker-${tracker.id}" class="tracker-input dropdown-select" data-tracker-id="${tracker.id}" data-type="dropdown">
-                                <option value="">Select an option</option>
-                                ${tracker.options.map((option, index) => `
-                                    <option value="${index}" data-color="${option.color}">
-                                        ${option.title}
-                                    </option>
-                                `).join('')}
-                            </select>
-                        `;
-                    }
-                
-                case 'yesno':
-                    return `
-                        <div class="yesno-buttons">
-                            <button class="yesno-btn" id="tracker-${tracker.id}-yes" onclick="handleYesNoChange(${tracker.id}, 'yes')">
-                                Yes
-                            </button>
-                            <button class="yesno-btn" id="tracker-${tracker.id}-no" onclick="handleYesNoChange(${tracker.id}, 'no')">
-                                No
-                            </button>
-                        </div>
-                    `;
-                
-                case 'numeric':
-                    const prefix = tracker.numericPrefix || '';
-                    const suffix = tracker.numericSuffix || '';
-                    return `
-                        <div class="numeric-input-group">
-                            ${prefix ? `<span class="numeric-prefix">${prefix}</span>` : ''}
-                            <input 
-                                type="number" 
-                                id="tracker-${tracker.id}" 
-                                class="numeric-input" 
-                                placeholder="Enter number"
-                                step="any"
-                                data-tracker-id="${tracker.id}" 
-                                data-type="${type}"
-                            >
-                            ${suffix ? `<span class="numeric-suffix">${suffix}</span>` : ''}
-                        </div>
-                    `;
-                
-                case 'text':
-                    return `
-                        <textarea 
-                            id="tracker-${tracker.id}" 
-                            class="tracker-input" 
-                            placeholder="Write your note here..."
-                            data-tracker-id="${tracker.id}" 
-                            data-type="${type}"
-                        ></textarea>
-                    `;
-                
-                default:
-                    return '<p>Unknown tracker type</p>';
-            }
-        }
-
-        // Handle yes/no button click
-        function handleYesNoChange(trackerId, value) {
-            const yesBtn = document.getElementById(`tracker-${trackerId}-yes`);
-            const noBtn = document.getElementById(`tracker-${trackerId}-no`);
-            
-            // Remove all selected classes
-            yesBtn.classList.remove('selected-yes', 'selected-no');
-            noBtn.classList.remove('selected-yes', 'selected-no');
-            
-            // Add appropriate class
-            if (value === 'yes') {
-                yesBtn.classList.add('selected-yes');
-            } else {
-                noBtn.classList.add('selected-no');
-            }
-            
-            // Store temporarily (don't save yet)
-            if (!tempSelections[currentDate]) {
-                tempSelections[currentDate] = {};
-            }
-            tempSelections[currentDate][trackerId] = {
-                trackerId: trackerId,
-                value: value,
-                type: 'yesno',
-                date: currentDate
-            };
-        }
-
-        // Handle radio button selection
-        function handleRadioSelection(trackerId, optionIndex, color) {
-            // Remove 'selected' class from all options in this tracker
-            const container = document.getElementById(`tracker-${trackerId}-container`);
-            container.querySelectorAll('.radio-option').forEach(option => {
-                option.classList.remove('selected');
-            });
-            
-            // Add 'selected' class to clicked option
-            const selectedOption = container.querySelector(`[data-value="${optionIndex}"]`);
-            if (selectedOption) {
-                selectedOption.classList.add('selected');
-            }
-            
-            // Store temporarily (don't save yet)
-            if (!tempSelections[currentDate]) {
-                tempSelections[currentDate] = {};
-            }
-            tempSelections[currentDate][trackerId] = {
-                trackerId: trackerId,
-                value: String(optionIndex),
-                type: 'dropdown',
-                date: currentDate
-            };
-        }
-
-        // Handle slider change
-        function handleSliderChange(trackerId, value) {
-            // Get tracker data to find option info
-            getAllTrackers().then(trackers => {
-                const tracker = trackers.find(t => t.id === trackerId);
-                if (tracker && tracker.options && tracker.options[value]) {
-                    const option = tracker.options[value];
-                    const label = document.getElementById(`slider-label-${trackerId}`);
-                    const sliderEl = document.getElementById(`slider-${trackerId}`);
-                    const wrapperEl = document.getElementById(`slider-wrapper-${trackerId}`);
-                    const clearBtn = document.getElementById(`slider-clear-${trackerId}`);
-
-                    // Mark as touched
-                    if (sliderEl) {
-                        sliderEl.dataset.touched = 'true';
-                        sliderEl.classList.remove('slider-input-unset');
-                    }
-                    if (wrapperEl) wrapperEl.classList.remove('slider-wrapper-unset');
-                    if (clearBtn) clearBtn.style.display = 'inline-flex';
-
-                    if (label) {
-                        label.classList.remove('slider-unset');
-                        label.innerHTML = `<span class="slider-set-dot" style="background:${option.color}"></span> ${option.title}`;
-                        label.style.color = option.color;
-                    }
-                    
-                    // Store temporarily (don't save yet)
-                    if (!tempSelections[currentDate]) {
-                        tempSelections[currentDate] = {};
-                    }
-                    tempSelections[currentDate][trackerId] = {
-                        trackerId: trackerId,
-                        value: String(value),
-                        type: 'dropdown',
-                        date: currentDate
-                    };
-                }
-            });
-        }
-
-        // Clear slider back to unset state
-        function clearSlider(trackerId) {
-            const sliderEl = document.getElementById(`slider-${trackerId}`);
-            const label = document.getElementById(`slider-label-${trackerId}`);
-            const wrapperEl = document.getElementById(`slider-wrapper-${trackerId}`);
-            const clearBtn = document.getElementById(`slider-clear-${trackerId}`);
-
-            if (sliderEl) {
-                sliderEl.value = 0;
-                sliderEl.dataset.touched = 'false';
-                sliderEl.classList.add('slider-input-unset');
-            }
-            if (wrapperEl) wrapperEl.classList.add('slider-wrapper-unset');
-            if (clearBtn) clearBtn.style.display = 'none';
-            if (label) {
-                label.className = 'slider-label slider-unset';
-                label.style.color = '';
-                label.innerHTML = '<span class="slider-unset-icon">○</span> Not recorded — slide to pick';
-            }
-
-            // Remove from temp selections
-            if (tempSelections[currentDate]) {
-                delete tempSelections[currentDate][trackerId];
-            }
-        }
-
-        // Save all trackers for the current date
-        function saveAllTrackers() {
-            // Collect all current values from inputs
-            const currentSelections = {};
-            
-            // Get all dropdown values
-            document.querySelectorAll('select[data-tracker-id]').forEach(select => {
-                const trackerId = select.getAttribute('data-tracker-id');
-                const value = select.value;
-                const type = select.getAttribute('data-type');
-                
-                if (value) {
-                    currentSelections[trackerId] = {
-                        trackerId: parseInt(trackerId),
-                        value: value,
-                        type: type,
-                        date: currentDate,
-                        timestamp: new Date().toISOString()
-                    };
-                }
-            });
-            
-            // Get all numeric and text inputs
-            document.querySelectorAll('input[data-tracker-id], textarea[data-tracker-id]').forEach(input => {
-                const trackerId = input.getAttribute('data-tracker-id');
-                const value = input.value.trim();
-                const type = input.getAttribute('data-type');
-                
-                if (value) {
-                    currentSelections[trackerId] = {
-                        trackerId: parseInt(trackerId),
-                        value: value,
-                        type: type,
-                        date: currentDate,
-                        timestamp: new Date().toISOString()
-                    };
-                }
-            });
-            
-            // Merge with yes/no selections from tempSelections
-            if (tempSelections[currentDate]) {
-                Object.keys(tempSelections[currentDate]).forEach(trackerId => {
-                    const selection = tempSelections[currentDate][trackerId];
-                    selection.timestamp = new Date().toISOString();
-                    currentSelections[trackerId] = selection;
-                });
-            }
-            
-            // Save to localStorage
-            let dailySelections = JSON.parse(localStorage.getItem('dailySelections') || '{}');
-            
-            if (Object.keys(currentSelections).length > 0) {
-                dailySelections[currentDate] = currentSelections;
-            } else {
-                // If no selections, remove this date
-                delete dailySelections[currentDate];
-            }
-            
-            localStorage.setItem('dailySelections', JSON.stringify(dailySelections));
-            
-            // Clear temp selections for this date
-            if (tempSelections[currentDate]) {
-                delete tempSelections[currentDate];
-            }
-            
-            // Show toast notification
-            showToast('Saved successfully!');
-            
-            console.log('Saved selections for', currentDate, currentSelections);
-        }
-
-        // Load selections for the currently selected date
-        async function loadSelectionsForDate() {
-            const dailySelections = JSON.parse(localStorage.getItem('dailySelections') || '{}');
-            const dateSelections = dailySelections[currentDate] || {};
-
-            // Clear temp selections when changing dates
-            tempSelections = {};
-
-            // First, reset all inputs to default
-            document.querySelectorAll('[id^="tracker-"]').forEach(element => {
-                if (element.tagName === 'SELECT') {
-                    element.value = '';
-                    element.style.borderLeft = '1px solid #ddd';
-                } else if (element.tagName === 'INPUT' && element.type !== 'range') {
-                    element.value = '';
-                } else if (element.tagName === 'TEXTAREA') {
-                    element.value = '';
-                } else if (element.classList.contains('yesno-btn')) {
-                    element.classList.remove('selected-yes', 'selected-no');
-                }
-            });
-
-            // Reset all radio options (these don't have tracker- IDs, so handle separately)
-            document.querySelectorAll('.radio-option').forEach(element => {
-                element.classList.remove('selected');
-            });
-
-            // Reset slider labels
-            document.querySelectorAll('[id^="slider-label-"]').forEach(label => {
-                label.className = 'slider-label slider-unset';
-                label.style.color = '';
-                label.innerHTML = '<span class="slider-unset-icon">○</span> Not recorded — slide to pick';
-            });
-            document.querySelectorAll('[id^="slider-"]').forEach(el => {
-                if (el.tagName === 'INPUT' && el.type === 'range') {
-                    el.value = 0;
-                    el.dataset.touched = 'false';
-                    el.classList.add('slider-input-unset');
-                }
-            });
-            document.querySelectorAll('[id^="slider-wrapper-"]').forEach(el => {
-                el.classList.add('slider-wrapper-unset');
-            });
-            document.querySelectorAll('[id^="slider-clear-"]').forEach(el => {
-                el.style.display = 'none';
-            });
-
-            // Get all trackers to know their display styles
-            const trackers = await getAllTrackers();
-
-            // Then load selections for this date
-            Object.keys(dateSelections).forEach(trackerId => {
-                const selection = dateSelections[trackerId];
-                const type = selection.type || 'dropdown';
-                const tracker = trackers.find(t => t.id == trackerId);
-                
-                if (type === 'dropdown' && tracker) {
-                    const displayStyle = tracker.displayStyle || 'radio';
-                    
-                    if (displayStyle === 'radio') {
-                        // Handle radio button selection
-                        const container = document.getElementById(`tracker-${trackerId}-container`);
-                        if (container) {
-                            const selectedOption = container.querySelector(`[data-value="${selection.value}"]`);
-                            if (selectedOption) {
-                                selectedOption.classList.add('selected');
-                            }
-                        }
-                    } else if (displayStyle === 'slider') {
-                        // Handle slider selection
-                        const slider = document.getElementById(`slider-${trackerId}`);
-                        if (slider) {
-                            slider.value = selection.value;
-                            slider.dataset.touched = 'true';
-                            slider.classList.remove('slider-input-unset');
-                            // Update wrapper
-                            const wrapperEl = document.getElementById(`slider-wrapper-${trackerId}`);
-                            if (wrapperEl) wrapperEl.classList.remove('slider-wrapper-unset');
-                            // Show clear button
-                            const clearBtn = document.getElementById(`slider-clear-${trackerId}`);
-                            if (clearBtn) clearBtn.style.display = 'inline-flex';
-                            // Update label
-                            const option = tracker.options[parseInt(selection.value)];
-                            if (option) {
-                                const label = document.getElementById(`slider-label-${trackerId}`);
-                                if (label) {
-                                    label.className = 'slider-label';
-                                    label.style.color = option.color;
-                                    label.innerHTML = `<span class="slider-set-dot" style="background:${option.color}"></span> ${option.title}`;
-                                }
-                            }
-                        }
-                    } else {
-                        // Handle dropdown selection
-                        const select = document.getElementById(`tracker-${trackerId}`);
-                        if (select) {
-                            select.value = selection.value;
-                            
-                            // Apply color indicator
-                            const selectedOption = select.options[select.selectedIndex];
-                            const color = selectedOption?.getAttribute('data-color');
-                            if (color) {
-                                select.style.borderLeft = `4px solid ${color}`;
-                            }
-                        }
-                    }
-                } else if (type === 'yesno') {
-                    const yesBtn = document.getElementById(`tracker-${trackerId}-yes`);
-                    const noBtn = document.getElementById(`tracker-${trackerId}-no`);
-                    if (yesBtn && noBtn) {
-                        if (selection.value === 'yes') {
-                            yesBtn.classList.add('selected-yes');
-                        } else {
-                            noBtn.classList.add('selected-no');
-                        }
-                    }
-                } else if (type === 'numeric' || type === 'text') {
-                    const input = document.getElementById(`tracker-${trackerId}`);
-                    if (input) {
-                        input.value = selection.value;
-                    }
-                }
-            });
-
-            // Clear save status when changing dates
-            const statusEl = document.getElementById('saveStatus');
-            statusEl.textContent = '';
-            statusEl.className = 'save-status';
-        }
-
-        // Toast notification helper
-        let toastTimer = null;
-        function showToast(message) {
-            const toast = document.getElementById('toastNotification');
-            const toastMsg = document.getElementById('toastMessage');
-            toastMsg.textContent = message;
-
-            // Clear any running timer so rapid saves don't stack
-            if (toastTimer) clearTimeout(toastTimer);
-
-            toast.classList.add('show');
-            toastTimer = setTimeout(() => {
-                toast.classList.remove('show');
-                toastTimer = null;
-            }, 3000);
-        }
-
-        // Initialize app
-        initDB();
-    </script>
-
-
-
-
-    <script>
-        /**
- * theme.js  —  drop this into every page
- *
- * What it does:
- *  1. On load: reads saved preference from localStorage.
- *              Falls back to OS preference (prefers-color-scheme).
- *              Applies data-theme to <html> BEFORE paint (no flash).
- *  2. Toggle:  clicking .theme-toggle cycles light ↔ dark and saves choice.
- *  3. Sync:    listens for OS-level changes in case the user switches in
- *              system settings and has no manual preference saved.
- */
-
-(function () {
-  const STORAGE_KEY = 'theme';
-  const LIGHT = 'light';
-  const DARK  = 'dark';
-
-  // ── 1. Resolve theme ────────────────────────────────────────
-  function getSystemTheme() {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? DARK : LIGHT;
-  }
-
-  function getSavedTheme() {
-    return localStorage.getItem(STORAGE_KEY); // null if never set
-  }
-
-  function resolveTheme() {
-    return getSavedTheme() || getSystemTheme();
-  }
-
-  // ── 2. Apply theme ──────────────────────────────────────────
-  function applyTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    // Update every toggle button icon on the page
-    document.querySelectorAll('.theme-toggle').forEach(btn => {
-      btn.textContent = theme === DARK ? '☀️' : '🌙';
-      btn.setAttribute('aria-label', theme === DARK ? 'Switch to light mode' : 'Switch to dark mode');
-    });
-  }
-
-  // ── 3. Toggle ───────────────────────────────────────────────
-  function toggleTheme() {
-    const current = document.documentElement.getAttribute('data-theme') || resolveTheme();
-    const next    = current === DARK ? LIGHT : DARK;
-    localStorage.setItem(STORAGE_KEY, next);
-    applyTheme(next);
-  }
-
-  // ── 4. Wire up toggle buttons (works for buttons added later too) ──
-  //    We use event delegation on <body> so it works even if the button
-  //    is injected by JS after DOMContentLoaded.
-  function attachToggle() {
-    document.body.addEventListener('click', function (e) {
-      if (e.target.closest('.theme-toggle')) toggleTheme();
-    });
-  }
-
-  // ── 5. Sync with OS changes (only if user has no saved pref) ──
-  function watchSystemTheme() {
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
-      if (!getSavedTheme()) {
-        applyTheme(e.matches ? DARK : LIGHT);
-      }
-    });
-  }
-
-  // ── INIT ─────────────────────────────────────────────────────
-  // Apply before first paint to avoid flash
-  applyTheme(resolveTheme());
-
-  // Wire up after DOM is ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', attachToggle);
+// ── DATE NAVIGATION ───────────────────────────────────────────────────────────
+function updateDateDisplay() {
+  const dateObj  = new Date(currentDate + 'T00:00:00');
+  const options  = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
+  let display    = dateObj.toLocaleDateString('en-US', options);
+  const today    = getLocalDateString();
+  if (currentDate === today) {
+    display += ' (Today)';
   } else {
-    attachToggle();
+    const diff = Math.ceil((new Date(today) - new Date(currentDate)) / 86400000);
+    display += ` (${diff} day${diff !== 1 ? 's' : ''} ago)`;
+  }
+  document.getElementById('currentDateDisplay').textContent = display;
+}
+
+function changeDate() {
+  const val = document.getElementById('dateInput').value;
+  if (!val || val > getLocalDateString()) return;
+  currentDate = val;
+  updateDateDisplay();
+  loadSelectionsForDate();
+}
+
+// ── Custom Calendar ───────────────────────────────────────────────────────────
+let calViewYear, calViewMonth;
+
+function toggleCustomCalendar() {
+  const cal = document.getElementById('customCalendar');
+  if (cal.classList.contains('open')) {
+    cal.classList.remove('open');
+  } else {
+    const [y, m] = currentDate.split('-');
+    calViewYear  = parseInt(y);
+    calViewMonth = parseInt(m) - 1;
+    renderCustomCalendar();
+    cal.classList.add('open');
+  }
+}
+
+document.addEventListener('click', (e) => {
+  const wrapper = document.querySelector('.date-wrapper');
+  if (wrapper && !wrapper.contains(e.target)) {
+    document.getElementById('customCalendar').classList.remove('open');
+  }
+});
+
+function calNavMonth(dir) {
+  calViewMonth += dir;
+  if (calViewMonth > 11) { calViewMonth = 0;  calViewYear++; }
+  if (calViewMonth < 0)  { calViewMonth = 11; calViewYear--; }
+  renderCustomCalendar();
+}
+
+function renderCustomCalendar() {
+  const today  = getLocalDateString();
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('calMonthLabel').textContent = `${months[calViewMonth]} ${calViewYear}`;
+
+  const firstDay    = new Date(calViewYear, calViewMonth, 1).getDay();
+  const daysInMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+  let html = '';
+  for (let i = 0; i < firstDay; i++) html += '<div class="cal-day cal-empty"></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds  = `${calViewYear}-${String(calViewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    let cls   = 'cal-day';
+    if (ds === today)       cls += ' cal-today';
+    if (ds === currentDate) cls += ' cal-selected';
+    if (ds > today)         cls += ' cal-disabled';
+    html += `<div class="${cls}" onclick="calSelectDay('${ds}')">${d}</div>`;
+  }
+  document.getElementById('calDays').innerHTML = html;
+}
+
+function calSelectDay(ds) {
+  currentDate = ds;
+  document.getElementById('dateInput').value = ds;
+  updateDateDisplay();
+  loadSelectionsForDate();
+  document.getElementById('customCalendar').classList.remove('open');
+}
+
+// ── TRACKER RENDERING ────────────────────────────────────────────────────────
+function getTypeLabel(type) {
+  return { dropdown:'Dropdown', yesno:'Yes / No', numeric:'Numeric', text:'Text' }[type] || 'Dropdown';
+}
+
+async function loadTrackers() {
+  const trackers    = await getAllTrackers();
+  const trackerList = document.getElementById('trackerList');
+
+  if (trackers.length === 0) {
+    trackerList.innerHTML = `<div class="empty-state"><p>No trackers yet. Create one first.</p></div>`;
+    return;
   }
 
-  watchSystemTheme();
+  trackerList.innerHTML = trackers.map(t => `
+    <div class="tracker-item">
+      <div class="tracker-header">
+        <div>
+          <span class="tracker-title">${t.title}</span>
+          <span class="tracker-type-badge">${getTypeLabel(t.type)}</span>
+        </div>
+      </div>
+      ${renderTrackerInput(t)}
+    </div>
+  `).join('');
+
+  await loadSelectionsForDate();
+}
+
+function renderTrackerInput(tracker) {
+  const type = tracker.type || 'dropdown';
+
+  if (type === 'dropdown') {
+    const style = tracker.displayStyle || 'radio';
+    if (style === 'radio') {
+      return `
+        <div class="radio-options" id="tracker-${tracker.id}-container">
+          ${tracker.options.map((opt, idx) => `
+            <div class="radio-option"
+                 style="background-color:${opt.color}"
+                 data-tracker-id="${tracker.id}"
+                 data-value="${idx}"
+                 data-type="dropdown"
+                 onclick="handleRadioSelection(${tracker.id},${idx},'${opt.color}')">
+              ${opt.title}
+            </div>`).join('')}
+        </div>`;
+    }
+    // slider
+    return `
+      <div class="slider-container">
+        <div class="slider-status-row">
+          <div class="slider-label slider-unset" id="slider-label-${tracker.id}">
+            <span class="slider-unset-icon">○</span> Not recorded — slide to pick
+          </div>
+          <button class="slider-clear-btn" id="slider-clear-${tracker.id}"
+                  onclick="clearSlider(${tracker.id})" style="display:none;">✕ Clear</button>
+        </div>
+        <div class="slider-wrapper slider-wrapper-unset" id="slider-wrapper-${tracker.id}">
+          <input type="range" class="slider-input slider-input-unset"
+                 id="slider-${tracker.id}"
+                 min="0" max="${tracker.options.length - 1}" value="0"
+                 data-tracker-id="${tracker.id}" data-type="dropdown" data-touched="false"
+                 oninput="handleSliderChange(${tracker.id},this.value)"
+                 style="background:linear-gradient(to right,${tracker.options.map(o=>o.color).join(',')})">
+        </div>
+        <div class="slider-marks">
+          ${tracker.options.map((o,i) => (i===0||i===tracker.options.length-1||tracker.options.length<=5)
+            ? `<div class="slider-mark">${o.title}</div>` : '<div class="slider-mark"></div>').join('')}
+        </div>
+      </div>`;
+  }
+
+  if (type === 'yesno') {
+    return `
+      <div class="yesno-buttons">
+        <button class="yesno-btn" id="tracker-${tracker.id}-yes"
+                onclick="handleYesNo(${tracker.id},'yes')">✅ Yes</button>
+        <button class="yesno-btn" id="tracker-${tracker.id}-no"
+                onclick="handleYesNo(${tracker.id},'no')">❌ No</button>
+      </div>`;
+  }
+
+  if (type === 'numeric') {
+    return `
+      <div class="numeric-input-group">
+        ${tracker.numericPrefix ? `<span class="numeric-prefix">${tracker.numericPrefix}</span>` : ''}
+        <input type="number" class="numeric-input tracker-input"
+               id="tracker-${tracker.id}"
+               data-tracker-id="${tracker.id}" data-type="numeric"
+               placeholder="Enter value…">
+        ${tracker.numericSuffix ? `<span class="numeric-suffix">${tracker.numericSuffix}</span>` : ''}
+      </div>`;
+  }
+
+  if (type === 'text') {
+    return `
+      <textarea class="tracker-input" id="tracker-${tracker.id}"
+                data-tracker-id="${tracker.id}" data-type="text"
+                placeholder="Write something…" rows="3"></textarea>`;
+  }
+
+  return '';
+}
+
+// ── INPUT HANDLERS ────────────────────────────────────────────────────────────
+function handleRadioSelection(trackerId, index, color) {
+  const container = document.getElementById(`tracker-${trackerId}-container`);
+  container.querySelectorAll('.radio-option').forEach(el => el.classList.remove('selected'));
+  const chosen = container.querySelector(`[data-value="${index}"]`);
+  if (chosen) chosen.classList.add('selected');
+  setTemp(trackerId, 'dropdown', String(index));
+}
+
+function handleYesNo(trackerId, value) {
+  const yes = document.getElementById(`tracker-${trackerId}-yes`);
+  const no  = document.getElementById(`tracker-${trackerId}-no`);
+  yes.classList.remove('selected-yes');
+  no.classList.remove('selected-no');
+  if (value === 'yes') yes.classList.add('selected-yes');
+  else                 no.classList.add('selected-no');
+  setTemp(trackerId, 'yesno', value);
+}
+
+function handleSliderChange(trackerId, value) {
+  const trackers = window._cachedTrackers || [];
+  const tracker  = trackers.find(t => t.id === trackerId);
+  if (!tracker) return;
+
+  const sliderEl  = document.getElementById(`slider-${trackerId}`);
+  const label     = document.getElementById(`slider-label-${trackerId}`);
+  const wrapperEl = document.getElementById(`slider-wrapper-${trackerId}`);
+  const clearBtn  = document.getElementById(`slider-clear-${trackerId}`);
+  const option    = tracker.options[parseInt(value)];
+
+  sliderEl.dataset.touched = 'true';
+  sliderEl.classList.remove('slider-input-unset');
+  wrapperEl.classList.remove('slider-wrapper-unset');
+  clearBtn.style.display = 'inline-flex';
+
+  if (option) {
+    label.className   = 'slider-label';
+    label.style.color = option.color;
+    label.innerHTML   = `<span class="slider-set-dot" style="background:${option.color}"></span> ${option.title}`;
+  }
+  setTemp(trackerId, 'dropdown', String(value));
+}
+
+function clearSlider(trackerId) {
+  const sliderEl  = document.getElementById(`slider-${trackerId}`);
+  const label     = document.getElementById(`slider-label-${trackerId}`);
+  const wrapperEl = document.getElementById(`slider-wrapper-${trackerId}`);
+  const clearBtn  = document.getElementById(`slider-clear-${trackerId}`);
+
+  sliderEl.value            = 0;
+  sliderEl.dataset.touched  = 'false';
+  sliderEl.classList.add('slider-input-unset');
+  wrapperEl.classList.add('slider-wrapper-unset');
+  clearBtn.style.display    = 'none';
+  label.className           = 'slider-label slider-unset';
+  label.style.color         = '';
+  label.innerHTML           = '<span class="slider-unset-icon">○</span> Not recorded — slide to pick';
+
+  deleteTemp(trackerId);
+}
+
+function setTemp(trackerId, type, rawValue) {
+  if (!tempSelections[currentDate]) tempSelections[currentDate] = {};
+  tempSelections[currentDate][trackerId] = { type, rawValue };
+}
+
+function deleteTemp(trackerId) {
+  if (tempSelections[currentDate]) delete tempSelections[currentDate][trackerId];
+}
+
+// ── SAVE ──────────────────────────────────────────────────────────────────────
+async function saveAllTrackers() {
+  const saves = [];
+
+  // numeric + text inputs (native elements)
+  document.querySelectorAll('input[data-tracker-id], textarea[data-tracker-id]').forEach(el => {
+    const tid   = parseInt(el.getAttribute('data-tracker-id'));
+    const type  = el.getAttribute('data-type');
+    const value = el.value.trim();
+    if (type === 'numeric' || type === 'text') {
+      if (value) saves.push(saveEntry(currentDate, tid, type, value));
+      else       saves.push(deleteEntry(currentDate, tid));
+    }
+  });
+
+  // temp selections (yes/no + radio + slider)
+  const dayTemp = tempSelections[currentDate] || {};
+  for (const [tidStr, sel] of Object.entries(dayTemp)) {
+    const tid = parseInt(tidStr);
+    saves.push(saveEntry(currentDate, tid, sel.type, sel.rawValue));
+  }
+
+  await Promise.all(saves);
+  tempSelections = {};
+  showToast('Saved successfully!');
+}
+
+// ── LOAD ──────────────────────────────────────────────────────────────────────
+async function loadSelectionsForDate() {
+  // reset all inputs
+  document.querySelectorAll('.radio-option').forEach(el => el.classList.remove('selected'));
+  document.querySelectorAll('.yesno-btn').forEach(el => el.classList.remove('selected-yes','selected-no'));
+  document.querySelectorAll('input[data-tracker-id]').forEach(el => { if (el.type !== 'range') el.value = ''; });
+  document.querySelectorAll('textarea[data-tracker-id]').forEach(el => el.value = '');
+  // reset sliders
+  document.querySelectorAll('[id^="slider-label-"]').forEach(el => {
+    el.className = 'slider-label slider-unset';
+    el.style.color = '';
+    el.innerHTML = '<span class="slider-unset-icon">○</span> Not recorded — slide to pick';
+  });
+  document.querySelectorAll('input[type="range"][data-tracker-id]').forEach(el => {
+    el.value = 0; el.dataset.touched = 'false'; el.classList.add('slider-input-unset');
+  });
+  document.querySelectorAll('[id^="slider-wrapper-"]').forEach(el => el.classList.add('slider-wrapper-unset'));
+  document.querySelectorAll('[id^="slider-clear-"]').forEach(el => el.style.display = 'none');
+
+  const trackers = await getAllTrackers();
+  window._cachedTrackers = trackers;
+  const entries  = await loadEntriesForDate(currentDate);
+  tempSelections = {};
+
+  for (const [tid, entry] of Object.entries(entries)) {
+    const tracker = trackers.find(t => t.id == tid);
+    if (!tracker) continue;
+    const type  = entry.type || 'dropdown';
+    const raw   = entry.rawValue;
+
+    if (type === 'dropdown') {
+      const style = tracker.displayStyle || 'radio';
+      if (style === 'radio') {
+        const cont = document.getElementById(`tracker-${tid}-container`);
+        const opt  = cont?.querySelector(`[data-value="${raw}"]`);
+        opt?.classList.add('selected');
+      } else {
+        const slider = document.getElementById(`slider-${tid}`);
+        if (slider) {
+          slider.value = raw;
+          slider.dataset.touched = 'true';
+          slider.classList.remove('slider-input-unset');
+          document.getElementById(`slider-wrapper-${tid}`)?.classList.remove('slider-wrapper-unset');
+          document.getElementById(`slider-clear-${tid}`).style.display = 'inline-flex';
+          const opt = tracker.options[parseInt(raw)];
+          if (opt) {
+            const lbl = document.getElementById(`slider-label-${tid}`);
+            lbl.className = 'slider-label';
+            lbl.style.color = opt.color;
+            lbl.innerHTML = `<span class="slider-set-dot" style="background:${opt.color}"></span> ${opt.title}`;
+          }
+        }
+      }
+    } else if (type === 'yesno') {
+      if (raw === 'yes') document.getElementById(`tracker-${tid}-yes`)?.classList.add('selected-yes');
+      else               document.getElementById(`tracker-${tid}-no`)?.classList.add('selected-no');
+    } else {
+      const el = document.getElementById(`tracker-${tid}`);
+      if (el) el.value = raw;
+    }
+  }
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg) {
+  const toast  = document.getElementById('toastNotification');
+  document.getElementById('toastMessage').textContent = msg;
+  if (toastTimer) clearTimeout(toastTimer);
+  toast.classList.add('show');
+  toastTimer = setTimeout(() => { toast.classList.remove('show'); toastTimer = null; }, 3000);
+}
+
+// Start
+document.addEventListener('DOMContentLoaded', init);
+</script>
+
+<!-- Theme toggle -->
+<script>
+(function () {
+  const KEY = 'theme', L = 'light', D = 'dark';
+  const sys  = () => window.matchMedia('(prefers-color-scheme: dark)').matches ? D : L;
+  const saved= () => localStorage.getItem(KEY);
+  const apply= (t) => {
+    document.documentElement.setAttribute('data-theme', t);
+    document.querySelectorAll('.theme-toggle').forEach(b => {
+      b.textContent = t === D ? '☀️' : '🌙';
+      b.setAttribute('aria-label', t === D ? 'Switch to light mode' : 'Switch to dark mode');
+    });
+  };
+  apply(saved() || sys());
+  const toggle = () => {
+    const next = (document.documentElement.getAttribute('data-theme') || sys()) === D ? L : D;
+    localStorage.setItem(KEY, next); apply(next);
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => document.body.addEventListener('click', e => { if (e.target.closest('.theme-toggle')) toggle(); }));
+  } else {
+    document.body.addEventListener('click', e => { if (e.target.closest('.theme-toggle')) toggle(); });
+  }
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => { if (!saved()) apply(e.matches ? D : L); });
 })();
 </script>
 
-  <script>
-    // Register Service Worker
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
-          .then(() => console.log("Service Worker Registered"))
-          .catch(err => console.log("SW failed:", err));
-      });
-    }
-  </script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(() => console.log('SW Registered'))
+      .catch(err => console.log('SW failed:', err));
+  });
+}
+</script>
 </body>
 </html>
-  <script>
-    // ── Custom Calendar Popup ─────────────────────────────────
-    let calViewYear, calViewMonth;
-
-    function toggleCustomCalendar() {
-      const cal = document.getElementById('customCalendar');
-      if (cal.classList.contains('open')) {
-        cal.classList.remove('open');
-      } else {
-        const parts = currentDate.split('-');
-        calViewYear  = parseInt(parts[0]);
-        calViewMonth = parseInt(parts[1]) - 1;
-        renderCustomCalendar();
-        cal.classList.add('open');
-      }
-    }
-
-    document.addEventListener('click', function(e) {
-      const wrapper = document.querySelector('.date-wrapper');
-      if (wrapper && !wrapper.contains(e.target)) {
-        document.getElementById('customCalendar').classList.remove('open');
-      }
-    });
-
-    function calNavMonth(dir) {
-      calViewMonth += dir;
-      if (calViewMonth > 11) { calViewMonth = 0;  calViewYear++; }
-      if (calViewMonth < 0)  { calViewMonth = 11; calViewYear--; }
-      renderCustomCalendar();
-    }
-
-    function renderCustomCalendar() {
-      const today = getLocalDateString();
-      const label = document.getElementById('calMonthLabel');
-      const grid  = document.getElementById('calDays');
-
-      const monthNames = ['January','February','March','April','May','June',
-                          'July','August','September','October','November','December'];
-      label.textContent = monthNames[calViewMonth] + ' ' + calViewYear;
-
-      const firstDay    = new Date(calViewYear, calViewMonth, 1).getDay();
-      const daysInMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate();
-
-      let html = '';
-      for (let i = 0; i < firstDay; i++) html += '<div class="cal-day cal-empty"></div>';
-      for (let d = 1; d <= daysInMonth; d++) {
-        const mm  = String(calViewMonth + 1).padStart(2,'0');
-        const dd  = String(d).padStart(2,'0');
-        const ds  = calViewYear + '-' + mm + '-' + dd;
-        const isToday    = ds === today;
-        const isSelected = ds === currentDate;
-        const isFuture   = ds > today;
-        let cls = 'cal-day';
-        if (isToday)    cls += ' cal-today';
-        if (isSelected) cls += ' cal-selected';
-        if (isFuture)   cls += ' cal-disabled';
-        html += '<div class="' + cls + '" onclick="calSelectDay(\'' + ds + '\')">' + d + '</div>';
-      }
-      grid.innerHTML = html;
-    }
-
-    function calSelectDay(dateStr) {
-      currentDate = dateStr;
-      document.getElementById('dateInput').value = dateStr;
-      updateDateDisplay();
-      renderWeekNavigation();
-      loadSelectionsForDate();
-      document.getElementById('customCalendar').classList.remove('open');
-    }
-
-    function openCalendar() { toggleCustomCalendar(); }
-  </script>
