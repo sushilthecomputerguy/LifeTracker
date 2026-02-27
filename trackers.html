@@ -5,142 +5,483 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Trackers</title>
     <link rel="stylesheet" href="styles.css">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#fef5eb">
-<link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#fef5eb">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 <body>
- 
+
 <div class="container">
     <h1>My Trackers</h1>
     <p class="subtitle">View and manage your custom trackers</p>
 
-    <!-- ── Top Bar ── -->
     <div class="top-bar" style="display: flex; gap: 12px; flex-wrap: wrap;">
         <button class="btn btn-primary" onclick="openAddModal()">+ Add Custom Tracker</button>
         <a href="template.html" class="btn btn-outline">Browse Templates →</a>
     </div>
 
-    <!-- ── Tracker List ── -->
     <div class="tracker-grid" id="trackerList"></div>
 </div>
 
 <div class="bottom-navigation">
-    <div><a href="trackers.html" class="active" aria-current="page"><img src="folder-icon.svg" alt=""/>Tracker</a></div>
-    <div><a href="report.html"   ><img src="report-icon.svg" alt=""/>Report</a></div>
-    <div><a href="index.html" ><img src="today-icon.svg" alt=""/>My Day</a></div>
-    <div><a href="chatbot.html" ><img src="ai_icon.png" alt=""/>AI Chat</a></div>
-    <div><a href="settings.html" class="active" aria-current="page"><img src="setting-icon.svg" alt=""/>Settings</a></div>
-  </div>
-
+    <div><a href="trackers.html"><img src="folder-icon.svg"/>Tracker</a></div>
+    <div><a href="report.html"><img src="report-icon.svg"/>Report</a></div>
+    <div><a href="index.html"><img src="today-icon.svg"/>My Day</a></div>
+    <div><a href="settings.html"><img src="setting-icon.svg"/>Settings</a></div>
+</div>
 
 <!-- ── Modal ── -->
 <div class="modal" id="trackerModal">
     <div class="modal-content">
         <div class="modal-header">
             <h2 class="modal-title" id="modalTitle">Add New Tracker</h2>
-            <button class="close-btn" onclick="closeModal()">&times;</button>
+            <button class="close-btn" onclick="closeModal()" aria-label="Close">✕</button>
         </div>
 
         <form id="trackerForm" onsubmit="saveTracker(event)">
+
+            <!-- Name -->
             <div class="form-group">
-                <label class="form-label">Tracker Name *</label>
-                <input type="text" id="trackerName" class="form-input" placeholder="e.g., Anxiety" required>
+                <label class="form-label">Tracker Name <span class="required">*</span></label>
+                <input type="text" id="trackerName" class="form-input" placeholder="e.g., Anxiety Level" required>
             </div>
 
+            <!-- Type -->
             <div class="form-group">
-                <label class="form-label">Type *</label>
-                <select id="trackerType" class="form-select" onchange="handleTypeChange()">
-                    <option value="dropdown">Dropdown (multiple choices)</option>
-                    <option value="yesno">Yes/No</option>
-                    <option value="numeric">Numeric</option>
-                    <option value="text">Text</option>
-                </select>
+                <label class="form-label">Type <span class="required">*</span></label>
+                <div class="type-cards" id="typeCards">
+                    <label class="type-card">
+                        <input type="radio" name="trackerTypeRadio" value="dropdown" checked onchange="handleTypeChange()">
+                        <span class="type-card-icon">🔘</span>
+                        <span class="type-card-name">Choices</span>
+                    </label>
+                    <label class="type-card">
+                        <input type="radio" name="trackerTypeRadio" value="yesno" onchange="handleTypeChange()">
+                        <span class="type-card-icon">✅</span>
+                        <span class="type-card-name">Yes / No</span>
+                    </label>
+                    <label class="type-card">
+                        <input type="radio" name="trackerTypeRadio" value="numeric" onchange="handleTypeChange()">
+                        <span class="type-card-icon">🔢</span>
+                        <span class="type-card-name">Number</span>
+                    </label>
+                    <label class="type-card">
+                        <input type="radio" name="trackerTypeRadio" value="text" onchange="handleTypeChange()">
+                        <span class="type-card-icon">📝</span>
+                        <span class="type-card-name">Text</span>
+                    </label>
+                </div>
+                <!-- hidden select kept for compatibility -->
+                <select id="trackerType" style="display:none;"></select>
             </div>
 
-            <!-- ── Dropdown Options ── -->
+            <!-- ── Choices Options ── -->
             <div id="dropdownSection" class="options-section">
-                <!-- Display Style Selector -->
-                <div class="display-style-group" style="padding : 0px">
-                    <span class="display-style-label">Display Style (how to show on My Day page):</span>
-                    <div class="display-style-options">
-                        <div class="display-style-option">
+
+                <!-- Display style -->
+                <div class="form-group">
+                    <label class="form-label">How to show on My Day</label>
+                    <div class="display-style-cards">
+                        <label class="ds-card">
                             <input type="radio" id="displayRadio" name="displayStyle" value="radio" checked>
-                            <label for="displayRadio">
-                                <span class="display-style-icon">⚪</span>
-                                Radio Buttons
-                            </label>
-                        </div>
-                        <div class="display-style-option">
+                            <span class="ds-icon">⚪</span>
+                            <span>Buttons</span>
+                        </label>
+                        <label class="ds-card">
                             <input type="radio" id="displayDropdown" name="displayStyle" value="dropdown">
-                            <label for="displayDropdown">
-                                <span class="display-style-icon">▼</span>
-                                Dropdown
-                            </label>
-                        </div>
-                        <div class="display-style-option">
+                            <span class="ds-icon">▼</span>
+                            <span>Dropdown</span>
+                        </label>
+                        <label class="ds-card">
                             <input type="radio" id="displaySlider" name="displayStyle" value="slider">
-                            <label for="displaySlider">
-                                <span class="display-style-icon">━●━</span>
-                                Level Slider
-                            </label>
-                        </div>
+                            <span class="ds-icon">━●━</span>
+                            <span>Slider</span>
+                        </label>
                     </div>
-                    <div class="display-style-hint" id="sliderHint" style="display: none;">
-                        💡 Tip: Arrange options from low to high (e.g., Sad → Happy) for best slider experience
+                    <div class="display-style-hint" id="sliderHint" style="display:none;">
+                        💡 Order options low → high for best slider experience
                     </div>
                 </div>
 
-                <!-- Options List -->
+                <!-- Options list -->
                 <div class="options-header">
-                    <h4>Options</h4>
-                    <button type="button" class="btn-outline" onclick="addOption()">+ Add Option</button>
+                    <label class="form-label" style="margin:0;">Options</label>
+                    <button type="button" class="btn-add-option" onclick="addOption()">+ Add Option</button>
                 </div>
+                <p class="hint-text">Give each option a name, colour and optional score.</p>
                 <div id="optionsList"></div>
+            </div>
+
+            <!-- ── Yes/No ── -->
+            <div id="yesnoSection" class="form-group hidden">
+                <label class="form-label">Score for Analysis</label>
+                <div class="two-col">
+                    <div class="score-field">
+                        <span class="score-label yes-label">Yes</span>
+                        <input type="number" id="yesValue" class="form-input" value="1" step="any" placeholder="1">
+                    </div>
+                    <div class="score-field">
+                        <span class="score-label no-label">No</span>
+                        <input type="number" id="noValue" class="form-input" value="0" step="any" placeholder="0">
+                    </div>
+                </div>
             </div>
 
             <!-- ── Numeric Config ── -->
             <div id="numericSection" class="form-group hidden">
-                <label class="form-label">Numeric Format</label>
-                <div class="numeric-config">
-                    <div>
-                        <input type="text" id="numericPrefix" class="form-input" placeholder="Prefix (e.g., $)">
-                    </div>
-                    <div>
-                        <input type="text" id="numericSuffix" class="form-input" placeholder="Suffix (e.g., kg)">
-                    </div>
+                <label class="form-label">Number Format</label>
+                <div class="two-col">
+                    <input type="text" id="numericPrefix" class="form-input" placeholder="Prefix  e.g. $">
+                    <input type="text" id="numericSuffix" class="form-input" placeholder="Suffix  e.g. kg">
                 </div>
             </div>
 
-            <div style="display: flex; gap: 10px; margin-top: 24px;">
-                <button type="submit" class="btn btn-success" style="flex:1;">Save Tracker</button>
-                <button type="button" class="btn btn-danger" onclick="closeModal()">Cancel</button>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn btn-success">Save Tracker</button>
             </div>
         </form>
     </div>
 </div>
- 
+
+<!-- ── Colour Picker Overlay ── -->
+<div class="cp-overlay" id="cpOverlay">
+    <div class="cp-sheet">
+        <div class="cp-header">
+            <span class="cp-title">Pick a Colour</span>
+            <button class="close-btn" onclick="closeColorPicker()" aria-label="Close">✕</button>
+        </div>
+        <div class="cp-swatches" id="cpSwatches"></div>
+        <div class="cp-hex-row">
+            <div class="cp-hex-preview" id="cpHexPreview"></div>
+            <input class="cp-hex-input" id="cpHexInput" type="text" maxlength="7" placeholder="#f1c40f" spellcheck="false">
+            <button class="cp-hex-apply" onclick="applyHex()">Apply</button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ── Option rows ─────────────────────────────────────────── */
+.option-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 8px 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 12px 12px 14px;
+    margin-bottom: 10px;
+    align-items: center;
+}
+.option-row .option-title {
+    grid-column: 1;
+    grid-row: 1;
+    font-size: 16px;
+    padding: 10px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-input);
+    color: var(--text-body);
+    width: 100%;
+    box-sizing: border-box;
+}
+.option-row .option-title:focus { outline: none; border-color: var(--accent); }
+.option-remove-btn {
+    grid-column: 2;
+    grid-row: 1;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: none;
+    color: var(--text-muted);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.option-remove-btn:hover { border-color: #e74c3c; color: #e74c3c; }
+.option-bottom-row {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.color-swatch-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 2.5px solid rgba(0,0,0,0.12);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform .15s;
+    position: relative;
+}
+.color-swatch-btn:active { transform: scale(.93); }
+.color-swatch-btn::after {
+    content: '✎';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    color: rgba(255,255,255,.85);
+    text-shadow: 0 1px 3px rgba(0,0,0,.4);
+}
+.option-numeric-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    flex: 1;
+}
+.option-numeric-input {
+    width: 100%;
+    padding: 10px 8px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 15px;
+    background: var(--bg-input);
+    color: var(--text-body);
+    text-align: center;
+    box-sizing: border-box;
+}
+.option-numeric-input:focus { outline: none; border-color: var(--accent); }
+.option-numeric-label {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* ── Type cards ──────────────────────────────────────────── */
+.type-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+.type-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 6px;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-body);
+    transition: border-color .15s, background .15s;
+    text-align: center;
+    line-height: 1.2;
+}
+.type-card input[type="radio"] { display: none; }
+.type-card-icon { font-size: 22px; }
+.type-card:has(input:checked) {
+    border-color: var(--accent, #e07b39);
+    background: color-mix(in srgb, var(--accent, #e07b39) 10%, transparent);
+}
+
+/* ── Display style cards ─────────────────────────────────── */
+.display-style-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.ds-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 6px;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-body);
+    transition: border-color .15s, background .15s;
+    text-align: center;
+}
+.ds-card input[type="radio"] { display: none; }
+.ds-icon { font-size: 18px; }
+.ds-card:has(input:checked) {
+    border-color: var(--accent, #e07b39);
+    background: color-mix(in srgb, var(--accent, #e07b39) 10%, transparent);
+}
+
+/* ── Options header / add btn ────────────────────────────── */
+.options-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+.btn-add-option {
+    padding: 8px 16px;
+    background: var(--accent, #e07b39);
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.hint-text {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 0 0 10px;
+}
+
+/* ── Yes/No score fields ─────────────────────────────────── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.score-field { display: flex; flex-direction: column; gap: 6px; }
+.score-label {
+    font-size: 14px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    display: inline-block;
+    width: fit-content;
+}
+.yes-label { background: #d4f5e2; color: #1a7a44; }
+.no-label  { background: #fde2e2; color: #a12020; }
+
+/* ── Modal actions ───────────────────────────────────────── */
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
+.modal-actions .btn { flex: 1; padding: 14px; font-size: 16px; font-weight: 700; border-radius: 14px; }
+.btn-ghost {
+    background: none;
+    border: 1.5px solid var(--border);
+    color: var(--text-body);
+    cursor: pointer;
+}
+.required { color: #e74c3c; }
+
+/* ── Colour Picker Overlay ───────────────────────────────── */
+.cp-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 9999;
+    align-items: flex-end;
+    justify-content: center;
+}
+.cp-overlay.open { display: flex; }
+.cp-sheet {
+    background: var(--bg-card, #fff);
+    border-radius: 24px 24px 0 0;
+    padding: 20px 20px 32px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 80vh;
+    overflow-y: auto;
+    animation: slideUp .2s ease;
+}
+@keyframes slideUp {
+    from { transform: translateY(40px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+.cp-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+.cp-title { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+.cp-swatches {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.cp-swatch {
+    aspect-ratio: 1;
+    border-radius: 12px;
+    border: 3px solid transparent;
+    cursor: pointer;
+    transition: transform .12s, border-color .12s;
+    min-height: 44px;
+}
+.cp-swatch:active { transform: scale(.88); }
+.cp-swatch.selected {
+    border-color: #fff;
+    box-shadow: 0 0 0 3px var(--accent, #e07b39);
+}
+.cp-hex-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-input, #f5f5f5);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 8px 10px;
+}
+.cp-hex-preview {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    border: 1px solid rgba(0,0,0,.1);
+}
+.cp-hex-input {
+    flex: 1;
+    border: none;
+    background: none;
+    font-size: 16px;
+    font-family: monospace;
+    color: var(--text-body);
+    outline: none;
+    letter-spacing: .05em;
+}
+.cp-hex-apply {
+    padding: 8px 16px;
+    background: var(--accent, #e07b39);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+</style>
+
 <script>
 /* ═══ INDEXEDDB ═════════════════════════════════════════════ */
 let db;
 let editingId = null;
 const DB_NAME = 'TrackerDB';
+const DB_VERSION = 4;
 const STORE_NAME = 'trackers';
 
-
 function initDB() {
-    const req = indexedDB.open(DB_NAME, 2);
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
 
     req.onupgradeneeded = (e) => {
         db = e.target.result;
         if (!db.objectStoreNames.contains(STORE_NAME)) {
             db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
         }
+        if (!db.objectStoreNames.contains('dailySelections')) {
+            db.createObjectStore('dailySelections', { keyPath: 'date' });
+        }
     };
 
     req.onsuccess = (e) => {
         db = e.target.result;
-        loadTrackers();
+        seedDefaultTracker().then(() => loadTrackers());
     };
 
     req.onerror = (e) => {
@@ -150,149 +491,244 @@ function initDB() {
 
 function getAllTrackers() {
     return new Promise((res, rej) => {
-        const req = db.transaction([STORE_NAME],'readonly').objectStore(STORE_NAME).getAll();
+        const req = db.transaction([STORE_NAME], 'readonly').objectStore(STORE_NAME).getAll();
         req.onsuccess = () => res(req.result);
-        req.onerror   = () => rej(req.error);
+        req.onerror = () => rej(req.error);
+    });
+}
+
+/* ═══ DEFAULT TRACKER SEED ══════════════════════════════════ */
+function seedDefaultTracker() {
+    if (localStorage.getItem('defaultTrackerSeeded')) return Promise.resolve();
+    const defaultTracker = {
+        title: 'Rate My Day',
+        type: 'dropdown',
+        displayStyle: 'radio',
+        createdAt: new Date().toISOString(),
+        options: [
+            { title: 'Excellent', color: '#27ae60', numericValue: 100 },
+            { title: 'Good',      color: '#2980b9', numericValue: 80  },
+            { title: 'Okay',      color: '#f1c40f', numericValue: 60  },
+            { title: 'Bad',       color: '#d35400', numericValue: 40  },
+            { title: 'Horrible',  color: '#c0392b', numericValue: 20  }
+        ]
+    };
+    return new Promise((res, rej) => {
+        const req = db.transaction([STORE_NAME], 'readwrite').objectStore(STORE_NAME).add(defaultTracker);
+        req.onsuccess = () => { localStorage.setItem('defaultTrackerSeeded', '1'); res(); };
+        req.onerror  = () => rej(req.error);
     });
 }
 
 function addTracker(tracker) {
     return new Promise((res, rej) => {
-        const req = db.transaction([STORE_NAME],'readwrite').objectStore(STORE_NAME).add(tracker);
+        const req = db.transaction([STORE_NAME], 'readwrite').objectStore(STORE_NAME).add(tracker);
         req.onsuccess = () => res(req.result);
-        req.onerror   = () => rej(req.error);
+        req.onerror = () => rej(req.error);
     });
 }
 
 function updateTracker(id, tracker) {
     return new Promise((res, rej) => {
-        const req = db.transaction([STORE_NAME],'readwrite').objectStore(STORE_NAME).put({...tracker, id});
+        const req = db.transaction([STORE_NAME], 'readwrite').objectStore(STORE_NAME).put({ ...tracker, id });
         req.onsuccess = () => res();
-        req.onerror   = () => rej(req.error);
+        req.onerror = () => rej(req.error);
     });
 }
 
 function deleteTracker(id) {
     return new Promise((res, rej) => {
-        const req = db.transaction([STORE_NAME],'readwrite').objectStore(STORE_NAME).delete(id);
+        const req = db.transaction([STORE_NAME], 'readwrite').objectStore(STORE_NAME).delete(id);
         req.onsuccess = () => res();
-        req.onerror   = () => rej(req.error);
+        req.onerror = () => rej(req.error);
     });
 }
 
 /* ═══ COLOR PALETTE ═════════════════════════════════════════ */
 const COLOR_PALETTE = [
-    // Yellow shades
-    '#f1c40f', '#f5d04a', '#f9dc7c', '#fcebaf',
-    // Orange shades
-    '#d35400', '#dc6e1a', '#e58a3d', '#efa570',
-    // Red shades
-    '#c0392b', '#d05446', '#de7268', '#ec9089',
-    // Dark blue shades
-    '#2c3e50', '#465a6f', '#61788e', '#7c95ad',
-    // Purple shades
-    '#8e44ad', '#a15eba', '#b479c7', '#c795d4',
-    // Blue shades
-    '#2980b9', '#4d96c6', '#72acd3', '#96c2e0',
-    // Green shades
-    '#27ae60', '#4dbe7d', '#74cd9a', '#9bddb7',
-    // Teal shades
-    '#16a085', '#3bb39a', '#62c5af', '#89d7c4'
+    '#e74c3c','#e67e22','#f1c40f','#2ecc71','#1abc9c',
+    '#3498db','#9b59b6','#e91e63','#ff5722','#ff9800',
+    '#8bc34a','#00bcd4','#673ab7','#f06292','#ff7043',
+    '#ffd54f','#a5d6a7','#80deea','#90caf9','#ce93d8',
+    '#b71c1c','#e65100','#f57f17','#1b5e20','#006064',
+    '#0d47a1','#4a148c','#880e4f','#37474f','#795548'
 ];
 
-function createColorPalette(selectedColor = '#f1c40f') {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'color-picker-wrapper';
-    
-    // Create display button
-    const displayBtn = document.createElement('div');
-    displayBtn.className = 'color-display-btn';
-    displayBtn.innerHTML = `
-        <div class="color-preview" style="background-color: ${selectedColor}"></div>
-        <span class="color-dropdown-arrow">▼</span>
-    `;
-    
-    // Create dropdown palette
-    const paletteDropdown = document.createElement('div');
-    paletteDropdown.className = 'color-palette';
-    
-    const paletteGrid = document.createElement('div');
-    paletteGrid.className = 'color-palette-grid';
-    
+// State for the colour picker overlay
+let _cpWrapper   = null; // the .color-picker-wrapper element currently editing
+let _cpSelected  = '#f1c40f';
+
+function openColorPicker(wrapper) {
+    _cpWrapper  = wrapper;
+    _cpSelected = wrapper.dataset.selectedColor || '#f1c40f';
+
+    // Build swatches
+    const grid = document.getElementById('cpSwatches');
+    grid.innerHTML = '';
     COLOR_PALETTE.forEach(color => {
-        const swatch = document.createElement('div');
-        swatch.className = 'color-swatch';
-        swatch.style.backgroundColor = color;
-        swatch.dataset.color = color;
-        
-        if (color === selectedColor) {
-            swatch.classList.add('selected');
-        }
-        
-        swatch.onclick = function(e) {
-            e.stopPropagation();
-            // Remove selected class from all swatches in this palette
-            paletteGrid.querySelectorAll('.color-swatch').forEach(s => {
-                s.classList.remove('selected');
-            });
-            // Add selected class to clicked swatch
-            this.classList.add('selected');
-            // Update the color preview
-            displayBtn.querySelector('.color-preview').style.backgroundColor = color;
-            // Update the selected color
-            wrapper.dataset.selectedColor = color;
-            // Close dropdown
-            paletteDropdown.classList.remove('show');
+        const s = document.createElement('div');
+        s.className = 'cp-swatch' + (color === _cpSelected ? ' selected' : '');
+        s.style.background = color;
+        s.onclick = () => {
+            grid.querySelectorAll('.cp-swatch').forEach(x => x.classList.remove('selected'));
+            s.classList.add('selected');
+            _cpSelected = color;
+            syncHexInput(color);
         };
-        
-        paletteGrid.appendChild(swatch);
+        grid.appendChild(s);
     });
-    
-    paletteDropdown.appendChild(paletteGrid);
-    
-    // Toggle dropdown on button click
-    displayBtn.onclick = function(e) {
-        e.stopPropagation();
-        // Close all other dropdowns
-        document.querySelectorAll('.color-palette.show').forEach(p => {
-            if (p !== paletteDropdown) p.classList.remove('show');
-        });
-        paletteDropdown.classList.toggle('show');
-    };
-    
-    wrapper.appendChild(displayBtn);
-    wrapper.appendChild(paletteDropdown);
-    wrapper.dataset.selectedColor = selectedColor;
-    
-    return wrapper;
+
+    syncHexInput(_cpSelected);
+    document.getElementById('cpOverlay').classList.add('open');
 }
 
-// Close dropdowns when clicking outside
-document.addEventListener('click', function(e) {
-    if (!e.target.closest('.color-picker-wrapper')) {
-        document.querySelectorAll('.color-palette.show').forEach(p => {
-            p.classList.remove('show');
-        });
+function syncHexInput(color) {
+    document.getElementById('cpHexPreview').style.background = color;
+    document.getElementById('cpHexInput').value = color;
+}
+
+function applyHex() {
+    let val = document.getElementById('cpHexInput').value.trim();
+    if (!val.startsWith('#')) val = '#' + val;
+    if (!/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(val)) {
+        document.getElementById('cpHexInput').style.outline = '2px solid #e74c3c';
+        setTimeout(() => document.getElementById('cpHexInput').style.outline = '', 1200);
+        return;
     }
+    _cpSelected = val;
+    syncHexInput(val);
+    // deselect palette swatches if custom hex
+    document.querySelectorAll('#cpSwatches .cp-swatch').forEach(s => {
+        s.classList.toggle('selected', s.style.background === val || rgbToHex(s.style.background) === val.toLowerCase());
+    });
+}
+
+// live preview as user types hex
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('cpHexInput').addEventListener('input', function () {
+        let val = this.value.trim();
+        if (!val.startsWith('#')) val = '#' + val;
+        if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(val)) {
+            document.getElementById('cpHexPreview').style.background = val;
+        }
+    });
+    document.getElementById('cpHexInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); applyHex(); }
+    });
 });
 
-// Handle display style change to show/hide slider hint
-document.addEventListener('DOMContentLoaded', function() {
-    const radioInputs = document.querySelectorAll('input[name="displayStyle"]');
-    const sliderHint = document.getElementById('sliderHint');
-    
-    radioInputs.forEach(input => {
-        input.addEventListener('change', function() {
-            if (this.value === 'slider') {
-                sliderHint.style.display = 'block';
-            } else {
-                sliderHint.style.display = 'none';
-            }
+function rgbToHex(rgb) {
+    const m = rgb.match(/\d+/g);
+    if (!m) return rgb;
+    return '#' + m.slice(0,3).map(n => parseInt(n).toString(16).padStart(2,'0')).join('');
+}
+
+function closeColorPicker(confirm = true) {
+    if (confirm && _cpWrapper) {
+        _cpWrapper.dataset.selectedColor = _cpSelected;
+        _cpWrapper.querySelector('.color-swatch-btn').style.background = _cpSelected;
+    }
+    document.getElementById('cpOverlay').classList.remove('open');
+    _cpWrapper = null;
+}
+
+// Close overlay on backdrop click
+document.getElementById('cpOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeColorPicker(true);
+});
+
+/* ═══ OPTIONS ═══════════════════════════════════════════════ */
+function addOption(title = '', color = '#3498db', numericValue = '') {
+    const list = document.getElementById('optionsList');
+    const uid  = Date.now() + Math.random();
+
+    const row = document.createElement('div');
+    row.className = 'option-row';
+    row.id = `option-${uid}`;
+
+    // Name input
+    const nameInput = document.createElement('input');
+    nameInput.type        = 'text';
+    nameInput.className   = 'option-title';
+    nameInput.placeholder = 'Option name';
+    nameInput.value       = title;
+
+    // Remove button
+    const removeBtn = document.createElement('button');
+    removeBtn.type      = 'button';
+    removeBtn.className = 'option-remove-btn';
+    removeBtn.innerHTML = '×';
+    removeBtn.onclick   = () => row.remove();
+
+    // Bottom row: colour + score
+    const bottomRow = document.createElement('div');
+    bottomRow.className = 'option-bottom-row';
+
+    // Colour swatch button (opens overlay)
+    const cpWrapper = document.createElement('div');
+    cpWrapper.className = 'color-picker-wrapper'; // keep class for saveTracker compat
+    cpWrapper.dataset.selectedColor = color;
+
+    const swatchBtn = document.createElement('button');
+    swatchBtn.type      = 'button';
+    swatchBtn.className = 'color-swatch-btn';
+    swatchBtn.style.background = color;
+    swatchBtn.title     = 'Choose colour';
+    swatchBtn.setAttribute('aria-label', 'Choose colour');
+    swatchBtn.onclick   = () => openColorPicker(cpWrapper);
+    cpWrapper.appendChild(swatchBtn);
+
+    // Numeric score
+    const numericWrap = document.createElement('div');
+    numericWrap.className = 'option-numeric-wrap';
+    const numericInput = document.createElement('input');
+    numericInput.type        = 'number';
+    numericInput.className   = 'option-numeric-input';
+    numericInput.placeholder = 'Score';
+    numericInput.step        = 'any';
+    numericInput.value       = numericValue !== '' ? numericValue : '';
+    numericInput.title       = 'Numeric score for analysis';
+    const numericLabel = document.createElement('div');
+    numericLabel.className   = 'option-numeric-label';
+    numericLabel.textContent = 'score';
+    numericWrap.appendChild(numericInput);
+    numericWrap.appendChild(numericLabel);
+
+    bottomRow.appendChild(cpWrapper);
+    bottomRow.appendChild(numericWrap);
+
+    row.appendChild(nameInput);
+    row.appendChild(removeBtn);
+    row.appendChild(bottomRow);
+    list.appendChild(row);
+}
+
+function removeOption(id) {
+    document.getElementById(`option-${id}`)?.remove();
+}
+
+/* ═══ TYPE CHANGE ═══════════════════════════════════════════ */
+function handleTypeChange() {
+    // sync hidden <select> from radio cards
+    const checked = document.querySelector('input[name="trackerTypeRadio"]:checked');
+    const type    = checked ? checked.value : 'dropdown';
+    document.getElementById('trackerType').value = type;
+
+    document.getElementById('dropdownSection').classList.toggle('hidden', type !== 'dropdown');
+    document.getElementById('numericSection') .classList.toggle('hidden', type !== 'numeric');
+    document.getElementById('yesnoSection')   .classList.toggle('hidden', type !== 'yesno');
+}
+
+// Wire slider hint to display-style cards
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('input[name="displayStyle"]').forEach(input => {
+        input.addEventListener('change', function () {
+            document.getElementById('sliderHint').style.display =
+                this.value === 'slider' ? 'block' : 'none';
         });
     });
 });
 
-/* ═══ LOAD TRACKERS ════════════════════════════════════════ */
 async function loadTrackers() {
     const trackers = await getAllTrackers();
     const list = document.getElementById('trackerList');
@@ -310,27 +746,22 @@ async function loadTrackers() {
         let detailHTML = '';
 
         if (type === 'dropdown' && t.options) {
-            detailHTML = t.options.map(o => 
-                `<span class="option-pill" style="background:${o.color}">${o.title}</span>`
+            detailHTML = t.options.map(o =>
+                `<span class="option-pill" style="background:${o.color}" title="Value: ${o.numericValue ?? 'not set'}">${o.title}${o.numericValue !== undefined ? ` <small>(${o.numericValue})</small>` : ''}</span>`
             ).join('');
-            
-            // Add display style indicator
             const displayStyle = t.displayStyle || 'radio';
-            const displayIcons = {
-                'radio': '⚪ Radio Buttons',
-                'dropdown': '▼ Dropdown',
-                'slider': '━━●━━ Slider'
-            };
+            const displayIcons = { 'radio': '⚪ Radio Buttons', 'dropdown': '▼ Dropdown', 'slider': '━━●━━ Slider' };
             detailHTML += `<div style="margin-top:8px;font-size:11px;color:#999;">Display: ${displayIcons[displayStyle]}</div>`;
-            
         } else if (type === 'yesno') {
-            detailHTML = '<span style="color:#666;font-size:13px;">Yes or No</span>';
+            const yv = t.yesValue ?? 1;
+            const nv = t.noValue ?? 0;
+            detailHTML = `<span style="color:#666;font-size:13px;">Yes = ${yv} | No = ${nv}</span>`;
         } else if (type === 'numeric') {
             const p = t.numericPrefix || '';
             const s = t.numericSuffix || '';
-            detailHTML = `<span style="color:#666;font-size:13px;">Format: ${p}[number]${s ? ' '+s : ''}</span>`;
+            detailHTML = `<span style="color:#666;font-size:13px;">Format: ${p}[number]${s ? ' ' + s : ''}</span>`;
         } else {
-            detailHTML = '<span style="color:#666;font-size:13px;">Free text entry</span>';
+            detailHTML = '<span style="color:#666;font-size:13px;">Free text entry (not analyzable)</span>';
         }
 
         return `
@@ -354,12 +785,16 @@ function openAddModal() {
     editingId = null;
     document.getElementById('modalTitle').textContent = 'Add New Tracker';
     document.getElementById('trackerForm').reset();
+    // reset type cards to dropdown
+    document.querySelector('input[name="trackerTypeRadio"][value="dropdown"]').checked = true;
     document.getElementById('trackerType').value = 'dropdown';
     document.getElementById('optionsList').innerHTML = '';
     document.getElementById('displayRadio').checked = true;
     document.getElementById('sliderHint').style.display = 'none';
+    document.getElementById('yesValue').value = '1';
+    document.getElementById('noValue').value = '0';
     handleTypeChange();
-    addOption(); // default one option
+    addOption();
     document.getElementById('trackerModal').classList.add('show');
 }
 
@@ -371,20 +806,27 @@ async function openEditModal(id) {
 
     document.getElementById('modalTitle').textContent = 'Edit Tracker';
     document.getElementById('trackerName').value = tracker.title;
-    document.getElementById('trackerType').value = tracker.type || 'dropdown';
+    const ttype = tracker.type || 'dropdown';
+    document.getElementById('trackerType').value = ttype;
+    // sync radio cards
+    const radioCard = document.querySelector(`input[name="trackerTypeRadio"][value="${ttype}"]`);
+    if (radioCard) radioCard.checked = true;
 
     if (tracker.type === 'numeric') {
         document.getElementById('numericPrefix').value = tracker.numericPrefix || '';
         document.getElementById('numericSuffix').value = tracker.numericSuffix || '';
     }
 
+    if (tracker.type === 'yesno') {
+        document.getElementById('yesValue').value = tracker.yesValue ?? 1;
+        document.getElementById('noValue').value = tracker.noValue ?? 0;
+    }
+
     handleTypeChange();
 
     if ((tracker.type === 'dropdown' || !tracker.type) && tracker.options) {
         document.getElementById('optionsList').innerHTML = '';
-        tracker.options.forEach(o => addOption(o.title, o.color));
-        
-        // Set display style
+        tracker.options.forEach(o => addOption(o.title, o.color, o.numericValue));
         const displayStyle = tracker.displayStyle || 'radio';
         document.getElementById('display' + displayStyle.charAt(0).toUpperCase() + displayStyle.slice(1)).checked = true;
         document.getElementById('sliderHint').style.display = displayStyle === 'slider' ? 'block' : 'none';
@@ -398,55 +840,25 @@ function closeModal() {
     editingId = null;
 }
 
-function handleTypeChange() {
-    const type = document.getElementById('trackerType').value;
-    document.getElementById('dropdownSection').classList.toggle('hidden', type !== 'dropdown');
-    document.getElementById('numericSection').classList.toggle('hidden', type !== 'numeric');
-}
-
-/* ═══ OPTIONS ═══════════════════════════════════════════════ */
-function addOption(title = '', color = '#f1c40f') {
-    const list = document.getElementById('optionsList');
-    const id = Date.now() + Math.random();
-    const div = document.createElement('div');
-    div.className = 'option-row';
-    div.id = `option-${id}`;
-    
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'option-title';
-    input.placeholder = 'Option name';
-    input.value = title;
-    
-    const colorPicker = createColorPalette(color);
-    
-    const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.className = 'remove-option-btn';
-    removeBtn.textContent = '×';
-    removeBtn.onclick = () => removeOption(id);
-    
-    div.appendChild(input);
-    div.appendChild(colorPicker);
-    div.appendChild(removeBtn);
-    
-    list.appendChild(div);
-}
-
-function removeOption(id) {
-    document.getElementById(`option-${id}`)?.remove();
-}
 
 /* ═══ SAVE ══════════════════════════════════════════════════ */
 async function saveTracker(e) {
     e.preventDefault();
 
     const title = document.getElementById('trackerName').value.trim();
-    const type  = document.getElementById('trackerType').value;
+    const type = document.getElementById('trackerType').value;
 
     if (!title) return alert('Please enter a tracker name');
 
-    const tracker = { title, type, createdAt: new Date().toISOString() };
+    const tracker = { title, type, createdAt: editingId ? undefined : new Date().toISOString() };
+
+    // Preserve createdAt if editing
+    if (editingId) {
+        const all = await getAllTrackers();
+        const existing = all.find(t => t.id === editingId);
+        if (existing) tracker.createdAt = existing.createdAt;
+    }
+    if (!tracker.createdAt) tracker.createdAt = new Date().toISOString();
 
     if (type === 'dropdown') {
         const rows = [...document.querySelectorAll('#optionsList .option-row')];
@@ -455,22 +867,28 @@ async function saveTracker(e) {
         const options = rows.map(row => {
             const titleInput = row.querySelector('.option-title');
             const colorPicker = row.querySelector('.color-picker-wrapper');
+            const numericInput = row.querySelector('.option-numeric-input');
+            const nv = numericInput.value.trim();
             return {
                 title: titleInput.value.trim(),
-                color: colorPicker.dataset.selectedColor
+                color: colorPicker.dataset.selectedColor,
+                numericValue: nv !== '' ? parseFloat(nv) : undefined
             };
         });
 
         if (options.some(o => !o.title)) return alert('Fill in all option names');
         tracker.options = options;
-        
-        // Save display style
-        const displayStyle = document.querySelector('input[name="displayStyle"]:checked').value;
-        tracker.displayStyle = displayStyle;
+        tracker.displayStyle = document.querySelector('input[name="displayStyle"]:checked').value;
 
     } else if (type === 'numeric') {
         tracker.numericPrefix = document.getElementById('numericPrefix').value.trim();
         tracker.numericSuffix = document.getElementById('numericSuffix').value.trim();
+
+    } else if (type === 'yesno') {
+        const yv = document.getElementById('yesValue').value.trim();
+        const nv = document.getElementById('noValue').value.trim();
+        tracker.yesValue = yv !== '' ? parseFloat(yv) : 1;
+        tracker.noValue = nv !== '' ? parseFloat(nv) : 0;
     }
 
     if (editingId) {
@@ -492,112 +910,53 @@ async function confirmDelete(id, title) {
 
 /* ═══ UTILS ═════════════════════════════════════════════════ */
 function typeLabel(t) {
-    return {dropdown:'Dropdown', yesno:'Yes/No', numeric:'Numeric', text:'Text'}[t] || 'Dropdown';
+    return { dropdown: 'Dropdown', yesno: 'Yes/No', numeric: 'Numeric', text: 'Text' }[t] || 'Dropdown';
 }
 
 /* ═══ BOOT ══════════════════════════════════════════════════ */
 initDB();
 </script>
 
-
-
-
-
-
-
-    <script>
-        /**
- * theme.js  —  drop this into every page
- *
- * What it does:
- *  1. On load: reads saved preference from localStorage.
- *              Falls back to OS preference (prefers-color-scheme).
- *              Applies data-theme to <html> BEFORE paint (no flash).
- *  2. Toggle:  clicking .theme-toggle cycles light ↔ dark and saves choice.
- *  3. Sync:    listens for OS-level changes in case the user switches in
- *              system settings and has no manual preference saved.
- */
-
+<script>
 (function () {
-  const STORAGE_KEY = 'theme';
-  const LIGHT = 'light';
-  const DARK  = 'dark';
-
-  // ── 1. Resolve theme ────────────────────────────────────────
-  function getSystemTheme() {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? DARK : LIGHT;
-  }
-
-  function getSavedTheme() {
-    return localStorage.getItem(STORAGE_KEY); // null if never set
-  }
-
-  function resolveTheme() {
-    return getSavedTheme() || getSystemTheme();
-  }
-
-  // ── 2. Apply theme ──────────────────────────────────────────
-  function applyTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    // Update every toggle button icon on the page
-    document.querySelectorAll('.theme-toggle').forEach(btn => {
-      btn.textContent = theme === DARK ? '☀️' : '🌙';
-      btn.setAttribute('aria-label', theme === DARK ? 'Switch to light mode' : 'Switch to dark mode');
-    });
-  }
-
-  // ── 3. Toggle ───────────────────────────────────────────────
-  function toggleTheme() {
-    const current = document.documentElement.getAttribute('data-theme') || resolveTheme();
-    const next    = current === DARK ? LIGHT : DARK;
-    localStorage.setItem(STORAGE_KEY, next);
-    applyTheme(next);
-  }
-
-  // ── 4. Wire up toggle buttons (works for buttons added later too) ──
-  //    We use event delegation on <body> so it works even if the button
-  //    is injected by JS after DOMContentLoaded.
-  function attachToggle() {
-    document.body.addEventListener('click', function (e) {
-      if (e.target.closest('.theme-toggle')) toggleTheme();
-    });
-  }
-
-  // ── 5. Sync with OS changes (only if user has no saved pref) ──
-  function watchSystemTheme() {
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
-      if (!getSavedTheme()) {
-        applyTheme(e.matches ? DARK : LIGHT);
-      }
-    });
-  }
-
-  // ── INIT ─────────────────────────────────────────────────────
-  // Apply before first paint to avoid flash
-  applyTheme(resolveTheme());
-
-  // Wire up after DOM is ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', attachToggle);
-  } else {
-    attachToggle();
-  }
-
-  watchSystemTheme();
+    const STORAGE_KEY = 'theme', LIGHT = 'light', DARK = 'dark';
+    function getSystemTheme() { return window.matchMedia('(prefers-color-scheme: dark)').matches ? DARK : LIGHT; }
+    function getSavedTheme() { return localStorage.getItem(STORAGE_KEY); }
+    function resolveTheme() { return getSavedTheme() || getSystemTheme(); }
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        document.querySelectorAll('.theme-toggle').forEach(btn => {
+            btn.textContent = theme === DARK ? '☀️' : '🌙';
+            btn.setAttribute('aria-label', theme === DARK ? 'Switch to light mode' : 'Switch to dark mode');
+        });
+    }
+    function toggleTheme() {
+        const current = document.documentElement.getAttribute('data-theme') || resolveTheme();
+        const next = current === DARK ? LIGHT : DARK;
+        localStorage.setItem(STORAGE_KEY, next);
+        applyTheme(next);
+    }
+    function attachToggle() {
+        document.body.addEventListener('click', function (e) { if (e.target.closest('.theme-toggle')) toggleTheme(); });
+    }
+    function watchSystemTheme() {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) { if (!getSavedTheme()) applyTheme(e.matches ? DARK : LIGHT); });
+    }
+    applyTheme(resolveTheme());
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', attachToggle); } else { attachToggle(); }
+    watchSystemTheme();
 })();
 </script>
 
-  <script>
-    // Register Service Worker
+<script>
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
-          .then(() => console.log("Service Worker Registered"))
-          .catch(err => console.log("SW failed:", err));
-      });
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log("Service Worker Registered"))
+                .catch(err => console.log("SW failed:", err));
+        });
     }
-  </script>
-
+</script>
 
 </body>
 </html>

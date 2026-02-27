@@ -62,7 +62,7 @@
         </div>
 
         <!-- Font Size -->
-        <div class="form-group">
+        <div class="form-group" style="display:none;">
             <label class="form-label">Font Size</label>
             <div class="slider-container">
                 <div class="slider-label" id="fontSizeLabel">Medium (16px)</div>
@@ -88,7 +88,7 @@
     </div>
 
     <!-- ── LANGUAGE & REGION ────────────────────────────── -->
-    <div class="section">
+    <div class="section" style="display:none;">
 
         <div class="section-title">Language &amp; Region</div>
 
@@ -126,7 +126,7 @@
         <div class="section-desc">Export or restore your tracker data.</div>
 
         <div style="margin-top:12px;">
-            <a href="backup.html" class="btn btn-primary">📦 Open Backup Page</a>
+            <a href="backup.html" class="btn btn-primary"  style="text-decoration: none;">📦 Open Backup Page</a>
         </div>
 
     </div>
@@ -139,7 +139,7 @@
         <div class="section-desc">We’re trying hard to improve it, so your feedback would be greatly appreciated.😊</div>
 
         <div style="margin-top:12px;">
-            <a href="mailto:sushilfiles@gmail.com" class="btn btn-primary">📧 sushilfiles@gmail.com</a>
+            <a href="" class="btn btn-primary" style="text-decoration: none;">📧 <span >sushilfiles@gmail.com</span></a>
         </div>
 
     </div>
@@ -155,23 +155,23 @@
             <label class="form-label">PWA Offline Cache</label>
             <div class="section-desc" style="margin-bottom: 10px;">
                 Removes all Service Worker cache files (scripts, styles, images, etc.).
-                Your IndexedDB data will <strong>not</strong> be affected.
+                Your tracker data will <strong>not</strong> be affected.
             </div>
             <button class="btn btn-danger" id="btnPurgeCache" onclick="purgeOfflineCache()">
                 🗑️ Purge Offline Cache
             </button>
         </div>
 
-        <!-- Purge IndexedDB -->
+        <!-- Clear All Site Data -->
         <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label">IndexedDB Data</label>
+            <label class="form-label">Clear All Site Data</label>
             <div class="section-desc" style="margin-bottom: 10px;">
-                Permanently deletes all tracker and entry data stored in IndexedDB (trackers you have created and all logged entries).
-                Quick Start Templates are built into the app and will still be available, but any trackers created from them will be gone.
-                Export a backup first if needed.
+                Nuclear option — permanently removes <strong>everything</strong>: IndexedDB, localStorage,
+                sessionStorage, and all PWA/Service Worker caches. The app will return to a completely
+                fresh state. Export a backup first if needed.
             </div>
-            <button class="btn btn-danger" id="btnPurgeIDB" onclick="purgeIndexedDB()">
-                🗑️ Purge IndexedDB
+            <button class="btn btn-danger" id="btnClearAll" onclick="clearAllSiteData()">
+                🗑️ Clear All Site Data
             </button>
         </div>
 
@@ -202,14 +202,13 @@
 
 </div><!-- /.container -->
 <div class="bottom-navigation">
-    <div><a href="trackers.html"><img src="folder-icon.svg" alt=""/>Tracker</a></div>
-    <div><a href="report.html"><img src="report-icon.svg" alt=""/>Report</a></div>
-    <div><a href="index.html" class="active" aria-current="page"><img src="today-icon.svg" alt=""/>My Day</a></div>
-    <div><a href="chatbot.html" ><img src="ai_icon.png" alt=""/>AI Chat</a></div>
-    <div><a href="settings.html" class="active" aria-current="page"><img src="setting-icon.svg" alt=""/>Settings</a></div>
-  </div>
+            <div><a href="trackers.html"><img src="folder-icon.svg"/>Tracker</a></div>
+            <div><a href="report.html"><img src="report-icon.svg"/>Report</a></div>
+            <div><a href="index.html"><img src="today-icon.svg"/>My Day</a></div>
+            <div><a href="settings.html"><img src="setting-icon.svg"/>Settings</a></div>
+        </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 /* ═══════════════════════════════════════════════════════════
    SETTINGS  —  settings.html
    All preferences are persisted in localStorage under the
@@ -421,26 +420,67 @@ async function purgeOfflineCache() {
     }
 }
 
-async function purgeIndexedDB() {
-    const btn = document.getElementById('btnPurgeIDB');
-    if (!confirm('⚠️ WARNING: This will permanently delete ALL tracker data stored in IndexedDB.\n\nThis includes every tracker and every entry you have logged.\nThe Quick Start Templates themselves will remain, but any trackers you created from them will be gone.\n\nExport a backup first if you want to keep your data.\n\nThis CANNOT be undone. Continue?')) return;
+async function clearAllSiteData() {
+    const btn = document.getElementById('btnClearAll');
+    if (!confirm('⚠️ CLEAR ALL SITE DATA\n\nThis will permanently delete EVERYTHING:\n• All IndexedDB databases (trackers & entries)\n• localStorage (settings, theme, etc.)\n• sessionStorage\n• All PWA / Service Worker caches\n\nThe app will reset to a completely fresh state.\nExport a backup first if you want to keep your data.\n\nThis CANNOT be undone. Continue?')) return;
     btn.disabled = true;
-    btn.textContent = '⏳ Purging…';
+    btn.textContent = '⏳ Clearing…';
+    const errors = [];
+
+    // 1. IndexedDB
     try {
         const dbs = await indexedDB.databases();
         await Promise.all(dbs.map(db => new Promise((resolve, reject) => {
             const req = indexedDB.deleteDatabase(db.name);
             req.onsuccess = resolve;
             req.onerror   = () => reject(req.error);
-            req.onblocked = resolve; // proceed even if blocked
+            req.onblocked = resolve;
         })));
-        showToast('IndexedDB purged ✓');
     } catch (err) {
-        console.error(err);
-        showToast('Error purging IndexedDB');
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = '🗑️ Purge IndexedDB';
+        console.error('IndexedDB clear error:', err);
+        errors.push('IndexedDB');
+    }
+
+    // 2. localStorage & sessionStorage
+    try {
+        localStorage.clear();
+        sessionStorage.clear();
+    } catch (err) {
+        console.error('Storage clear error:', err);
+        errors.push('localStorage/sessionStorage');
+    }
+
+    // 3. PWA / Service Worker caches
+    try {
+        if ('caches' in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(k => caches.delete(k)));
+        }
+    } catch (err) {
+        console.error('Cache clear error:', err);
+        errors.push('PWA cache');
+    }
+
+    // 4. Unregister Service Workers
+    try {
+        if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(registrations.map(r => r.unregister()));
+        }
+    } catch (err) {
+        console.error('SW unregister error:', err);
+        errors.push('Service Worker');
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '🗑️ Clear All Site Data';
+
+    if (errors.length) {
+        showToast('Partial clear — errors: ' + errors.join(', '));
+    } else {
+        showToast('All site data cleared ✓');
+        // Brief delay so the user sees the toast, then reload to fresh state
+        setTimeout(() => location.reload(), 1800);
     }
 }
 
@@ -457,11 +497,10 @@ populateTimezones();
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js')
-          .then(() => console.log("Service Worker Registered"))
-          .catch(err => console.log("SW failed:", err));
+          .then(reg => console.log('SW registered:', reg.scope))
+          .catch(err => console.error('SW registration failed:', err));
       });
     }
   </script>
-
 </body>
 </html>

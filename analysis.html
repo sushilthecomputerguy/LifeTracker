@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#fef5eb">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <h1>Analysis</h1>
+    <p class="subtitle">Explore correlations between your trackers</p>
+
+    <!-- Tracker Selection -->
+    <div class="card" style="margin-bottom:16px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:end;">
+            <div class="form-group" style="margin:0">
+                <label class="form-label">Tracker A</label>
+                <select id="trackerA" class="form-select" onchange="onTrackerChange()">
+                    <option value="">— Select tracker —</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin:0">
+                <label class="form-label">Tracker B</label>
+                <select id="trackerB" class="form-select" onchange="onTrackerChange()">
+                    <option value="">— Select tracker —</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Date Range -->
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;margin-top:16px;">
+            <div class="form-group" style="margin:0">
+                <label class="form-label">From</label>
+                <input type="date" id="dateFrom" class="form-input">
+            </div>
+            <div class="form-group" style="margin:0">
+                <label class="form-label">To</label>
+                <input type="date" id="dateTo" class="form-input">
+            </div>
+            <button class="btn btn-primary" onclick="runAnalysis()" style="white-space:nowrap;">
+                🔍 Analyse
+            </button>
+        </div>
+
+        <!-- Quick range presets -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+            <button class="btn btn-outline btn-small" onclick="setRange(7)">Last 7 days</button>
+            <button class="btn btn-outline btn-small" onclick="setRange(30)">Last 30 days</button>
+            <button class="btn btn-outline btn-small" onclick="setRange(90)">Last 90 days</button>
+            <button class="btn btn-outline btn-small" onclick="setRange(365)">Last year</button>
+            <button class="btn btn-outline btn-small" onclick="setRange(null)">All time</button>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div id="resultsArea" style="display:none;">
+
+        <!-- Correlation Card -->
+        <div class="card correlation-card" id="correlationCard" style="margin-bottom:16px;text-align:center;">
+            <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">Pearson Correlation (r)</div>
+            <div id="correlationValue" style="font-size:48px;font-weight:800;line-height:1;"></div>
+            <div id="correlationLabel" style="font-size:15px;font-weight:600;margin-top:6px;"></div>
+            <div id="correlationDesc" style="font-size:13px;color:var(--text-muted);margin-top:4px;"></div>
+            <div id="pValueRow" style="font-size:12px;color:var(--text-faint);margin-top:8px;"></div>
+            <div id="sampleSize" style="font-size:12px;color:var(--text-faint);margin-top:2px;"></div>
+        </div>
+
+        <!-- Scatter Plot -->
+        <div class="card" style="margin-bottom:16px;">
+            <h3 style="margin:0 0 12px;font-size:15px;">Scatter Plot</h3>
+            <div style="position:relative;height:280px;">
+                <canvas id="scatterChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Time Series -->
+        <div class="card" style="margin-bottom:16px;">
+            <h3 style="margin:0 0 12px;font-size:15px;">Timeline</h3>
+            <div style="position:relative;height:280px;">
+                <canvas id="timelineChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="card" style="margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <h3 style="margin:0;font-size:15px;">Matched Data Points</h3>
+                <span id="matchedCount" style="font-size:12px;color:var(--text-muted);"></span>
+            </div>
+            <div style="overflow-x:auto;">
+                <table id="dataTable" class="analysis-table">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Empty / Error state -->
+    <div id="emptyState" class="empty-state" style="display:none;">
+        <div class="icon">📈</div>
+        <p id="emptyMsg">Select two trackers and click Analyse.</p>
+    </div>
+
+</div>
+
+<div class="bottom-navigation">
+    <div><a href="trackers.html"><img src="folder-icon.svg"/>Tracker</a></div>
+    <div><a href="report.html"><img src="report-icon.svg"/>Report</a></div>
+    <div><a href="index.html"><img src="today-icon.svg"/>My Day</a></div>
+    <div><a href="settings.html"><img src="setting-icon.svg"/>Settings</a></div>
+</div>
+
+<style>
+.card {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-card);
+}
+
+.correlation-card {
+    border-top: 4px solid var(--accent, #e07b39);
+}
+
+.analysis-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+.analysis-table th {
+    text-align: left;
+    padding: 8px 10px;
+    background: var(--bg-subtle);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 12px;
+    border-bottom: 1px solid var(--border);
+}
+.analysis-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border-faint);
+    color: var(--text-body);
+}
+.analysis-table tr:last-child td { border-bottom: none; }
+.analysis-table tr:hover td { background: var(--bg-hover); }
+
+/* Correlation strength colors */
+.corr-strong-pos  { color: #27ae60; }
+.corr-moderate-pos { color: #2980b9; }
+.corr-weak        { color: var(--text-muted); }
+.corr-moderate-neg { color: #e67e22; }
+.corr-strong-neg  { color: #c0392b; }
+
+.value-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--bg-subtle);
+}
+</style>
+
+<script>
+/* ═══════════════════════════════════════════════
+   DB
+═══════════════════════════════════════════════ */
+const DB_NAME = 'TrackerDB';
+const DB_VERSION = 4;
+let db;
+
+function initDB() {
+    return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+
+        req.onupgradeneeded = (e) => {
+            const d = e.target.result;
+            if (!d.objectStoreNames.contains('trackers')) {
+                d.createObjectStore('trackers', { keyPath: 'id', autoIncrement: true });
+            }
+            if (!d.objectStoreNames.contains('dailySelections')) {
+                d.createObjectStore('dailySelections', { keyPath: 'date' });
+            }
+        };
+
+        req.onsuccess = (e) => {
+            db = e.target.result;
+            resolve(db);
+        };
+
+        req.onerror = () => reject(req.error);
+    });
+}
+
+function getAllTrackers() {
+    return new Promise((res, rej) => {
+        const req = db.transaction(['trackers'], 'readonly').objectStore('trackers').getAll();
+        req.onsuccess = () => res(req.result);
+        req.onerror = () => rej(req.error);
+    });
+}
+
+function getAllDailySelections() {
+    return new Promise((res, rej) => {
+        const req = db.transaction(['dailySelections'], 'readonly').objectStore('dailySelections').getAll();
+        req.onsuccess = () => res(req.result);
+        req.onerror = () => rej(req.error);
+    });
+}
+
+/* ═══════════════════════════════════════════════
+   NUMERIC VALUE RESOLUTION
+   Given a tracker and a raw selection value,
+   return the numeric score (or null if not set).
+═══════════════════════════════════════════════ */
+function resolveNumericValue(tracker, selectionValue) {
+    if (!tracker || selectionValue === undefined || selectionValue === null || selectionValue === '') return null;
+
+    const type = tracker.type || 'dropdown';
+
+    if (type === 'numeric') {
+        const n = parseFloat(selectionValue);
+        return isNaN(n) ? null : n;
+    }
+
+    if (type === 'yesno') {
+        const yv = tracker.yesValue ?? 1;
+        const nv = tracker.noValue ?? 0;
+        if (selectionValue === 'yes') return yv;
+        if (selectionValue === 'no') return nv;
+        return null;
+    }
+
+    if (type === 'dropdown') {
+        const idx = parseInt(selectionValue);
+        if (isNaN(idx) || !tracker.options || !tracker.options[idx]) return null;
+        const opt = tracker.options[idx];
+        // Use explicitly set numericValue; fallback to index (0-based positional)
+        return opt.numericValue !== undefined ? opt.numericValue : idx;
+    }
+
+    // text → not numeric
+    return null;
+}
+
+/* ═══════════════════════════════════════════════
+   SELECTION LABEL (human-readable)
+═══════════════════════════════════════════════ */
+function resolveLabel(tracker, selectionValue) {
+    if (!tracker || selectionValue === undefined || selectionValue === null || selectionValue === '') return '—';
+    const type = tracker.type || 'dropdown';
+    if (type === 'numeric') return selectionValue;
+    if (type === 'yesno') return selectionValue === 'yes' ? 'Yes' : 'No';
+    if (type === 'dropdown') {
+        const idx = parseInt(selectionValue);
+        if (!isNaN(idx) && tracker.options && tracker.options[idx]) return tracker.options[idx].title;
+    }
+    return String(selectionValue);
+}
+
+function resolveColor(tracker, selectionValue) {
+    if (!tracker) return '#888';
+    const type = tracker.type || 'dropdown';
+    if (type === 'dropdown') {
+        const idx = parseInt(selectionValue);
+        if (!isNaN(idx) && tracker.options && tracker.options[idx]) return tracker.options[idx].color;
+    }
+    if (type === 'yesno') return selectionValue === 'yes' ? '#27ae60' : '#c0392b';
+    return 'var(--accent, #e07b39)';
+}
+
+/* ═══════════════════════════════════════════════
+   STATISTICS
+═══════════════════════════════════════════════ */
+function pearsonCorrelation(xs, ys) {
+    const n = xs.length;
+    if (n < 2) return NaN;
+
+    const meanX = xs.reduce((a, b) => a + b, 0) / n;
+    const meanY = ys.reduce((a, b) => a + b, 0) / n;
+
+    let num = 0, sdX = 0, sdY = 0;
+    for (let i = 0; i < n; i++) {
+        const dx = xs[i] - meanX;
+        const dy = ys[i] - meanY;
+        num += dx * dy;
+        sdX += dx * dx;
+        sdY += dy * dy;
+    }
+
+    const denom = Math.sqrt(sdX * sdY);
+    if (denom === 0) return NaN;
+    return num / denom;
+}
+
+// t-distribution CDF approximation (two-tailed p-value)
+function pValue(r, n) {
+    if (n < 3 || isNaN(r)) return NaN;
+    const t = r * Math.sqrt((n - 2) / (1 - r * r));
+    const df = n - 2;
+    // approximation via regularised incomplete beta
+    const x = df / (df + t * t);
+    const p = 1 - incompleteBeta(x, df / 2, 0.5);
+    return Math.min(1, 2 * p); // two-tailed
+}
+
+function incompleteBeta(x, a, b) {
+    // continued fraction approximation (Lentz)
+    if (x < 0 || x > 1) return NaN;
+    if (x === 0) return 0;
+    if (x === 1) return 1;
+    const lbeta = lgamma(a) + lgamma(b) - lgamma(a + b);
+    const front = Math.exp(Math.log(x) * a + Math.log(1 - x) * b - lbeta) / a;
+    return front * cf(x, a, b);
+}
+
+function cf(x, a, b) {
+    const MAX_ITER = 200, EPS = 3e-7;
+    let f = 1, C = f, D = 0;
+    for (let m = 0; m <= MAX_ITER; m++) {
+        const d1 = m === 0 ? 1 :
+            (m % 2 === 1
+                ? -(a + Math.floor(m / 2)) * (a + b + Math.floor(m / 2)) * x / ((a + m - 1) * (a + m))
+                : Math.floor(m / 2) * (b - Math.floor(m / 2)) * x / ((a + m - 1) * (a + m)));
+        D = 1 + d1 * D; if (Math.abs(D) < 1e-30) D = 1e-30;
+        C = 1 + d1 / C; if (Math.abs(C) < 1e-30) C = 1e-30;
+        D = 1 / D;
+        const delta = C * D;
+        f *= delta;
+        if (Math.abs(delta - 1) < EPS) break;
+    }
+    return f;
+}
+
+function lgamma(z) {
+    // Lanczos approximation
+    const p = [676.5203681218851, -1259.1392167224028, 771.32342877765313,
+        -176.61502916214059, 12.507343278686905, -0.13857109526572012,
+        9.9843695780195716e-6, 1.5056327351493116e-7];
+    let x = z, y = x + 7.5;
+    let s = 0.99999999999980993;
+    for (let i = 0; i < 8; i++) s += p[i] / (x + i + 1);
+    return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(y) - y + Math.log(s / x);
+}
+
+/* ═══════════════════════════════════════════════
+   CORRELATION LABEL
+═══════════════════════════════════════════════ */
+function correlationInfo(r) {
+    const abs = Math.abs(r);
+    if (isNaN(r)) return { label: 'N/A', desc: 'Not enough data', cls: 'corr-weak' };
+    if (abs >= 0.7) return {
+        label: r > 0 ? 'Strong Positive' : 'Strong Negative',
+        desc: r > 0 ? 'These trackers tend to rise and fall together.' : 'When one is high, the other tends to be low.',
+        cls: r > 0 ? 'corr-strong-pos' : 'corr-strong-neg'
+    };
+    if (abs >= 0.4) return {
+        label: r > 0 ? 'Moderate Positive' : 'Moderate Negative',
+        desc: r > 0 ? 'There is a noticeable tendency to move together.' : 'There is a noticeable inverse tendency.',
+        cls: r > 0 ? 'corr-moderate-pos' : 'corr-moderate-neg'
+    };
+    if (abs >= 0.2) return {
+        label: r > 0 ? 'Weak Positive' : 'Weak Negative',
+        desc: 'A slight pattern exists but it\'s not very strong.',
+        cls: 'corr-weak'
+    };
+    return { label: 'Little / No Correlation', desc: 'No meaningful linear relationship detected.', cls: 'corr-weak' };
+}
+
+/* ═══════════════════════════════════════════════
+   CHART INSTANCES
+═══════════════════════════════════════════════ */
+let scatterChart = null;
+let timelineChart = null;
+
+function destroyCharts() {
+    if (scatterChart) { scatterChart.destroy(); scatterChart = null; }
+    if (timelineChart) { timelineChart.destroy(); timelineChart = null; }
+}
+
+/* ═══════════════════════════════════════════════
+   UI HELPERS
+═══════════════════════════════════════════════ */
+function setRange(days) {
+    const today = new Date();
+    const toStr = today.toISOString().split('T')[0];
+    document.getElementById('dateTo').value = toStr;
+
+    if (days === null) {
+        document.getElementById('dateFrom').value = '';
+    } else {
+        const from = new Date(today);
+        from.setDate(from.getDate() - days + 1);
+        document.getElementById('dateFrom').value = from.toISOString().split('T')[0];
+    }
+}
+
+function onTrackerChange() {
+    // If both selected, auto-run
+    const a = document.getElementById('trackerA').value;
+    const b = document.getElementById('trackerB').value;
+    if (a && b && a !== b) runAnalysis();
+}
+
+/* ═══════════════════════════════════════════════
+   MAIN ANALYSIS
+═══════════════════════════════════════════════ */
+async function runAnalysis() {
+    const idA = parseInt(document.getElementById('trackerA').value);
+    const idB = parseInt(document.getElementById('trackerB').value);
+
+    if (!idA || !idB) {
+        showEmpty('Please select two trackers to compare.');
+        return;
+    }
+    if (idA === idB) {
+        showEmpty('Please select two different trackers.');
+        return;
+    }
+
+    const [allTrackers, allSelections] = await Promise.all([getAllTrackers(), getAllDailySelections()]);
+
+    const trackerA = allTrackers.find(t => t.id === idA);
+    const trackerB = allTrackers.find(t => t.id === idB);
+
+    if (!trackerA || !trackerB) {
+        showEmpty('Could not find one or both trackers.');
+        return;
+    }
+
+    // Filter non-numeric types
+    if (trackerA.type === 'text' || trackerB.type === 'text') {
+        showEmpty('Text-type trackers cannot be analysed numerically. Please choose dropdown, yes/no, or numeric trackers.');
+        return;
+    }
+
+    // Date filtering
+    const dateFrom = document.getElementById('dateFrom').value;
+    const dateTo = document.getElementById('dateTo').value;
+
+    // Build matched data: only dates where both trackers have values
+    const points = [];
+
+    for (const dayRecord of allSelections) {
+        const date = dayRecord.date;
+
+        // Date range filter
+        if (dateFrom && date < dateFrom) continue;
+        if (dateTo && date > dateTo) continue;
+
+        const sels = dayRecord.selections || {};
+
+        const selA = sels[idA];
+        const selB = sels[idB];
+
+        if (!selA || !selB) continue;
+
+        const numA = resolveNumericValue(trackerA, selA.value);
+        const numB = resolveNumericValue(trackerB, selB.value);
+
+        if (numA === null || numB === null) continue;
+
+        points.push({
+            date,
+            rawA: selA.value, labelA: resolveLabel(trackerA, selA.value), colorA: resolveColor(trackerA, selA.value),
+            rawB: selB.value, labelB: resolveLabel(trackerB, selB.value), colorB: resolveColor(trackerB, selB.value),
+            numA, numB
+        });
+    }
+
+    // Sort by date
+    points.sort((a, b) => a.date.localeCompare(b.date));
+
+    if (points.length < 2) {
+        showEmpty(`Not enough overlapping data. Found ${points.length} day(s) where both "${trackerA.title}" and "${trackerB.title}" were recorded. Need at least 2 to compute correlation.`);
+        return;
+    }
+
+    // Compute correlation
+    const xs = points.map(p => p.numA);
+    const ys = points.map(p => p.numB);
+    const r = pearsonCorrelation(xs, ys);
+    const pv = pValue(r, points.length);
+    const info = correlationInfo(r);
+
+    showResults(trackerA, trackerB, points, r, pv, info);
+}
+
+function showEmpty(msg) {
+    document.getElementById('resultsArea').style.display = 'none';
+    const el = document.getElementById('emptyState');
+    el.style.display = '';
+    document.getElementById('emptyMsg').textContent = msg;
+    destroyCharts();
+}
+
+function showResults(trackerA, trackerB, points, r, pv, info) {
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('resultsArea').style.display = '';
+
+    // Correlation card
+    const rDisplay = isNaN(r) ? 'N/A' : r.toFixed(3);
+    document.getElementById('correlationValue').textContent = rDisplay;
+    document.getElementById('correlationValue').className = info.cls;
+    document.getElementById('correlationLabel').textContent = info.label;
+    document.getElementById('correlationLabel').className = info.cls;
+    document.getElementById('correlationDesc').textContent = info.desc;
+
+    const pDisplay = isNaN(pv) ? '' : `p-value: ${pv < 0.001 ? '< 0.001' : pv.toFixed(3)}${pv < 0.05 ? ' ✓ statistically significant' : ''}`;
+    document.getElementById('pValueRow').textContent = pDisplay;
+    document.getElementById('sampleSize').textContent = `Based on ${points.length} overlapping day${points.length !== 1 ? 's' : ''}`;
+
+    // Border color based on correlation
+    const card = document.getElementById('correlationCard');
+    const borderColors = {
+        'corr-strong-pos': '#27ae60', 'corr-moderate-pos': '#2980b9',
+        'corr-weak': '#999', 'corr-moderate-neg': '#e67e22', 'corr-strong-neg': '#c0392b'
+    };
+    card.style.borderTopColor = borderColors[info.cls] || '#e07b39';
+
+    destroyCharts();
+
+    // ── Scatter Chart ──────────────────────────────────────
+    const scatterCtx = document.getElementById('scatterChart').getContext('2d');
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+    const textColor = isDark ? '#aaa' : '#666';
+
+    scatterChart = new Chart(scatterCtx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: `${trackerA.title} vs ${trackerB.title}`,
+                data: points.map(p => ({ x: p.numA, y: p.numB, label: p.date, la: p.labelA, lb: p.labelB })),
+                backgroundColor: points.map(p => p.colorA + 'cc'),
+                borderColor: points.map(p => p.colorA),
+                pointRadius: 7,
+                pointHoverRadius: 9,
+                borderWidth: 1.5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        title: (items) => items[0].raw.label,
+                        label: (item) => [`${trackerA.title}: ${item.raw.la} (${item.raw.x})`, `${trackerB.title}: ${item.raw.lb} (${item.raw.y})`]
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: { display: true, text: trackerA.title, color: textColor, font: { size: 12 } },
+                    grid: { color: gridColor },
+                    ticks: { color: textColor }
+                },
+                y: {
+                    title: { display: true, text: trackerB.title, color: textColor, font: { size: 12 } },
+                    grid: { color: gridColor },
+                    ticks: { color: textColor }
+                }
+            }
+        }
+    });
+
+    // ── Timeline Chart ─────────────────────────────────────
+    const timeCtx = document.getElementById('timelineChart').getContext('2d');
+    const labels = points.map(p => {
+        const d = new Date(p.date + 'T00:00:00');
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
+
+    timelineChart = new Chart(timeCtx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: trackerA.title,
+                    data: points.map(p => p.numA),
+                    borderColor: '#e07b39',
+                    backgroundColor: '#e07b3920',
+                    tension: 0.3,
+                    fill: false,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    yAxisID: 'yA'
+                },
+                {
+                    label: trackerB.title,
+                    data: points.map(p => p.numB),
+                    borderColor: '#2980b9',
+                    backgroundColor: '#2980b920',
+                    tension: 0.3,
+                    fill: false,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    yAxisID: 'yB'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: {
+                    labels: { color: textColor, font: { size: 12 } }
+                },
+                tooltip: {
+                    callbacks: {
+                        afterLabel: (item) => {
+                            const p = points[item.dataIndex];
+                            return item.datasetIndex === 0 ? `  → ${p.labelA}` : `  → ${p.labelB}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: gridColor },
+                    ticks: { color: textColor, maxRotation: 45, font: { size: 11 } }
+                },
+                yA: {
+                    type: 'linear', position: 'left',
+                    title: { display: true, text: trackerA.title, color: '#e07b39', font: { size: 11 } },
+                    grid: { color: gridColor },
+                    ticks: { color: '#e07b39' }
+                },
+                yB: {
+                    type: 'linear', position: 'right',
+                    title: { display: true, text: trackerB.title, color: '#2980b9', font: { size: 11 } },
+                    grid: { drawOnChartArea: false },
+                    ticks: { color: '#2980b9' }
+                }
+            }
+        }
+    });
+
+    // ── Data Table ─────────────────────────────────────────
+    document.getElementById('matchedCount').textContent = `${points.length} records`;
+    const table = document.getElementById('dataTable');
+    table.querySelector('thead').innerHTML = `
+        <tr>
+            <th>Date</th>
+            <th>${trackerA.title}</th>
+            <th>Value</th>
+            <th>${trackerB.title}</th>
+            <th>Value</th>
+        </tr>`;
+    table.querySelector('tbody').innerHTML = points.map(p => `
+        <tr>
+            <td>${p.date}</td>
+            <td><span class="value-pill" style="background:${p.colorA}20;color:${p.colorA};border:1px solid ${p.colorA}40">${p.labelA}</span></td>
+            <td style="color:var(--text-muted)">${p.numA}</td>
+            <td><span class="value-pill" style="background:${p.colorB}20;color:${p.colorB};border:1px solid ${p.colorB}40">${p.labelB}</span></td>
+            <td style="color:var(--text-muted)">${p.numB}</td>
+        </tr>`).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════ */
+async function init() {
+    await initDB();
+
+    const trackers = await getAllTrackers();
+
+    const selA = document.getElementById('trackerA');
+    const selB = document.getElementById('trackerB');
+
+    const analyzable = trackers.filter(t => t.type !== 'text');
+
+    analyzable.forEach(t => {
+        const makeOpt = () => {
+            const o = document.createElement('option');
+            o.value = t.id;
+            o.textContent = `${t.title} (${t.type})`;
+            return o;
+        };
+        selA.appendChild(makeOpt());
+        selB.appendChild(makeOpt());
+    });
+
+    if (analyzable.length < 2) {
+        showEmpty('You need at least 2 analyzable trackers (dropdown, yes/no, or numeric). Go to Trackers to create some.');
+        return;
+    }
+
+    // Default date range: last 30 days
+    setRange(30);
+
+    showEmpty('Select two trackers and click Analyse.');
+}
+
+init();
+</script>
+
+<script>
+(function () {
+    const STORAGE_KEY = 'theme', LIGHT = 'light', DARK = 'dark';
+    function getSystemTheme() { return window.matchMedia('(prefers-color-scheme: dark)').matches ? DARK : LIGHT; }
+    function getSavedTheme() { return localStorage.getItem(STORAGE_KEY); }
+    function resolveTheme() { return getSavedTheme() || getSystemTheme(); }
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        document.querySelectorAll('.theme-toggle').forEach(btn => {
+            btn.textContent = theme === DARK ? '☀️' : '🌙';
+            btn.setAttribute('aria-label', theme === DARK ? 'Switch to light mode' : 'Switch to dark mode');
+        });
+    }
+    function toggleTheme() {
+        const current = document.documentElement.getAttribute('data-theme') || resolveTheme();
+        const next = current === DARK ? LIGHT : DARK;
+        localStorage.setItem(STORAGE_KEY, next);
+        applyTheme(next);
+    }
+    function attachToggle() {
+        document.body.addEventListener('click', function (e) { if (e.target.closest('.theme-toggle')) toggleTheme(); });
+    }
+    function watchSystemTheme() {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) { if (!getSavedTheme()) applyTheme(e.matches ? DARK : LIGHT); });
+    }
+    applyTheme(resolveTheme());
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', attachToggle); } else { attachToggle(); }
+    watchSystemTheme();
+})();
+</script>
+
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log("Service Worker Registered"))
+                .catch(err => console.log("SW failed:", err));
+        });
+    }
+</script>
+
+</body>
+</html>

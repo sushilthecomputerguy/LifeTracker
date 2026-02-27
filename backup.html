@@ -11,7 +11,7 @@
     
 </head>
 <body>
-        <button class="theme-toggle" aria-label="Switch to dark mode">🌙</button>
+ 
 
 <div class="container">
     <h1>Backup &amp; Restore</h1>
@@ -20,8 +20,8 @@
     <div class="section">
         <h2 class="section-title">Export Backup</h2>
         <p class="section-desc">
-            Downloads every tracker and all your daily entries as one JSON file.
-            Each date in the file includes the tracker name, type, and the actual saved value — fully readable without the app.
+            Downloads every tracker and all your daily entries as one backup file.
+            Each date in the file includes the tracker name, type, and the actual saved value.
         </p>
 
         <button class="btn btn-primary" onclick="exportBackup()">📥 Download Backup</button>
@@ -44,7 +44,7 @@
     <div class="section">
         <h2 class="section-title">Import Backup</h2>
         <p class="section-desc">
-            Drop or choose a backup JSON file. A full preview of trackers and every date will appear before anything is written.
+            Drop or choose a backup file. A full preview of trackers and every date will appear before anything is written.
         </p>
 
         <!-- drop zone -->
@@ -53,7 +53,7 @@
             <div class="hint">Drag &amp; drop your backup file here</div>
             <div class="hint dim">or</div>
             <button class="btn btn-success" onclick="document.getElementById('fileInput').click()">Choose File</button>
-            <input type="file" id="fileInput" class="file-input" accept=".json" onchange="onFileChosen(event)">
+            <input type="file" id="fileInput" class="file-input" onchange="onFileChosen(event)">
         </div>
 
         <!-- mode -->
@@ -117,13 +117,32 @@
 <script>
 /* ═══ DB ═══════════════════════════════════════════════════ */
 let db;
-const DB_NAME    = 'TrackerDB';
-const STORE_NAME = 'trackers';
+const DB_NAME         = 'TrackerDB';
+const STORE_NAME      = 'trackers';
+const SELECTIONS_STORE = 'dailySelections';
+
+/* dbReady resolves with the open IDBDatabase — every helper awaits this
+   instead of reading the bare `db` variable, eliminating the race condition. */
+let dbReady;
 
 function initDB() {
-    const req = indexedDB.open(DB_NAME, 2);
-    req.onerror   = () => console.error('DB open failed');
-    req.onsuccess = () => { db = req.result; };
+    dbReady = new Promise((resolve, reject) => {
+        const probe = indexedDB.open(DB_NAME);
+        probe.onerror   = () => reject(new Error('DB probe failed'));
+        probe.onsuccess = () => {
+            const probeDb        = probe.result;
+            const currentVersion = probeDb.version;
+            const needsStore     = !probeDb.objectStoreNames.contains(SELECTIONS_STORE);
+            probeDb.close();
+            openDB(needsStore ? currentVersion + 1 : currentVersion, resolve, reject);
+        };
+    });
+}
+
+function openDB(version, resolve, reject) {
+    const req = indexedDB.open(DB_NAME, version);
+    req.onerror   = () => reject(req.error);
+    req.onsuccess = () => { db = req.result; resolve(db); };
     req.onupgradeneeded = (e) => {
         const d = e.target.result;
         if (!d.objectStoreNames.contains(STORE_NAME)) {
@@ -131,28 +150,68 @@ function initDB() {
             s.createIndex('title','title');
             s.createIndex('type','type');
         }
+        if (!d.objectStoreNames.contains(SELECTIONS_STORE)) {
+            d.createObjectStore(SELECTIONS_STORE, { keyPath:'date' });
+        }
     };
 }
 
-function getAllTrackers() {
+/* All DB helpers call this instead of using `db` directly */
+function getDB() { return dbReady; }
+
+async function getAllTrackers() {
+    const database = await getDB();
     return new Promise((res, rej) => {
-        const req = db.transaction([STORE_NAME],'readonly').objectStore(STORE_NAME).getAll();
+        const req = database.transaction([STORE_NAME],'readonly').objectStore(STORE_NAME).getAll();
         req.onsuccess = () => res(req.result);
         req.onerror   = () => rej(req.error);
     });
 }
 
-function addTracker(tracker) {
+async function getAllSelections() {
+    const database = await getDB();
     return new Promise((res, rej) => {
-        const req = db.transaction([STORE_NAME],'readwrite').objectStore(STORE_NAME).add(tracker);
-        req.onsuccess = () => res(req.result);   // new auto-inc id
+        const req = database.transaction([SELECTIONS_STORE],'readonly').objectStore(SELECTIONS_STORE).getAll();
+        req.onsuccess = () => {
+            const map = {};
+            req.result.forEach(record => { map[record.date] = record.selections; });
+            res(map);
+        };
+        req.onerror = () => rej(req.error);
+    });
+}
+
+async function addTracker(tracker) {
+    const database = await getDB();
+    return new Promise((res, rej) => {
+        const req = database.transaction([STORE_NAME],'readwrite').objectStore(STORE_NAME).add(tracker);
+        req.onsuccess = () => res(req.result);
         req.onerror   = () => rej(req.error);
     });
 }
 
-function clearDB() {
+async function putSelectionRecord(date, selections) {
+    const database = await getDB();
     return new Promise((res, rej) => {
-        const req = db.transaction([STORE_NAME],'readwrite').objectStore(STORE_NAME).clear();
+        const req = database.transaction([SELECTIONS_STORE],'readwrite').objectStore(SELECTIONS_STORE).put({ date, selections });
+        req.onsuccess = () => res();
+        req.onerror   = () => rej(req.error);
+    });
+}
+
+async function clearTrackers() {
+    const database = await getDB();
+    return new Promise((res, rej) => {
+        const req = database.transaction([STORE_NAME],'readwrite').objectStore(STORE_NAME).clear();
+        req.onsuccess = res;
+        req.onerror   = () => rej(req.error);
+    });
+}
+
+async function clearSelections() {
+    const database = await getDB();
+    return new Promise((res, rej) => {
+        const req = database.transaction([SELECTIONS_STORE],'readwrite').objectStore(SELECTIONS_STORE).clear();
         req.onsuccess = res;
         req.onerror   = () => rej(req.error);
     });
@@ -192,9 +251,9 @@ function resolveValue(tracker, rawValue) {
 /* ═══ EXPORT ═══════════════════════════════════════════════ */
 async function exportBackup() {
     try {
-        const trackers       = await getAllTrackers();
-        const dailySelections = JSON.parse(localStorage.getItem('dailySelections') || '{}');
-        const customTemplates = JSON.parse(localStorage.getItem('customTemplates')  || '[]');
+        const trackers        = await getAllTrackers();
+        const dailySelections = await getAllSelections();
+        const customTemplates = JSON.parse(localStorage.getItem('customTemplates') || '[]');
 
         // Build a tracker-id → tracker map for quick lookup
         const trackerMap = {};
@@ -222,13 +281,13 @@ async function exportBackup() {
             });
 
             return {
-                date:          dateKey,           // "2026-02-03"  — the machine key
-                dateFormatted: formatDate(dateKey), // "February 3, 2026"
+                date:          dateKey,
+                dateFormatted: formatDate(dateKey),
                 entries:       entries
             };
         });
 
-        /* final JSON payload */
+        /* final payload */
         const backup = {
             version:    '2.0',
             exportDate: new Date().toISOString(),
@@ -239,18 +298,23 @@ async function exportBackup() {
             }
         };
 
-        /* download */
-        const blob = new Blob([JSON.stringify(backup, null, 2)], { type:'application/json' });
+        /* Encode as base64 so the file isn't plain-readable JSON */
+        const jsonStr  = JSON.stringify(backup);
+        const encoded  = btoa(unescape(encodeURIComponent(jsonStr)));
+
+        /* Download with no extension */
+        const blob = new Blob([encoded], { type: 'application/octet-stream' });
         const url  = URL.createObjectURL(blob);
         const a    = document.createElement('a');
         a.href     = url;
-        a.download = `tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+        a.download = `tracker-backup-${new Date().toISOString().split('T')[0]}`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
 
-        showMsg('exportSuccess','exportSuccessText', 'Backup downloaded. The file contains all trackers and every tracked date.');
+        showMsg('exportSuccess','exportSuccessText',
+            `Backup downloaded — ${trackers.length} tracker${trackers.length !== 1 ? 's' : ''} and ${dates.length} date${dates.length !== 1 ? 's' : ''} saved.`);
 
     } catch (err) {
         console.error('Export error', err);
@@ -274,14 +338,23 @@ dropZone.addEventListener('drop', (e) => {
     dropZone.classList.remove('dragover');
     const file = e.dataTransfer.files[0];
     if (file) readFile(file);
-    else      showMsg('importError','importErrorText','Please drop a valid JSON backup file.');
+    else      showMsg('importError','importErrorText','Please drop a valid Tracker backup file.');
 });
 
 async function readFile(file) {
     hideAll();
     try {
         const text   = await file.text();
-        const backup = JSON.parse(text);
+
+        /* Support both new (base64-encoded) and legacy (plain JSON) backups */
+        let backup;
+        try {
+            const decoded = decodeURIComponent(escape(atob(text.trim())));
+            backup = JSON.parse(decoded);
+        } catch {
+            // Fallback: try plain JSON (legacy .json files)
+            backup = JSON.parse(text);
+        }
 
         // accept both v2 (dates array) and legacy (dailySelections object)
         if (!backup.version || !backup.data || !backup.data.trackers) {
@@ -295,7 +368,7 @@ async function readFile(file) {
 
     } catch (err) {
         console.error('Read error', err);
-        showMsg('importError','importErrorText','Invalid file — make sure it is a Tracker backup JSON.');
+        showMsg('importError','importErrorText','Invalid file — make sure it is a Tracker backup file.');
         pendingBackup = null;
         document.getElementById('previewPanel').classList.remove('show');
         document.getElementById('importBtnRow').classList.remove('show');
@@ -381,8 +454,8 @@ async function runImport() {
     const mode = document.querySelector('input[name="importMode"]:checked').value;
     if (mode === 'replace') {
         if (!confirm('Replace will permanently delete all data on this device. Continue?')) return;
-        await clearDB();
-        localStorage.removeItem('dailySelections');
+        await clearTrackers();
+        await clearSelections();
         localStorage.removeItem('customTemplates');
     }
 
@@ -431,15 +504,20 @@ async function runImport() {
             }
         }
 
-        /* ── 3. write dailySelections ── */
+        /* ── 3. write dailySelections to IndexedDB ── */
         if (mode === 'replace') {
-            localStorage.setItem('dailySelections', JSON.stringify(rebuilt));
+            for (const [date, selections] of Object.entries(rebuilt)) {
+                await putSelectionRecord(date, selections);
+            }
         } else {
-            const existing = JSON.parse(localStorage.getItem('dailySelections') || '{}');
+            // Merge: load existing records, merge per-date, write back
+            const existing = await getAllSelections();
             for (const [date, entries] of Object.entries(rebuilt)) {
                 existing[date] = { ...(existing[date] || {}), ...entries };
             }
-            localStorage.setItem('dailySelections', JSON.stringify(existing));
+            for (const [date, selections] of Object.entries(existing)) {
+                await putSelectionRecord(date, selections);
+            }
         }
 
         /* ── 4. write templates ── */

@@ -40,23 +40,42 @@
 </div>
 </div>
 <div class="bottom-navigation">
-    <div><a href="trackers.html"><img src="folder-icon.svg" alt=""/>Tracker</a></div>
-    <div><a href="report.html" class="active" aria-current="page" ><img src="report-icon.svg" alt=""/>Report</a></div>
-    <div><a href="index.html"><img src="today-icon.svg" alt=""/>My Day</a></div>
-    <div><a href="chatbot.html" ><img src="ai_icon.png" alt=""/>AI Chat</a></div>
-    <div><a href="settings.html" class="active" aria-current="page"><img src="setting-icon.svg" alt=""/>Settings</a></div>
-  </div>
+            <div><a href="trackers.html"><img src="folder-icon.svg"/>Tracker</a></div>
+            <div><a href="report.html"><img src="report-icon.svg"/>Report</a></div>
+            <div><a href="index.html"><img src="today-icon.svg"/>My Day</a></div>
+            <div><a href="settings.html"><img src="setting-icon.svg"/>Settings</a></div>
+        </div>
 
 <script>
 /* ═══ DB ═══════════════════════════════════════════════════ */
 let db;
-const DB_NAME    = 'TrackerDB';
-const STORE_NAME = 'trackers';
+let dbReady;
+const DB_NAME         = 'TrackerDB';
+const STORE_NAME      = 'trackers';
+const SELECTIONS_STORE = 'dailySelections';
 
 function initDB() {
-    const req = indexedDB.open(DB_NAME, 2);
-    req.onerror   = () => console.error('DB open failed');
-    req.onsuccess = () => { db = req.result; populateTrackerDropdown(); };
+    // Probe first to read the live version and check which stores exist,
+    // then open at current version (or bump by 1 if the selections store is missing).
+    dbReady = new Promise((resolve, reject) => {
+        const probe = indexedDB.open(DB_NAME);
+        probe.onerror   = () => reject(new Error('DB probe failed'));
+        probe.onsuccess = () => {
+            const probeDb        = probe.result;
+            const currentVersion = probeDb.version;
+            const needsStore     = !probeDb.objectStoreNames.contains(SELECTIONS_STORE);
+            probeDb.close();
+            openDB(needsStore ? currentVersion + 1 : currentVersion, resolve, reject);
+        };
+    });
+
+    dbReady.then(() => populateTrackerDropdown()).catch(err => console.error('DB init failed', err));
+}
+
+function openDB(version, resolve, reject) {
+    const req = indexedDB.open(DB_NAME, version);
+    req.onerror   = () => reject(req.error);
+    req.onsuccess = () => { db = req.result; resolve(db); };
     req.onupgradeneeded = (e) => {
         const d = e.target.result;
         if (!d.objectStoreNames.contains(STORE_NAME)) {
@@ -64,22 +83,43 @@ function initDB() {
             s.createIndex('title','title');
             s.createIndex('type','type');
         }
+        if (!d.objectStoreNames.contains(SELECTIONS_STORE)) {
+            d.createObjectStore(SELECTIONS_STORE, { keyPath:'date' });
+        }
     };
 }
 
-function getAllTrackers() {
+function getDB() { return dbReady; }
+
+async function getAllTrackers() {
+    const database = await getDB();
     return new Promise((res, rej) => {
-        const req = db.transaction([STORE_NAME],'readonly').objectStore(STORE_NAME).getAll();
+        const req = database.transaction([STORE_NAME],'readonly').objectStore(STORE_NAME).getAll();
         req.onsuccess = () => res(req.result);
         req.onerror   = () => rej(req.error);
     });
 }
 
-function getTrackerById(id) {
+async function getTrackerById(id) {
+    const database = await getDB();
     return new Promise((res, rej) => {
-        const req = db.transaction([STORE_NAME],'readonly').objectStore(STORE_NAME).get(id);
+        const req = database.transaction([STORE_NAME],'readonly').objectStore(STORE_NAME).get(id);
         req.onsuccess = () => res(req.result);
         req.onerror   = () => rej(req.error);
+    });
+}
+
+// Returns a flat { date: { trackerId: entry } } map from the dailySelections IDB store
+async function getAllSelections() {
+    const database = await getDB();
+    return new Promise((res, rej) => {
+        const req = database.transaction([SELECTIONS_STORE],'readonly').objectStore(SELECTIONS_STORE).getAll();
+        req.onsuccess = () => {
+            const map = {};
+            req.result.forEach(record => { map[record.date] = record.selections; });
+            res(map);
+        };
+        req.onerror = () => rej(req.error);
     });
 }
 
@@ -125,8 +165,8 @@ async function onTrackerChange() {
 }
 
 /* ═══ year dropdown – only years that have data ════════════ */
-function populateYearDropdown(trackerId) {
-    const all   = JSON.parse(localStorage.getItem('dailySelections') || '{}');
+async function populateYearDropdown(trackerId) {
+    const all   = await getAllSelections();
     const years = new Set();
 
     Object.keys(all).forEach(date => {
@@ -193,9 +233,9 @@ async function renderReport() {
     const type    = tracker.type || 'dropdown';
     const year    = parseInt(document.getElementById('yearSelect').value) || new Date().getFullYear();
 
-    // pull only this tracker's entries for the chosen year
-    const all      = JSON.parse(localStorage.getItem('dailySelections') || '{}');
-    const entries  = {};   // date → entry
+    // pull only this tracker's entries for the chosen year from IDB
+    const all     = await getAllSelections();
+    const entries = {};   // date → entry
 
     Object.keys(all).forEach(date => {
         if (all[date][id] && new Date(date + 'T00:00:00').getFullYear() === year) {
