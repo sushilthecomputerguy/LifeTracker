@@ -266,17 +266,21 @@ let db;
 const DB_NAME    = 'TrackerDB';
 const STORE_NAME = 'trackers';
 
+const SELECTIONS_STORE = 'dailySelections';
+
 function initDB() {
   return new Promise((res, rej) => {
-    const req = indexedDB.open(DB_NAME, 2);
-    req.onerror   = () => rej('DB open failed');
+    const req = indexedDB.open(DB_NAME, 4); // version 4: matches index.html exactly
+    req.onerror   = (e) => rej('DB open failed: ' + (e.target.error?.message || 'unknown'));
     req.onsuccess = () => { db = req.result; res(); };
     req.onupgradeneeded = (e) => {
       const d = e.target.result;
       if (!d.objectStoreNames.contains(STORE_NAME)) {
         const s = d.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
-        s.createIndex('title', 'title');
-        s.createIndex('type',  'type');
+        s.createIndex('title', 'title', { unique: false });
+      }
+      if (!d.objectStoreNames.contains(SELECTIONS_STORE)) {
+        d.createObjectStore(SELECTIONS_STORE, { keyPath: 'date' });
       }
     };
   });
@@ -313,27 +317,47 @@ function escapeCSV(val) {
   return s;
 }
 
-// ── buildPivot — exact copy from export.html ────────────────────
+// ── getAllDailySelections — reads from IndexedDB (matches index.html) ──
+function getAllDailySelections() {
+  return new Promise((res, rej) => {
+    const req = db.transaction([SELECTIONS_STORE], 'readonly').objectStore(SELECTIONS_STORE).getAll();
+    req.onsuccess = () => res(req.result); // array of { date, selections: { trackerId: { trackerId, value } } }
+    req.onerror   = () => rej(req.error);
+  });
+}
+
+// ── buildPivot — reads daily selections from IndexedDB ──────────
 async function buildPivot() {
-  const trackers        = await getAllTrackers();
-  const dailySelections = JSON.parse(localStorage.getItem('dailySelections') || '{}');
+  const trackers       = await getAllTrackers();
+  const allRecords     = await getAllDailySelections(); // [{date, selections}]
 
   const trackerMap = {};
   trackers.forEach(t => { trackerMap[t.id] = t; });
 
+  // Build a plain map: { 'YYYY-MM-DD': { trackerId: { trackerId, value } } }
+  const dailyMap = {};
+  allRecords.forEach(record => {
+    if (record && record.date && record.selections) {
+      dailyMap[record.date] = record.selections;
+    }
+  });
+
   const usedTrackerIds = new Set();
-  Object.values(dailySelections).forEach(dayEntries => {
-    Object.keys(dayEntries).forEach(tid => usedTrackerIds.add(Number(tid)));
+  Object.values(dailyMap).forEach(dayEntries => {
+    Object.values(dayEntries).forEach(entry => {
+      if (entry && entry.trackerId != null) usedTrackerIds.add(Number(entry.trackerId));
+    });
   });
 
   const orderedTrackers = trackers.filter(t => usedTrackerIds.has(t.id));
-  const sortedDates     = Object.keys(dailySelections).sort().reverse();
+  const sortedDates     = Object.keys(dailyMap).sort().reverse();
 
   const rows = sortedDates.map(dateKey => {
-    const dayEntries = dailySelections[dateKey];
+    const dayEntries = dailyMap[dateKey];
     const values = {};
     Object.values(dayEntries).forEach(entry => {
-      const tracker = trackerMap[entry.trackerId];
+      if (!entry || entry.trackerId == null) return;
+      const tracker = trackerMap[Number(entry.trackerId)];
       if (tracker) values[tracker.id] = resolveValue(tracker, entry.value);
     });
     return { date: dateKey, values };
