@@ -270,10 +270,13 @@ const SELECTIONS_STORE = 'dailySelections';
 
 function initDB() {
   return new Promise((res, rej) => {
-    const req = indexedDB.open(DB_NAME, 4); // version 4: matches index.html exactly
-    req.onerror   = (e) => rej('DB open failed: ' + (e.target.error?.message || 'unknown'));
-    req.onsuccess = () => { db = req.result; res(); };
-    req.onupgradeneeded = (e) => {
+    // Phase 1: open without a version to read whatever version currently exists
+    const probe = indexedDB.open(DB_NAME);
+
+    probe.onerror = (e) => rej('DB open failed: ' + (e.target.error?.message || 'unknown'));
+
+    probe.onupgradeneeded = (e) => {
+      // DB didn't exist yet — create all stores fresh in one go
       const d = e.target.result;
       if (!d.objectStoreNames.contains(STORE_NAME)) {
         const s = d.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
@@ -282,6 +285,37 @@ function initDB() {
       if (!d.objectStoreNames.contains(SELECTIONS_STORE)) {
         d.createObjectStore(SELECTIONS_STORE, { keyPath: 'date' });
       }
+    };
+
+    probe.onsuccess = (e) => {
+      const probedDB      = e.target.result;
+      const curVersion    = probedDB.version;
+      const hasTrackers   = probedDB.objectStoreNames.contains(STORE_NAME);
+      const hasSelections = probedDB.objectStoreNames.contains(SELECTIONS_STORE);
+      probedDB.close();
+
+      // Phase 2: if both stores exist, just open normally at the same version
+      if (hasTrackers && hasSelections) {
+        const req2 = indexedDB.open(DB_NAME, curVersion);
+        req2.onerror   = (e) => rej('DB open failed: ' + (e.target.error?.message || 'unknown'));
+        req2.onsuccess = () => { db = req2.result; res(); };
+        return;
+      }
+
+      // Phase 3: a store is missing — bump the version to trigger onupgradeneeded
+      const req3 = indexedDB.open(DB_NAME, curVersion + 1);
+      req3.onerror = (e) => rej('DB upgrade failed: ' + (e.target.error?.message || 'unknown'));
+      req3.onsuccess = () => { db = req3.result; res(); };
+      req3.onupgradeneeded = (e) => {
+        const d = e.target.result;
+        if (!d.objectStoreNames.contains(STORE_NAME)) {
+          const s = d.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+          s.createIndex('title', 'title', { unique: false });
+        }
+        if (!d.objectStoreNames.contains(SELECTIONS_STORE)) {
+          d.createObjectStore(SELECTIONS_STORE, { keyPath: 'date' });
+        }
+      };
     };
   });
 }
