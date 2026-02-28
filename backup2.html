@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backup & Restore</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#fef5eb">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+<body>
+
+<div class="container">
+    <h1>Backup &amp; Restore</h1>
+
+    <!-- ═══ EXPORT ═══ -->
+    <div class="section">
+        <h2 class="section-title">Export Backup</h2>
+        <p class="section-desc">
+            Downloads every tracker and all your daily entries as one JSON backup file.
+            Each date in the file includes the tracker name, type, and the actual saved value.
+        </p>
+
+        <button class="btn btn-primary" onclick="exportBackup()">📥 Download Backup (JSON)</button>
+
+        <div class="box box-info">
+            <div class="box-title">What is saved in the file?</div>
+            ✓ All trackers with their full settings (options, prefix/suffix, etc.)<br>
+            ✓ Every tracked date with each entry resolved: tracker name + value<br>
+            ✓ Custom templates<br>
+            ✓ Export date &amp; version metadata
+        </div>
+
+        <div class="box box-success" id="exportSuccess">
+            <div class="box-title">✓ Success</div>
+            <span id="exportSuccessText"></span>
+        </div>
+    </div>
+
+    <!-- ═══ IMPORT ═══ -->
+    <div class="section">
+        <h2 class="section-title">Import Backup</h2>
+        <p class="section-desc">
+            Drop or choose a backup file (.json). A full preview of trackers and every date will appear before anything is written.
+        </p>
+
+        <!-- drop zone -->
+        <div class="drop-zone" id="dropZone">
+            <div class="icon">📁</div>
+            <div class="hint">Drag &amp; drop your backup .json file here</div>
+            <div class="hint dim">or</div>
+            <button class="btn btn-success" onclick="document.getElementById('fileInput').click()">Choose File</button>
+            <input type="file" id="fileInput" class="file-input" accept=".json,application/json" onchange="onFileChosen(event)">
+        </div>
+
+        <!-- mode -->
+        <div class="radio-group">
+            <label>
+                <input type="radio" name="importMode" value="merge" checked>
+                <div>
+                    <div class="radio-label">Merge</div>
+                    <div class="radio-desc">Keep current data and add everything from the backup on top.</div>
+                </div>
+            </label>
+            <label>
+                <input type="radio" name="importMode" value="replace">
+                <div>
+                    <div class="radio-label">Replace</div>
+                    <div class="radio-desc">Delete all current data first, then load the backup. Best for a fresh device.</div>
+                </div>
+            </label>
+        </div>
+
+        <!-- preview (hidden until file loaded) -->
+        <div class="preview-panel" id="previewPanel">
+            <div class="preview-trackers-title">Trackers in this backup</div>
+            <div id="previewTrackerList"></div>
+            <div id="previewDates" style="margin-top:18px;"></div>
+        </div>
+
+        <!-- import button -->
+        <div class="import-btn-row" id="importBtnRow">
+            <button class="btn btn-primary" onclick="runImport()">📥 Import</button>
+        </div>
+
+        <!-- messages -->
+        <div class="box box-warn">
+            <div class="box-title">⚠️ Important</div>
+            "Replace" permanently deletes everything currently on this device. Export a fresh backup first if you need to keep current data.
+        </div>
+
+        <div class="box box-success" id="importSuccess">
+            <div class="box-title">✓ Import successful</div>
+            <span id="importSuccessText"></span>
+        </div>
+
+        <div class="box box-error" id="importError">
+            <div class="box-title">✗ Import failed</div>
+            <span id="importErrorText"></span>
+        </div>
+    </div>
+</div>
+
+<div class="bottom-navigation">
+    <div><a href="trackers.html"><img src="folder-icon.svg"/>Tracker</a></div>
+    <div><a href="report.html"><img src="report-icon.svg"/>Report</a></div>
+    <div><a href="index.html"><img src="today-icon.svg"/>My Day</a></div>
+    <div><a href="settings.html"><img src="setting-icon.svg"/>Settings</a></div>
+</div>
+
+<script>
+/* ═══ DB ═══════════════════════════════════════════════════ */
+let db;
+const DB_NAME          = 'TrackerDB';
+const STORE_NAME       = 'trackers';
+const SELECTIONS_STORE = 'dailySelections';
+
+let dbReady;
+
+function initDB() {
+    dbReady = new Promise((resolve, reject) => {
+        const probe = indexedDB.open(DB_NAME);
+        probe.onerror   = () => reject(new Error('DB probe failed'));
+        probe.onsuccess = () => {
+            const probeDb        = probe.result;
+            const currentVersion = probeDb.version;
+            const needsStore     = !probeDb.objectStoreNames.contains(SELECTIONS_STORE);
+            probeDb.close();
+            openDB(needsStore ? currentVersion + 1 : currentVersion, resolve, reject);
+        };
+    });
+}
+
+function openDB(version, resolve, reject) {
+    const req = indexedDB.open(DB_NAME, version);
+    req.onerror   = () => reject(req.error);
+    req.onsuccess = () => { db = req.result; resolve(db); };
+    req.onupgradeneeded = (e) => {
+        const d = e.target.result;
+        if (!d.objectStoreNames.contains(STORE_NAME)) {
+            const s = d.createObjectStore(STORE_NAME, { keyPath:'id', autoIncrement:true });
+            s.createIndex('title','title');
+            s.createIndex('type','type');
+        }
+        if (!d.objectStoreNames.contains(SELECTIONS_STORE)) {
+            d.createObjectStore(SELECTIONS_STORE, { keyPath:'date' });
+        }
+    };
+}
+
+function getDB() { return dbReady; }
+
+async function getAllTrackers() {
+    const database = await getDB();
+    return new Promise((res, rej) => {
+        const req = database.transaction([STORE_NAME],'readonly').objectStore(STORE_NAME).getAll();
+        req.onsuccess = () => res(req.result);
+        req.onerror   = () => rej(req.error);
+    });
+}
+
+async function getAllSelections() {
+    const database = await getDB();
+    return new Promise((res, rej) => {
+        const req = database.transaction([SELECTIONS_STORE],'readonly').objectStore(SELECTIONS_STORE).getAll();
+        req.onsuccess = () => {
+            const map = {};
+            req.result.forEach(record => { map[record.date] = record.selections; });
+            res(map);
+        };
+        req.onerror = () => rej(req.error);
+    });
+}
+
+async function addTracker(tracker) {
+    const database = await getDB();
+    return new Promise((res, rej) => {
+        const req = database.transaction([STORE_NAME],'readwrite').objectStore(STORE_NAME).add(tracker);
+        req.onsuccess = () => res(req.result);
+        req.onerror   = () => rej(req.error);
+    });
+}
+
+async function putSelectionRecord(date, selections) {
+    const database = await getDB();
+    return new Promise((res, rej) => {
+        const req = database.transaction([SELECTIONS_STORE],'readwrite').objectStore(SELECTIONS_STORE).put({ date, selections });
+        req.onsuccess = () => res();
+        req.onerror   = () => rej(req.error);
+    });
+}
+
+async function clearTrackers() {
+    const database = await getDB();
+    return new Promise((res, rej) => {
+        const req = database.transaction([STORE_NAME],'readwrite').objectStore(STORE_NAME).clear();
+        req.onsuccess = res;
+        req.onerror   = () => rej(req.error);
+    });
+}
+
+async function clearSelections() {
+    const database = await getDB();
+    return new Promise((res, rej) => {
+        const req = database.transaction([SELECTIONS_STORE],'readwrite').objectStore(SELECTIONS_STORE).clear();
+        req.onsuccess = res;
+        req.onerror   = () => rej(req.error);
+    });
+}
+
+/* ═══ tiny helpers ═════════════════════════════════════════ */
+function getTypeLabel(t) {
+    return { dropdown:'Dropdown', yesno:'Yes / No', numeric:'Numeric', text:'Text' }[t] || 'Dropdown';
+}
+
+function formatDate(isoDate) {
+    const d = new Date(isoDate + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+}
+
+function resolveValue(tracker, rawValue) {
+    const type = tracker.type || 'dropdown';
+    if (type === 'dropdown') {
+        const idx = parseInt(rawValue);
+        return (tracker.options && tracker.options[idx]) ? tracker.options[idx].title : rawValue;
+    }
+    if (type === 'yesno')   return rawValue === 'yes' ? 'Yes' : 'No';
+    if (type === 'numeric') {
+        const p = tracker.numericPrefix || '';
+        const s = tracker.numericSuffix || '';
+        return `${p}${rawValue}${s ? ' ' + s : ''}`;
+    }
+    return rawValue;
+}
+
+/* ═══ EXPORT — plain JSON ══════════════════════════════════ */
+async function exportBackup() {
+    try {
+        const trackers        = await getAllTrackers();
+        const dailySelections = await getAllSelections();
+        const customTemplates = JSON.parse(localStorage.getItem('customTemplates') || '[]');
+
+        const trackerMap = {};
+        trackers.forEach(t => { trackerMap[t.id] = t; });
+
+        const sortedDates = Object.keys(dailySelections).sort().reverse();
+
+        const dates = sortedDates.map(dateKey => {
+            const dayEntries = dailySelections[dateKey];
+            const entries = Object.values(dayEntries).map(entry => {
+                const tracker = trackerMap[entry.trackerId];
+                return {
+                    trackerId:   entry.trackerId,
+                    trackerName: tracker ? tracker.title : 'Unknown Tracker',
+                    trackerType: tracker ? (tracker.type || 'dropdown') : entry.type,
+                    value:       tracker ? resolveValue(tracker, entry.value) : entry.value,
+                    rawValue:    entry.value
+                };
+            });
+            return {
+                date:          dateKey,
+                dateFormatted: formatDate(dateKey),
+                entries:       entries
+            };
+        });
+
+        /* ── Build plain JSON payload ── */
+        const backup = {
+            version:    '2.0',
+            exportDate: new Date().toISOString(),
+            data: {
+                trackers:        trackers,
+                dates:           dates,
+                customTemplates: customTemplates
+            }
+        };
+
+        /* ── Download as .json ── */
+        const jsonStr  = JSON.stringify(backup, null, 2); // pretty-printed
+        const blob     = new Blob([jsonStr], { type: 'application/json' });
+        const url      = URL.createObjectURL(blob);
+        const a        = document.createElement('a');
+        a.href         = url;
+        a.download     = `tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showMsg('exportSuccess','exportSuccessText',
+            `Backup downloaded — ${trackers.length} tracker${trackers.length !== 1 ? 's' : ''} and ${dates.length} date${dates.length !== 1 ? 's' : ''} saved.`);
+
+    } catch (err) {
+        console.error('Export error', err);
+    }
+}
+
+/* ═══ IMPORT – read file ═══════════════════════════════════ */
+let pendingBackup = null;
+
+function onFileChosen(e) {
+    const file = e.target.files[0];
+    if (file) readFile(file);
+}
+
+/* drag & drop */
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover',  (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', ()  => { dropZone.classList.remove('dragover'); });
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) readFile(file);
+    else      showMsg('importError','importErrorText','Please drop a valid Tracker backup file.');
+});
+
+async function readFile(file) {
+    hideAll();
+    try {
+        const text = await file.text();
+
+        /* ── Try plain JSON first; fall back to legacy base64 ── */
+        let backup;
+        try {
+            backup = JSON.parse(text);
+        } catch {
+            // Legacy: base64-encoded JSON
+            try {
+                const decoded = decodeURIComponent(escape(atob(text.trim())));
+                backup = JSON.parse(decoded);
+            } catch {
+                throw new Error('Not a valid tracker backup file');
+            }
+        }
+
+        if (!backup.version || !backup.data || !backup.data.trackers) {
+            throw new Error('Not a valid tracker backup');
+        }
+
+        pendingBackup = backup;
+        renderPreview(backup);
+        document.getElementById('previewPanel').classList.add('show');
+        document.getElementById('importBtnRow').classList.add('show');
+
+    } catch (err) {
+        console.error('Read error', err);
+        showMsg('importError','importErrorText','Invalid file — make sure it is a Tracker backup .json file.');
+        pendingBackup = null;
+        document.getElementById('previewPanel').classList.remove('show');
+        document.getElementById('importBtnRow').classList.remove('show');
+    }
+}
+
+/* ═══ PREVIEW ══════════════════════════════════════════════ */
+function renderPreview(backup) {
+    const { trackers, dates } = backup.data;
+
+    document.getElementById('previewTrackerList').innerHTML = trackers.map(t => {
+        const type = t.type || 'dropdown';
+        let detail = '';
+        if (type === 'dropdown' && t.options) {
+            detail = t.options.map(o => `<span class="pill" style="background:${o.color}">${o.title}</span>`).join('');
+        } else if (type === 'yesno') {
+            detail = '<span style="color:#666;font-size:13px;">Yes or No</span>';
+        } else if (type === 'numeric') {
+            const p = t.numericPrefix || '';
+            const s = t.numericSuffix || '';
+            detail = `<span style="color:#666;font-size:13px;">${p}[number]${s ? ' '+s : ''}</span>`;
+        } else {
+            detail = '<span style="color:#666;font-size:13px;">Free text</span>';
+        }
+        return `<div class="preview-tracker-row">
+                    <span class="type-badge">${getTypeLabel(type)}</span>
+                    <span style="font-weight:600;">${t.title}</span>
+                    <span style="flex:1;">${detail}</span>
+                </div>`;
+    }).join('');
+
+    let dateBlocks = [];
+    if (dates && dates.length) {
+        dateBlocks = dates;
+    } else if (backup.data.dailySelections) {
+        const tMap = {};
+        trackers.forEach(t => { tMap[t.id] = t; });
+        dateBlocks = Object.keys(backup.data.dailySelections).sort().reverse().map(dateKey => {
+            const entries = Object.values(backup.data.dailySelections[dateKey]).map(entry => {
+                const tracker = tMap[entry.trackerId];
+                return {
+                    trackerId:   entry.trackerId,
+                    trackerName: tracker ? tracker.title : 'Unknown',
+                    trackerType: tracker ? (tracker.type || 'dropdown') : (entry.type || 'dropdown'),
+                    value:       tracker ? resolveValue(tracker, entry.value) : entry.value,
+                    rawValue:    entry.value
+                };
+            });
+            return { date: dateKey, dateFormatted: formatDate(dateKey), entries };
+        });
+    }
+
+    document.getElementById('previewDates').innerHTML = dateBlocks.length
+        ? dateBlocks.map(block => `
+            <div class="date-block">
+                <div class="date-block-header">${block.dateFormatted} <span style="font-weight:400;color:#666;font-size:13px;">(${block.date})</span></div>
+                <div class="date-block-body">
+                    ${block.entries.map(e => `
+                        <div class="entry-row">
+                            <span class="entry-name">${e.trackerName}</span>
+                            <span class="type-badge">${getTypeLabel(e.trackerType)}</span>
+                            <span class="entry-value">${e.value}</span>
+                        </div>`).join('')}
+                </div>
+            </div>`).join('')
+        : '<p style="color:#999;font-size:14px;margin-top:10px;">No tracked dates in this backup.</p>';
+}
+
+/* ═══ IMPORT – execute ════════════════════════════════════ */
+async function runImport() {
+    if (!pendingBackup) return;
+    hideAll();
+
+    const mode = document.querySelector('input[name="importMode"]:checked').value;
+    if (mode === 'replace') {
+        if (!confirm('Replace will permanently delete all data on this device. Continue?')) return;
+        await clearTrackers();
+        await clearSelections();
+        localStorage.removeItem('customTemplates');
+    }
+
+    try {
+        const { trackers, dates, customTemplates } = pendingBackup.data;
+        const legacySelections = pendingBackup.data.dailySelections;
+
+        const idMap = {};
+        if (trackers && trackers.length) {
+            for (const t of trackers) {
+                const oldId = t.id;
+                const copy  = { ...t };
+                delete copy.id;
+                const newId = await addTracker(copy);
+                idMap[String(oldId)] = newId;
+            }
+        }
+
+        let rebuilt = {};
+        if (dates && dates.length) {
+            dates.forEach(block => {
+                rebuilt[block.date] = {};
+                block.entries.forEach(e => {
+                    const newId = idMap[String(e.trackerId)] || e.trackerId;
+                    rebuilt[block.date][String(newId)] = {
+                        trackerId: newId,
+                        value:     e.rawValue,
+                        type:      e.trackerType,
+                        date:      block.date,
+                        timestamp: new Date().toISOString()
+                    };
+                });
+            });
+        } else if (legacySelections) {
+            for (const [date, entries] of Object.entries(legacySelections)) {
+                rebuilt[date] = {};
+                for (const [oldTid, entry] of Object.entries(entries)) {
+                    const newId = idMap[String(oldTid)] || oldTid;
+                    rebuilt[date][String(newId)] = { ...entry, trackerId: newId };
+                }
+            }
+        }
+
+        if (mode === 'replace') {
+            for (const [date, selections] of Object.entries(rebuilt)) {
+                await putSelectionRecord(date, selections);
+            }
+        } else {
+            const existing = await getAllSelections();
+            for (const [date, entries] of Object.entries(rebuilt)) {
+                existing[date] = { ...(existing[date] || {}), ...entries };
+            }
+            for (const [date, selections] of Object.entries(existing)) {
+                await putSelectionRecord(date, selections);
+            }
+        }
+
+        if (customTemplates) {
+            if (mode === 'replace') {
+                localStorage.setItem('customTemplates', JSON.stringify(customTemplates));
+            } else {
+                const existing = JSON.parse(localStorage.getItem('customTemplates') || '[]');
+                localStorage.setItem('customTemplates', JSON.stringify([...existing, ...customTemplates]));
+            }
+        }
+
+        showMsg('importSuccess','importSuccessText','All trackers and every date have been restored. Open My Day to see your data.');
+        pendingBackup = null;
+        document.getElementById('fileInput').value = '';
+        document.getElementById('previewPanel').classList.remove('show');
+        document.getElementById('importBtnRow').classList.remove('show');
+
+    } catch (err) {
+        console.error('Import error', err);
+        showMsg('importError','importErrorText','Something went wrong. Check the browser console for details.');
+    }
+}
+
+/* ═══ message helpers ══════════════════════════════════════ */
+function hideAll() {
+    ['exportSuccess','importSuccess','importError'].forEach(id => {
+        document.getElementById(id).classList.remove('show');
+    });
+}
+
+function showMsg(boxId, textId, msg) {
+    hideAll();
+    document.getElementById(textId).textContent = msg;
+    document.getElementById(boxId).classList.add('show');
+}
+
+/* ═══ boot ═════════════════════════════════════════════════ */
+initDB();
+</script>
+
+<script>
+(function () {
+  const STORAGE_KEY = 'theme', LIGHT = 'light', DARK = 'dark';
+  function getSystemTheme() { return window.matchMedia('(prefers-color-scheme: dark)').matches ? DARK : LIGHT; }
+  function getSavedTheme()  { return localStorage.getItem(STORAGE_KEY); }
+  function resolveTheme()   { return getSavedTheme() || getSystemTheme(); }
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.querySelectorAll('.theme-toggle').forEach(btn => {
+      btn.textContent = theme === DARK ? '☀️' : '🌙';
+      btn.setAttribute('aria-label', theme === DARK ? 'Switch to light mode' : 'Switch to dark mode');
+    });
+  }
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || resolveTheme();
+    const next    = current === DARK ? LIGHT : DARK;
+    localStorage.setItem(STORAGE_KEY, next);
+    applyTheme(next);
+  }
+  function attachToggle() {
+    document.body.addEventListener('click', function (e) { if (e.target.closest('.theme-toggle')) toggleTheme(); });
+  }
+  function watchSystemTheme() {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
+      if (!getSavedTheme()) applyTheme(e.matches ? DARK : LIGHT);
+    });
+  }
+  applyTheme(resolveTheme());
+  if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', attachToggle); }
+  else { attachToggle(); }
+  watchSystemTheme();
+})();
+</script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(() => console.log("Service Worker Registered"))
+        .catch(err => console.log("SW failed:", err));
+    });
+  }
+</script>
+
+</body>
+</html>

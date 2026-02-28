@@ -797,10 +797,13 @@
 
         // Save all trackers for the current date
         async function saveAllTrackers() {
-            // Collect all current values from inputs
-            const currentSelections = {};
+            // Start with whatever is already saved in IndexedDB as the base.
+            // This preserves radio/yes-no values (which live only in tempSelections
+            // and are not readable from the DOM after a previous save clears tempSelections).
+            const savedSelections = await getSelectionsForDate(currentDate);
+            const currentSelections = Object.assign({}, savedSelections);
             
-            // Get all dropdown values
+            // Overlay dropdown (select element) values from the DOM
             document.querySelectorAll('select[data-tracker-id]').forEach(select => {
                 const trackerId = select.getAttribute('data-tracker-id');
                 const value = select.value;
@@ -814,11 +817,14 @@
                         date: currentDate,
                         timestamp: new Date().toISOString()
                     };
+                } else {
+                    // Explicitly cleared — remove from saved data
+                    delete currentSelections[trackerId];
                 }
             });
             
-            // Get all numeric and text inputs
-            document.querySelectorAll('input[data-tracker-id], textarea[data-tracker-id]').forEach(input => {
+            // Overlay numeric and text inputs from the DOM (exclude range/slider inputs)
+            document.querySelectorAll('input[data-tracker-id]:not([type="range"]), textarea[data-tracker-id]').forEach(input => {
                 const trackerId = input.getAttribute('data-tracker-id');
                 const value = input.value.trim();
                 const type = input.getAttribute('data-type');
@@ -831,10 +837,13 @@
                         date: currentDate,
                         timestamp: new Date().toISOString()
                     };
+                } else {
+                    // Explicitly cleared — remove from saved data
+                    delete currentSelections[trackerId];
                 }
             });
             
-            // Merge with yes/no selections from tempSelections
+            // Overlay radio / yes-no / slider selections from tempSelections (highest priority)
             if (tempSelections[currentDate]) {
                 Object.keys(tempSelections[currentDate]).forEach(trackerId => {
                     const selection = tempSelections[currentDate][trackerId];
@@ -843,13 +852,11 @@
                 });
             }
             
-            // Save to IndexedDB
+            // Save merged result to IndexedDB
             await saveSelectionsForDate(currentDate, currentSelections);
             
-            // Clear temp selections for this date
-            if (tempSelections[currentDate]) {
-                delete tempSelections[currentDate];
-            }
+            // Clear temp selections for this date (now persisted)
+            delete tempSelections[currentDate];
             
             // Show toast notification
             showToast('Saved successfully!');
@@ -861,8 +868,8 @@
         async function loadSelectionsForDate() {
             const dateSelections = await getSelectionsForDate(currentDate);
 
-            // Clear temp selections when changing dates
-            tempSelections = {};
+            // Clear temp selections only for the date we are loading (any unsaved changes for that date are discarded)
+            delete tempSelections[currentDate];
 
             // First, reset all inputs to default
             document.querySelectorAll('[id^="tracker-"]').forEach(element => {

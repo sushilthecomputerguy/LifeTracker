@@ -71,8 +71,6 @@
                         <span class="type-card-name">Text</span>
                     </label>
                 </div>
-                <!-- hidden select kept for compatibility -->
-                <select id="trackerType" style="display:none;"></select>
             </div>
 
             <!-- ── Choices Options ── -->
@@ -555,14 +553,13 @@ const COLOR_PALETTE = [
 ];
 
 // State for the colour picker overlay
-let _cpWrapper   = null; // the .color-picker-wrapper element currently editing
+let _cpWrapper   = null;
 let _cpSelected  = '#f1c40f';
 
 function openColorPicker(wrapper) {
     _cpWrapper  = wrapper;
     _cpSelected = wrapper.dataset.selectedColor || '#f1c40f';
 
-    // Build swatches
     const grid = document.getElementById('cpSwatches');
     grid.innerHTML = '';
     COLOR_PALETTE.forEach(color => {
@@ -597,13 +594,11 @@ function applyHex() {
     }
     _cpSelected = val;
     syncHexInput(val);
-    // deselect palette swatches if custom hex
     document.querySelectorAll('#cpSwatches .cp-swatch').forEach(s => {
         s.classList.toggle('selected', s.style.background === val || rgbToHex(s.style.background) === val.toLowerCase());
     });
 }
 
-// live preview as user types hex
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('cpHexInput').addEventListener('input', function () {
         let val = this.value.trim();
@@ -632,7 +627,6 @@ function closeColorPicker(confirm = true) {
     _cpWrapper = null;
 }
 
-// Close overlay on backdrop click
 document.getElementById('cpOverlay').addEventListener('click', function(e) {
     if (e.target === this) closeColorPicker(true);
 });
@@ -646,27 +640,23 @@ function addOption(title = '', color = '#3498db', numericValue = '') {
     row.className = 'option-row';
     row.id = `option-${uid}`;
 
-    // Name input
     const nameInput = document.createElement('input');
     nameInput.type        = 'text';
     nameInput.className   = 'option-title';
     nameInput.placeholder = 'Option name';
     nameInput.value       = title;
 
-    // Remove button
     const removeBtn = document.createElement('button');
     removeBtn.type      = 'button';
     removeBtn.className = 'option-remove-btn';
     removeBtn.innerHTML = '×';
     removeBtn.onclick   = () => row.remove();
 
-    // Bottom row: colour + score
     const bottomRow = document.createElement('div');
     bottomRow.className = 'option-bottom-row';
 
-    // Colour swatch button (opens overlay)
     const cpWrapper = document.createElement('div');
-    cpWrapper.className = 'color-picker-wrapper'; // keep class for saveTracker compat
+    cpWrapper.className = 'color-picker-wrapper';
     cpWrapper.dataset.selectedColor = color;
 
     const swatchBtn = document.createElement('button');
@@ -678,7 +668,6 @@ function addOption(title = '', color = '#3498db', numericValue = '') {
     swatchBtn.onclick   = () => openColorPicker(cpWrapper);
     cpWrapper.appendChild(swatchBtn);
 
-    // Numeric score
     const numericWrap = document.createElement('div');
     numericWrap.className = 'option-numeric-wrap';
     const numericInput = document.createElement('input');
@@ -703,23 +692,19 @@ function addOption(title = '', color = '#3498db', numericValue = '') {
     list.appendChild(row);
 }
 
-function removeOption(id) {
-    document.getElementById(`option-${id}`)?.remove();
+/* ═══ TYPE CHANGE ═══════════════════════════════════════════ */
+function getSelectedType() {
+    const checked = document.querySelector('input[name="trackerTypeRadio"]:checked');
+    return checked ? checked.value : 'dropdown';
 }
 
-/* ═══ TYPE CHANGE ═══════════════════════════════════════════ */
 function handleTypeChange() {
-    // sync hidden <select> from radio cards
-    const checked = document.querySelector('input[name="trackerTypeRadio"]:checked');
-    const type    = checked ? checked.value : 'dropdown';
-    document.getElementById('trackerType').value = type;
-
+    const type = getSelectedType();
     document.getElementById('dropdownSection').classList.toggle('hidden', type !== 'dropdown');
     document.getElementById('numericSection') .classList.toggle('hidden', type !== 'numeric');
     document.getElementById('yesnoSection')   .classList.toggle('hidden', type !== 'yesno');
 }
 
-// Wire slider hint to display-style cards
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('input[name="displayStyle"]').forEach(input => {
         input.addEventListener('change', function () {
@@ -785,9 +770,7 @@ function openAddModal() {
     editingId = null;
     document.getElementById('modalTitle').textContent = 'Add New Tracker';
     document.getElementById('trackerForm').reset();
-    // reset type cards to dropdown
     document.querySelector('input[name="trackerTypeRadio"][value="dropdown"]').checked = true;
-    document.getElementById('trackerType').value = 'dropdown';
     document.getElementById('optionsList').innerHTML = '';
     document.getElementById('displayRadio').checked = true;
     document.getElementById('sliderHint').style.display = 'none';
@@ -806,29 +789,31 @@ async function openEditModal(id) {
 
     document.getElementById('modalTitle').textContent = 'Edit Tracker';
     document.getElementById('trackerName').value = tracker.title;
+
+    // ── FIX: set the radio button for the tracker type ──
     const ttype = tracker.type || 'dropdown';
-    document.getElementById('trackerType').value = ttype;
-    // sync radio cards
     const radioCard = document.querySelector(`input[name="trackerTypeRadio"][value="${ttype}"]`);
     if (radioCard) radioCard.checked = true;
 
-    if (tracker.type === 'numeric') {
+    // ── FIX: call handleTypeChange AFTER setting the radio so sections show correctly ──
+    handleTypeChange();
+
+    if (ttype === 'numeric') {
         document.getElementById('numericPrefix').value = tracker.numericPrefix || '';
         document.getElementById('numericSuffix').value = tracker.numericSuffix || '';
     }
 
-    if (tracker.type === 'yesno') {
+    if (ttype === 'yesno') {
         document.getElementById('yesValue').value = tracker.yesValue ?? 1;
         document.getElementById('noValue').value = tracker.noValue ?? 0;
     }
 
-    handleTypeChange();
-
-    if ((tracker.type === 'dropdown' || !tracker.type) && tracker.options) {
+    if (ttype === 'dropdown' && tracker.options) {
         document.getElementById('optionsList').innerHTML = '';
         tracker.options.forEach(o => addOption(o.title, o.color, o.numericValue));
         const displayStyle = tracker.displayStyle || 'radio';
-        document.getElementById('display' + displayStyle.charAt(0).toUpperCase() + displayStyle.slice(1)).checked = true;
+        const dsRadio = document.getElementById('display' + displayStyle.charAt(0).toUpperCase() + displayStyle.slice(1));
+        if (dsRadio) dsRadio.checked = true;
         document.getElementById('sliderHint').style.display = displayStyle === 'slider' ? 'block' : 'none';
     }
 
@@ -840,17 +825,18 @@ function closeModal() {
     editingId = null;
 }
 
-
 /* ═══ SAVE ══════════════════════════════════════════════════ */
 async function saveTracker(e) {
     e.preventDefault();
 
     const title = document.getElementById('trackerName').value.trim();
-    const type = document.getElementById('trackerType').value;
+
+    // ── FIX: always read type from the radio buttons, not the hidden select ──
+    const type = getSelectedType();
 
     if (!title) return alert('Please enter a tracker name');
 
-    const tracker = { title, type, createdAt: editingId ? undefined : new Date().toISOString() };
+    const tracker = { title, type, createdAt: new Date().toISOString() };
 
     // Preserve createdAt if editing
     if (editingId) {
@@ -858,7 +844,6 @@ async function saveTracker(e) {
         const existing = all.find(t => t.id === editingId);
         if (existing) tracker.createdAt = existing.createdAt;
     }
-    if (!tracker.createdAt) tracker.createdAt = new Date().toISOString();
 
     if (type === 'dropdown') {
         const rows = [...document.querySelectorAll('#optionsList .option-row')];
