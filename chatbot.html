@@ -174,9 +174,9 @@
   <!-- Header -->
   <div class="ai-header">
     <div class="ai-header-left">
-      <div class="ai-avatar">🤖</div>
+      <div class="ai-avatar">🌿</div>
       <div class="ai-header-info">
-        <h1>AI Assistant</h1>
+        <h1>Your Wellness Buddy</h1>
         <p id="headerSub">Loading…</p>
       </div>
     </div>
@@ -218,16 +218,16 @@
   <div class="chat-wrap hidden" id="chatWrap">
     <div class="chat-area" id="chatArea"></div>
     <div class="suggestions-wrap" id="suggestions">
-      <div class="suggestion-chip" onclick="sendSuggestion(this)">How am I doing this week?</div>
-      <div class="suggestion-chip" onclick="sendSuggestion(this)">What did I log today?</div>
-      <div class="suggestion-chip" onclick="sendSuggestion(this)">Show my trackers</div>
-      <div class="suggestion-chip" onclick="sendSuggestion(this)">Any patterns in my data?</div>
+      <div class="suggestion-chip" onclick="sendSuggestion(this)">How am I doing this week? 🌱</div>
+      <div class="suggestion-chip" onclick="sendSuggestion(this)">Any patterns you've noticed?</div>
       <div class="suggestion-chip" onclick="sendSuggestion(this)">What was my best day?</div>
-      <div class="suggestion-chip" onclick="sendSuggestion(this)">Give me a weekly summary</div>
+      <div class="suggestion-chip" onclick="sendSuggestion(this)">How's my streak looking?</div>
+      <div class="suggestion-chip" onclick="sendSuggestion(this)">Where am I struggling?</div>
+      <div class="suggestion-chip" onclick="sendSuggestion(this)">Give me a pep talk 💪</div>
     </div>
     <div class="input-area">
       <div class="input-row">
-        <textarea id="userInput" rows="1" placeholder="Ask about your trackers…"
+        <textarea id="userInput" rows="1" placeholder="Talk to me…"
           onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
         <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="Send">
           <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
@@ -382,16 +382,11 @@ async function init() {
     document.getElementById('dataBanner').classList.add('show');
     document.getElementById('chatWrap').classList.remove('hidden');
 
-    // Greeting — list real tracker names so user can verify
-    const names = trackers.map(t => t.title).join(', ') || 'none yet';
+    // Greeting — warm and friendly
     appendMessage('ai',
-      `Hi! I've loaded your data as a CSV.\n\n` +
-      `**Trackers found:** ${names}\n` +
-      `**Days logged:** ${rows.length}\n` +
-      `**Total entries:** ${totalEntries}\n\n` +
-      (rows.length === 0
-        ? `No entries saved yet — go to My Day, fill in your trackers, and hit Save.`
-        : `What would you like to know about your data?`)
+      rows.length === 0
+        ? `Hey! 👋 I'm so glad you're here. I had a look at your data but it seems like you haven't logged anything yet — no worries at all! Head over to My Day, fill in your trackers, and come back whenever you're ready. I'll be right here. 😊`
+        : `Hey, good to see you! 😊 I've been looking through your data — you've got **${trackers.length} tracker${trackers.length !== 1 ? 's' : ''}** going and you've logged **${rows.length} day${rows.length !== 1 ? 's' : ''}** so far. That's genuinely great — showing up consistently is half the battle.\n\nWhat's on your mind? I can dig into patterns, reflect on how a specific week went, or just chat about whatever feels useful right now.`
     );
 
   } catch (err) {
@@ -444,11 +439,21 @@ async function sendMessage(text) {
       .join('\n');
 
     const fullPrompt =
-`You are a personal AI assistant for a habit tracker app called "My Day".
+`You are a warm, caring friend who also happens to have access to the user's habit tracker data. Think of yourself like a supportive therapist-friend — someone who genuinely cares, listens, notices patterns, and gently reflects things back without being preachy or clinical.
+
 Today's date is ${today}.
-The user's complete tracker data is provided below as a CSV.
-Use ONLY this data to answer. Reference real tracker names and actual logged values.
-Never make up data. If something wasn't logged, say so clearly.
+
+Your personality:
+- Talk like a real friend, not a report generator. Use casual, warm language.
+- Start with empathy or acknowledgment before diving into data.
+- When you share insights, frame them conversationally — "I noticed..." or "It looks like..." rather than bullet-pointed summaries.
+- Celebrate wins genuinely. If they did something consistently, cheer them on!
+- If something looks off or a streak was broken, be gentle and curious, not judgmental.
+- Keep responses concise and human. Avoid long lists or formal headers unless the user specifically asks for a breakdown.
+- Use light markdown only when it genuinely helps (bold for a key insight, maybe). No excessive formatting.
+- You can ask a thoughtful follow-up question at the end to keep the conversation going, but only one.
+
+The user's tracker data is below as a CSV. Use ONLY this data. Never make up values. If something wasn't logged, acknowledge it naturally.
 
 --- TRACKER DATA (CSV) ---
 ${csvString || 'No entries have been saved yet.'}
@@ -494,7 +499,7 @@ function appendMessage(role, text) {
   const div  = document.createElement('div');
   div.className = `msg ${role}`;
   div.innerHTML =
-    `<div class="msg-avatar">${role === 'ai' ? '🤖' : '🧑'}</div>` +
+    `<div class="msg-avatar">${role === 'ai' ? '🌿' : '🧑'}</div>` +
     `<div class="msg-bubble">${role === 'ai' ? renderMarkdown(text) : escapeHtml(text)}</div>`;
   area.appendChild(div);
   area.scrollTop = area.scrollHeight;
@@ -505,7 +510,7 @@ function showTyping() {
   const div  = document.createElement('div');
   div.className = 'msg ai';
   div.innerHTML =
-    `<div class="msg-avatar">🤖</div>` +
+    `<div class="msg-avatar">🌿</div>` +
     `<div class="msg-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
   area.appendChild(div);
   area.scrollTop = area.scrollHeight;
@@ -518,8 +523,7 @@ function clearChat() {
   chatHistory.length = 0;
   document.getElementById('chatArea').innerHTML = '';
   document.getElementById('suggestions').style.display = 'flex';
-  const names = trackerRef.map(t => t.title).join(', ') || 'none';
-  appendMessage('ai', `Chat cleared! CSV still loaded.\n\n**Trackers:** ${names}\n\nWhat would you like to know?`);
+  appendMessage('ai', `Fresh start! 🌱 I still have all your data loaded, so we can pick up wherever you'd like. What's on your mind?`);
 }
 
 function handleKey(e) {
